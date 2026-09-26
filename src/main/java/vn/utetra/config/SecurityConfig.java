@@ -1,0 +1,69 @@
+package vn.utetra.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
+
+@Configuration
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Custom HttpFirewall: chỉ cho phép thêm dấu chấm phẩy (;) và
+     * URL-encoded double slash (%2F%2F) để phòng trường hợp SiteMesh
+     * hoặc proxy forward URL đặc biệt.
+     * 
+     * LƯU Ý: KHÔNG gọi setAllowNullByte() vì method này không tồn tại
+     * trong Spring Security 6.x. Null byte luôn bị chặn mặc định.
+     */
+    @Bean
+    public HttpFirewall httpFirewall() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowSemicolon(true);
+        firewall.setAllowUrlEncodedDoubleSlash(true);
+        return firewall;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           HttpFirewall httpFirewall) throws Exception {
+        // Đăng ký firewall custom
+        http.setSharedObject(HttpFirewall.class, httpFirewall);
+
+        http
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/", "/home", "/products/**", "/product/**",
+                    "/login", "/register", "/auth/**",
+                    "/static/**", "/css/**", "/js/**", "/images/**",
+                    "/api/auth/**", "/ws/**"
+                ).permitAll()
+                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "STAFF")
+                .requestMatchers("/cart/**", "/order/**", "/profile/**", "/notifications/**")
+                    .authenticated()
+                .anyRequest().permitAll()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}
