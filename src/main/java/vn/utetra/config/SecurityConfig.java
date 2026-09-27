@@ -25,14 +25,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Custom HttpFirewall: chỉ cho phép thêm dấu chấm phẩy (;) và
-     * URL-encoded double slash (%2F%2F) để phòng trường hợp SiteMesh
-     * hoặc proxy forward URL đặc biệt.
-     * 
-     * LƯU Ý: KHÔNG gọi setAllowNullByte() vì method này không tồn tại
-     * trong Spring Security 6.x. Null byte luôn bị chặn mặc định.
-     */
     @Bean
     public HttpFirewall httpFirewall() {
         StrictHttpFirewall firewall = new StrictHttpFirewall();
@@ -44,7 +36,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            HttpFirewall httpFirewall) throws Exception {
-        // Đăng ký firewall custom
         http.setSharedObject(HttpFirewall.class, httpFirewall);
 
         http
@@ -57,7 +48,11 @@ public class SecurityConfig {
                     "/static/**", "/css/**", "/js/**", "/images/**",
                     "/api/auth/**", "/ws/**"
                 ).permitAll()
-                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "STAFF")
+                // Đơn hàng: ADMIN và STAFF đều được thao tác (màn hình pha chế)
+                .requestMatchers("/admin/orders/**").hasAnyRole("ADMIN", "STAFF")
+                // Toàn bộ trang quản trị còn lại: CHỈ ADMIN
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // Khách hàng đã đăng nhập
                 .requestMatchers("/cart/**", "/order/**", "/profile/**", "/notifications/**")
                     .authenticated()
                 .anyRequest().permitAll()

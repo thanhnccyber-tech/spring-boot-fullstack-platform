@@ -16,6 +16,9 @@ import java.util.*;
 @Service
 public class OrderService {
 
+    private static final BigDecimal SIZE_M_SURCHARGE = new BigDecimal("5000");
+    private static final BigDecimal SIZE_L_SURCHARGE = new BigDecimal("10000");
+
     @Autowired private OrderRepository orderRepository;
     @Autowired private OrderDetailRepository orderDetailRepository;
     @Autowired private UserRepository userRepository;
@@ -56,6 +59,15 @@ public class OrderService {
             od.setIceLevel(ci.getIceLevel());
 
             BigDecimal unit = p.getBasePrice();
+
+            // Phụ thu theo Size
+            if ("M".equalsIgnoreCase(ci.getSize())) {
+                unit = unit.add(SIZE_M_SURCHARGE);
+            } else if ("L".equalsIgnoreCase(ci.getSize())) {
+                unit = unit.add(SIZE_L_SURCHARGE);
+            }
+
+            // Topping
             if (ci.getToppingIds() != null && !ci.getToppingIds().isEmpty()) {
                 List<Topping> toppings = toppingRepository.findAllById(ci.getToppingIds());
                 od.setToppings(toppings);
@@ -109,11 +121,9 @@ public class OrderService {
         msg.put("status", status);
         msg.put("updatedAt", o.getUpdatedAt().toString());
 
-        // Gửi cho customer
         messagingTemplate.convertAndSend(
                 "/topic/order-status/" + o.getUser().getId(), msg);
 
-        // Lưu notification
         Notification n = new Notification();
         n.setUserId(o.getUser().getId());
         n.setTitle("Đơn hàng " + o.getOrderCode());

@@ -21,6 +21,8 @@ import java.util.List;
 public class CartController {
 
     private static final String CART = "CART";
+    private static final BigDecimal SIZE_M_SURCHARGE = new BigDecimal("5000");
+    private static final BigDecimal SIZE_L_SURCHARGE = new BigDecimal("10000");
 
     @Autowired private ProductService productService;
     @Autowired private ToppingService toppingService;
@@ -68,6 +70,15 @@ public class CartController {
         item.setToppingIds(toppingIds);
 
         BigDecimal unit = p.getBasePrice();
+
+        // Phụ thu theo Size (S = 0, M = +5.000, L = +10.000)
+        if ("M".equalsIgnoreCase(size)) {
+            unit = unit.add(SIZE_M_SURCHARGE);
+        } else if ("L".equalsIgnoreCase(size)) {
+            unit = unit.add(SIZE_L_SURCHARGE);
+        }
+
+        // Cộng tiền Topping
         if (toppingIds != null && !toppingIds.isEmpty()) {
             List<Topping> tops = toppingService.all().stream()
                     .filter(t -> toppingIds.contains(t.getId())).toList();
