@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -29,6 +30,7 @@ public class AuthController {
     @Autowired private JwtUtil jwtUtil;
     @Autowired private MailService mailService;
     @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     @GetMapping("/login")
     public String loginPage(Model model) {
@@ -51,10 +53,8 @@ public class AuthController {
 
         User u = opt.get();
 
-        // Verify password
-        org.springframework.security.crypto.password.PasswordEncoder pe =
-                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
-        if (!pe.matches(req.getPassword(), u.getPassword())) {
+        // Verify password (dùng bean PasswordEncoder đã inject)
+        if (!passwordEncoder.matches(req.getPassword(), u.getPassword())) {
             ra.addFlashAttribute("error", "Email hoặc mật khẩu không đúng");
             return "redirect:/login";
         }
@@ -69,16 +69,16 @@ public class AuthController {
         cookie.setMaxAge(24 * 3600);
         response.addCookie(cookie);
 
-        // Lưu thông tin user vào session để dùng cho WebSocket realtime
-        session.setAttribute("userId", u.getId());
+        // Lưu session cho WebSocket + JSP check role
+        session.setAttribute("userId",   u.getId());
         session.setAttribute("fullName", u.getFullName());
-        session.setAttribute("email", u.getEmail());
-        if (!roles.isEmpty()) {
-            session.setAttribute("role", roles.get(0));
-        }
+        session.setAttribute("email",    u.getEmail());
+        session.setAttribute("roles",    roles);   // Lưu LIST roles
 
-        if (roles.contains("ROLE_ADMIN")) return "redirect:/admin/dashboard";
-        if (roles.contains("ROLE_STAFF")) return "redirect:/admin/orders";
+        // Redirect theo role (ưu tiên cao nhất)
+        if (roles.contains("ROLE_ADMIN"))   return "redirect:/admin/dashboard";
+        if (roles.contains("ROLE_MANAGER")) return "redirect:/admin/users";
+        if (roles.contains("ROLE_STAFF"))   return "redirect:/admin/orders";
         return "redirect:/";
     }
 
@@ -113,7 +113,6 @@ public class AuthController {
         cookie.setMaxAge(0);
         response.addCookie(cookie);
 
-        // Xóa session
         session.invalidate();
 
         return "redirect:/";

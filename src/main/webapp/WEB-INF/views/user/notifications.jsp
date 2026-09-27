@@ -1,6 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <title>Thông báo</title>
 
 <h3>🔔 Thông báo</h3>
@@ -9,7 +8,7 @@
         <li class="list-group-item">
             <div class="d-flex justify-content-between">
                 <strong>${n.title}</strong>
-                <small class="text-muted"><fmt:formatDate value="${n.createdAt}" pattern="dd/MM/yyyy HH:mm"/></small>
+                <small class="text-muted">${n.createdAtFormatted}</small>
             </div>
             <p class="mb-0">${n.content}</p>
         </li>

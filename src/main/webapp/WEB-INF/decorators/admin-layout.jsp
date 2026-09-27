@@ -23,8 +23,8 @@
         <hr/>
         <ul class="nav flex-column">
 
-            <%-- Chỉ ADMIN mới thấy các mục quản lý --%>
-            <c:if test="${sessionScope.role == 'ROLE_ADMIN'}">
+            <%-- Dashboard: chỉ ADMIN --%>
+            <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')}">
                 <li class="nav-item">
                     <a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/dashboard">
                         <i class="fas fa-tachometer-alt"></i> Dashboard
@@ -50,19 +50,28 @@
                         <i class="fas fa-store"></i> Chi nhánh
                     </a>
                 </li>
+            </c:if>
+
+            <%-- Đơn hàng: ADMIN + MANAGER + STAFF --%>
+            <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')
+                      || sessionScope.roles.contains('ROLE_MANAGER')
+                      || sessionScope.roles.contains('ROLE_STAFF')}">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/orders">
+                        <i class="fas fa-receipt"></i> Đơn hàng
+                    </a>
+                </li>
+            </c:if>
+
+            <%-- Người dùng: ADMIN + MANAGER --%>
+            <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')
+                      || sessionScope.roles.contains('ROLE_MANAGER')}">
                 <li class="nav-item">
                     <a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/users">
                         <i class="fas fa-users"></i> Người dùng
                     </a>
                 </li>
             </c:if>
-
-            <%-- Cả ADMIN và STAFF đều thấy Đơn hàng --%>
-            <li class="nav-item">
-                <a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/orders">
-                    <i class="fas fa-receipt"></i> Đơn hàng
-                </a>
-            </li>
 
             <li class="nav-item">
                 <a class="nav-link text-white" href="${pageContext.request.contextPath}/logout">
@@ -104,7 +113,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     (function() {
-        // Lắng nghe đơn hàng mới cho admin/staff
+        // Lắng nghe đơn hàng mới cho admin/manager/staff
         const socket = new SockJS('${pageContext.request.contextPath}/ws');
         const stomp = Stomp.over(socket);
         stomp.debug = null;

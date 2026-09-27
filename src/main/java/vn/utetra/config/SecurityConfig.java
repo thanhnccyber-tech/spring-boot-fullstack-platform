@@ -48,9 +48,13 @@ public class SecurityConfig {
                     "/static/**", "/css/**", "/js/**", "/images/**",
                     "/api/auth/**", "/ws/**"
                 ).permitAll()
-                // Đơn hàng: ADMIN và STAFF đều được thao tác (màn hình pha chế)
-                .requestMatchers("/admin/orders/**").hasAnyRole("ADMIN", "STAFF")
-                // Toàn bộ trang quản trị còn lại: CHỈ ADMIN
+                // Đơn hàng: ADMIN + MANAGER + STAFF
+                .requestMatchers("/admin/orders/**")
+                    .hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                // Quản lý người dùng: ADMIN + MANAGER
+                .requestMatchers("/admin/users/**")
+                    .hasAnyRole("ADMIN", "MANAGER")
+                // Còn lại: chỉ ADMIN
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Khách hàng đã đăng nhập
                 .requestMatchers("/cart/**", "/order/**", "/profile/**", "/notifications/**")

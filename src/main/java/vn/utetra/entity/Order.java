@@ -4,12 +4,19 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Entity
 @Table(name = "orders")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Order {
+
+    private static final DateTimeFormatter FMT_DATETIME =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FMT_SHORT =
+            DateTimeFormatter.ofPattern("dd/MM HH:mm");
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -51,4 +58,20 @@ public class Order {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetail> details;
+
+    /* ==================== Derived getters cho JSP ==================== */
+
+    /** Format đầy đủ: 27/09/2026 18:56 */
+    public String getCreatedAtFormatted() {
+        return createdAt == null ? "" : createdAt.format(FMT_DATETIME);
+    }
+
+    /** Format ngắn: 27/09 18:56 */
+    public String getCreatedAtShort() {
+        return createdAt == null ? "" : createdAt.format(FMT_SHORT);
+    }
+
+    public String getUpdatedAtFormatted() {
+        return updatedAt == null ? "" : updatedAt.format(FMT_DATETIME);
+    }
 }

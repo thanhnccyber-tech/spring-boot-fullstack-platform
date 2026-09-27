@@ -7,17 +7,25 @@
 
 <table class="table table-hover">
     <thead class="table-dark">
-        <tr><th>Mã</th><th>Chi nhánh</th><th>Ngày</th><th>Tổng tiền</th><th>Trạng thái</th><th></th></tr>
+        <tr>
+            <th>Mã</th><th>Chi nhánh</th><th>Ngày</th>
+            <th>Tổng tiền</th><th>Trạng thái</th><th></th>
+        </tr>
     </thead>
     <tbody>
         <c:forEach items="${orders}" var="o">
             <tr>
                 <td>${o.orderCode}</td>
                 <td>${o.branch.name}</td>
-                <td><fmt:formatDate value="${o.createdAt}" pattern="dd/MM/yyyy HH:mm"/></td>
-                <td class="text-danger"><fmt:formatNumber value="${o.totalAmount}" pattern="#,##0"/> ₫</td>
+                <td>${o.createdAtFormatted}</td>
+                <td class="text-danger">
+                    <fmt:formatNumber value="${o.totalAmount}" pattern="#,##0"/> ₫
+                </td>
                 <td><span class="badge bg-info">${o.status}</span></td>
-                <td><a href="${pageContext.request.contextPath}/order/detail/${o.id}" class="btn btn-sm btn-outline-primary">Xem</a></td>
+                <td>
+                    <a href="${pageContext.request.contextPath}/order/detail/${o.id}"
+                       class="btn btn-sm btn-outline-primary">Xem</a>
+                </td>
             </tr>
         </c:forEach>
     </tbody>
@@ -31,14 +39,13 @@
     if (userId) {
         const socket = new SockJS('${pageContext.request.contextPath}/ws');
         const stomp = Stomp.over(socket);
-        stomp.debug = null; // tắt log debug
+        stomp.debug = null;
 
         stomp.connect({}, function () {
             stomp.subscribe('/topic/order-status/' + userId, function (msg) {
                 const data = JSON.parse(msg.body);
                 console.log('Order update:', data);
 
-                // Hiển thị thông báo trên trang
                 const banner = document.createElement('div');
                 banner.className = 'alert alert-info alert-dismissible fade show position-fixed top-0 end-0 m-3';
                 banner.style.zIndex = '9999';
@@ -47,7 +54,6 @@
                     '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
                 document.body.appendChild(banner);
 
-                // Reload sau 2s để cập nhật bảng
                 setTimeout(() => location.reload(), 2000);
             });
         });

@@ -60,16 +60,16 @@ public class OrderService {
 
             BigDecimal unit = p.getBasePrice();
 
-            // Phụ thu theo Size
             if ("M".equalsIgnoreCase(ci.getSize())) {
                 unit = unit.add(SIZE_M_SURCHARGE);
             } else if ("L".equalsIgnoreCase(ci.getSize())) {
                 unit = unit.add(SIZE_L_SURCHARGE);
             }
 
-            // Topping
             if (ci.getToppingIds() != null && !ci.getToppingIds().isEmpty()) {
-                List<Topping> toppings = toppingRepository.findAllById(ci.getToppingIds());
+                // Bọc List → Set để khớp kiểu mới của OrderDetail.toppings
+                Set<Topping> toppings = new LinkedHashSet<>(
+                        toppingRepository.findAllById(ci.getToppingIds()));
                 od.setToppings(toppings);
                 BigDecimal tSum = toppings.stream()
                         .map(Topping::getPrice)
@@ -85,7 +85,6 @@ public class OrderService {
         saved.setTotalAmount(total);
         orderRepository.save(saved);
 
-        // Gửi thông báo realtime đến admin/staff
         Map<String, Object> noti = new HashMap<>();
         noti.put("orderId", saved.getId());
         noti.put("orderCode", saved.getOrderCode());
@@ -106,7 +105,14 @@ public class OrderService {
         return orderRepository.findAll();
     }
 
-    public Order get(Long id) { return orderRepository.findById(id).orElseThrow(); }
+    /**
+     * Dùng cho màn hình chi tiết đơn hàng (admin + user).
+     * Dùng findByIdWithDetails để fetch sẵn details + product + toppings
+     * (tránh LazyInitializationException do spring.jpa.open-in-view=false).
+     */
+    public Order get(Long id) {
+        return orderRepository.findByIdWithDetails(id).orElseThrow();
+    }
 
     @Transactional
     public void updateStatus(Long id, String status) {

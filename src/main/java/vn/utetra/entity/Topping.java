@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "toppings")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@EqualsAndHashCode(of = "id")
 public class Topping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
