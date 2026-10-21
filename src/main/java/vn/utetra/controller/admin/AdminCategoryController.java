@@ -7,19 +7,19 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Category;
-import vn.utetra.service.CategoryService;
+import vn.utetra.repository.CategoryRepository;
 import vn.utetra.service.CloudinaryService;
 
 @Controller
 @RequestMapping("/admin/categories")
 public class AdminCategoryController {
 
-    @Autowired private CategoryService categoryService;
+    @Autowired private CategoryRepository repo;
     @Autowired private CloudinaryService cloudinaryService;
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("categories", categoryService.all());
+        model.addAttribute("categories", repo.findAll());
         return "admin/categories";
     }
 
@@ -31,24 +31,29 @@ public class AdminCategoryController {
 
     @GetMapping("/edit/{id}")
     public String edit(@PathVariable Long id, Model model) {
-        model.addAttribute("category", categoryService.get(id));
+        model.addAttribute("category", repo.findById(id).orElseThrow());
         return "admin/category-form";
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute Category category,
+    public String save(@ModelAttribute Category c,
                        @RequestParam(required = false) MultipartFile imageFile,
                        RedirectAttributes ra) {
         if (imageFile != null && !imageFile.isEmpty())
-            category.setImageUrl(cloudinaryService.upload(imageFile, "categories"));
-        categoryService.save(category);
+            c.setImageUrl(cloudinaryService.upload(imageFile, "categories"));
+        repo.save(c);
         ra.addFlashAttribute("success", "Lưu danh mục thành công!");
         return "redirect:/admin/categories";
     }
 
     @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id) {
-        categoryService.delete(id);
+    public String delete(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            repo.deleteById(id);
+            ra.addFlashAttribute("success", "Đã xóa danh mục");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Không thể xóa (còn sản phẩm tham chiếu)");
+        }
         return "redirect:/admin/categories";
     }
 }

@@ -11,8 +11,12 @@ public class Branch {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 150)
     private String name;
+
     private String address;
     private String phone;
+
+    @Column(nullable = false)
     private Boolean active = true;
 }

@@ -8,46 +8,55 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", indexes = {
+        @Index(name = "idx_order_user",   columnList = "user_id"),
+        @Index(name = "idx_order_branch", columnList = "branch_id"),
+        @Index(name = "idx_order_status", columnList = "status"),
+        @Index(name = "idx_order_created", columnList = "created_at")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Order {
 
-    private static final DateTimeFormatter FMT_DATETIME =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    private static final DateTimeFormatter FMT_SHORT =
-            DateTimeFormatter.ofPattern("dd/MM HH:mm");
+    public static final String STATUS_PENDING    = "PENDING";
+    public static final String STATUS_PREPARING  = "PREPARING";
+    public static final String STATUS_DELIVERING = "DELIVERING";
+    public static final String STATUS_COMPLETED  = "COMPLETED";
+    public static final String STATUS_CANCELLED  = "CANCELLED";
+
+    private static final DateTimeFormatter FMT_DATETIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FMT_SHORT    = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_code", unique = true)
+    @Column(name = "order_code", unique = true, length = 30)
     private String orderCode;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
-    @Column(name = "shipping_address")
+    @Column(name = "shipping_address", length = 500)
     private String shippingAddress;
 
-    @Column(name = "payment_method")
-    private String paymentMethod; // CASH, BANK, COD
+    @Column(name = "payment_method", length = 20)
+    private String paymentMethod;
 
-    @Column(name = "payment_status")
-    private String paymentStatus = "PENDING"; // PENDING, PAID
+    @Column(name = "payment_status", length = 20)
+    private String paymentStatus = "PENDING";
 
-    @Column(nullable = false)
-    private String status = "PENDING";
-    // PENDING -> PREPARING -> DELIVERING -> COMPLETED -> CANCELLED
+    @Column(nullable = false, length = 20)
+    private String status = STATUS_PENDING;
 
     @Column(name = "total_amount", precision = 14, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(columnDefinition = "TEXT")
     private String note;
 
     @Column(name = "created_at")
@@ -59,18 +68,13 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetail> details;
 
-    /* ==================== Derived getters cho JSP ==================== */
-
-    /** Format đầy đủ: 27/09/2026 18:56 */
+    /* Derived getters cho JSP */
     public String getCreatedAtFormatted() {
         return createdAt == null ? "" : createdAt.format(FMT_DATETIME);
     }
-
-    /** Format ngắn: 27/09 18:56 */
     public String getCreatedAtShort() {
         return createdAt == null ? "" : createdAt.format(FMT_SHORT);
     }
-
     public String getUpdatedAtFormatted() {
         return updatedAt == null ? "" : updatedAt.format(FMT_DATETIME);
     }

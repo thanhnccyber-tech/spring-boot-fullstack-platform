@@ -5,10 +5,7 @@
 
 <table class="table bg-white">
     <thead class="table-dark">
-        <tr>
-            <th>Mã</th><th>Khách</th><th>Chi nhánh</th>
-            <th>Tổng</th><th>Trạng thái</th><th>Ngày</th><th></th>
-        </tr>
+        <tr><th>Mã</th><th>Khách</th><th>Chi nhánh</th><th>Tổng</th><th>Trạng thái</th><th>Ngày</th><th></th></tr>
     </thead>
     <tbody>
         <c:forEach items="${orders}" var="o">
@@ -25,5 +22,8 @@
                 </td>
             </tr>
         </c:forEach>
+        <c:if test="${empty orders}">
+            <tr><td colspan="7" class="text-center text-muted">Chưa có đơn hàng</td></tr>
+        </c:if>
     </tbody>
 </table>

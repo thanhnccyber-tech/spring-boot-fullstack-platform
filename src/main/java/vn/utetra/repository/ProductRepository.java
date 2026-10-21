@@ -12,10 +12,9 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByFeaturedTrueAndActiveTrue();
-
     List<Product> findByIsNewTrueAndActiveTrue();
 
-    @Query("SELECT p FROM Product p WHERE p.active=true " +
+    @Query("SELECT p FROM Product p WHERE p.active = true " +
             "AND (:kw IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :kw, '%'))) " +
             "AND (:catId IS NULL OR p.category.id = :catId) " +
             "AND (:minPrice IS NULL OR p.basePrice >= :minPrice) " +

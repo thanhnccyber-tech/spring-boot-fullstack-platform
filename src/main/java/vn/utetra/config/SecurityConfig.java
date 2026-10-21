@@ -10,15 +10,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.firewall.HttpFirewall;
-import org.springframework.security.web.firewall.StrictHttpFirewall;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @Autowired private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -26,39 +23,47 @@ public class SecurityConfig {
     }
 
     @Bean
-    public HttpFirewall httpFirewall() {
-        StrictHttpFirewall firewall = new StrictHttpFirewall();
-        firewall.setAllowSemicolon(true);
-        firewall.setAllowUrlEncodedDoubleSlash(true);
-        return firewall;
-    }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http,
-                                           HttpFirewall httpFirewall) throws Exception {
-        http.setSharedObject(HttpFirewall.class, httpFirewall);
-
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Public
                 .requestMatchers(
-                    "/", "/home", "/products/**", "/product/**",
-                    "/login", "/register", "/auth/**",
-                    "/static/**", "/css/**", "/js/**", "/images/**",
-                    "/api/auth/**", "/ws/**"
+                        "/", "/home", "/products", "/products/**",
+                        "/product/**", "/login", "/register",
+                        "/auth/**", "/api/auth/**",
+                        "/otp/**",
+                        "/static/**", "/ws/**", "/error"
                 ).permitAll()
-                // Đơn hàng: ADMIN + MANAGER + STAFF
+
+                // Admin toàn quyền
+                .requestMatchers("/admin/dashboard/**",
+                                 "/admin/products/**",
+                                 "/admin/categories/**",
+                                 "/admin/toppings/**",
+                                 "/admin/branches/**",
+                                 "/admin/reports/**")
+                    .hasRole("ADMIN")
+
+                // Đơn hàng: Admin + Manager + Staff
                 .requestMatchers("/admin/orders/**")
                     .hasAnyRole("ADMIN", "MANAGER", "STAFF")
-                // Quản lý người dùng: ADMIN + MANAGER
+
+                // Người dùng: Admin + Manager
                 .requestMatchers("/admin/users/**")
                     .hasAnyRole("ADMIN", "MANAGER")
-                // Còn lại: chỉ ADMIN
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                // Khách hàng đã đăng nhập
-                .requestMatchers("/cart/**", "/order/**", "/profile/**", "/notifications/**")
-                    .authenticated()
+
+                // Shipper
+                .requestMatchers("/shipper/**")
+                    .hasAnyRole("SHIPPER", "ADMIN")
+
+                // Khách đã đăng nhập
+                .requestMatchers(
+                        "/cart/**", "/order/**", "/profile/**",
+                        "/notifications/**", "/checkout/**"
+                ).authenticated()
+
                 .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

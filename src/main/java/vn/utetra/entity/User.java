@@ -7,7 +7,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_user_email", columnList = "email", unique = true)
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class User {
 
@@ -33,13 +35,7 @@ public class User {
     private String avatarUrl;
 
     @Column(nullable = false)
-    private Boolean enabled = true;
-
-    @Column(name = "verification_token")
-    private String verificationToken;
-
-    @Column(name = "reset_token")
-    private String resetToken;
+    private Boolean enabled = false;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -50,7 +46,17 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id")
     private Branch branch;
+
+    /* Derived helpers cho JSP */
+    public boolean hasRole(String roleName) {
+        return roles.stream().anyMatch(r -> roleName.equals(r.getName()));
+    }
+
+    public boolean isAdmin()   { return hasRole(RoleName.ADMIN);   }
+    public boolean isManager() { return hasRole(RoleName.MANAGER); }
+    public boolean isStaff()   { return hasRole(RoleName.STAFF);   }
+    public boolean isShipper() { return hasRole(RoleName.SHIPPER); }
 }

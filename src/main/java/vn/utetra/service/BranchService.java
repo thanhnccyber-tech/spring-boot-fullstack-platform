@@ -10,8 +10,7 @@ import java.util.List;
 public class BranchService {
     @Autowired private BranchRepository repo;
     public List<Branch> active() { return repo.findByActiveTrue(); }
-    public List<Branch> all() { return repo.findAll(); }
-    public Branch save(Branch b) { return repo.save(b); }
-    public Branch get(Long id) { return repo.findById(id).orElseThrow(); }
-    public void delete(Long id) { repo.deleteById(id); }
+    public List<Branch> all()    { return repo.findAll(); }
+    public Branch save(Branch b){ return repo.save(b); }
+    public Branch get(Long id)  { return repo.findById(id).orElseThrow(); }
 }

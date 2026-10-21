@@ -14,18 +14,19 @@ public class OrderDetail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private Order order;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
 
+    @Column(nullable = false)
     private Integer quantity;
 
-    private String size;        // S, M, L
-    private String sugarLevel;  // 0, 30, 50, 100
+    private String size;
+    private String sugarLevel;
     private String iceLevel;
 
     @Column(name = "unit_price", precision = 12, scale = 2)
@@ -34,11 +35,6 @@ public class OrderDetail {
     @Column(precision = 12, scale = 2)
     private BigDecimal subtotal;
 
-    /**
-     * Dùng Set thay vì List để tránh MultipleBagFetchException khi
-     * fetch đồng thời Order.details (bag) + OrderDetail.toppings (bag).
-     * LinkedHashSet để giữ thứ tự insert cho hiển thị ổn định.
-     */
     @ManyToMany
     @JoinTable(name = "order_detail_toppings",
             joinColumns = @JoinColumn(name = "order_detail_id"),

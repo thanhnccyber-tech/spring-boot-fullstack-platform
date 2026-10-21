@@ -2,6 +2,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <title>Topping</title>
+
+<c:if test="${success != null}"><div class="alert alert-success">${success}</div></c:if>
 <a href="${pageContext.request.contextPath}/admin/toppings/new" class="btn btn-warning mb-3">+ Thêm Topping</a>
 <table class="table bg-white">
     <thead class="table-dark"><tr><th>ID</th><th>Tên</th><th>Giá</th><th>Active</th><th></th></tr></thead>
@@ -13,7 +15,8 @@
                 <td>${t.active ? '✔' : '✘'}</td>
                 <td>
                     <a href="${pageContext.request.contextPath}/admin/toppings/edit/${t.id}" class="btn btn-sm btn-primary">Sửa</a>
-                    <a href="${pageContext.request.contextPath}/admin/toppings/delete/${t.id}" class="btn btn-sm btn-danger">Xóa</a>
+                    <a href="${pageContext.request.contextPath}/admin/toppings/delete/${t.id}" class="btn btn-sm btn-danger"
+                       onclick="return confirm('Xóa topping?')">Xóa</a>
                 </td>
             </tr>
         </c:forEach>

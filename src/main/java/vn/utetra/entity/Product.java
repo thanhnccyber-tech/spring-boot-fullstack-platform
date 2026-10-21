@@ -7,14 +7,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+        @Index(name = "idx_product_active", columnList = "active"),
+        @Index(name = "idx_product_category", columnList = "category_id")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 200)
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -26,21 +29,22 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
-    @Column(name = "is_featured")
+    @Column(name = "is_featured", nullable = false)
     private Boolean featured = false;
 
-    @Column(name = "is_new")
+    @Column(name = "is_new", nullable = false)
     private Boolean isNew = false;
 
-    @Column(name = "discount_percent")
+    @Column(name = "discount_percent", nullable = false)
     private Integer discountPercent = 0;
 
+    @Column(nullable = false)
     private Boolean active = true;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 

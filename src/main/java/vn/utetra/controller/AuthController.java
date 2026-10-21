@@ -13,10 +13,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.config.JwtAuthenticationFilter;
 import vn.utetra.dto.LoginRequest;
+import vn.utetra.dto.OtpVerifyRequest;
 import vn.utetra.dto.RegisterRequest;
+import vn.utetra.entity.OtpToken;
+import vn.utetra.entity.RoleName;
 import vn.utetra.entity.User;
-import vn.utetra.service.CloudinaryService;
 import vn.utetra.service.MailService;
+import vn.utetra.service.OtpService;
 import vn.utetra.service.UserService;
 import vn.utetra.util.JwtUtil;
 
@@ -29,8 +32,10 @@ public class AuthController {
     @Autowired private UserService userService;
     @Autowired private JwtUtil jwtUtil;
     @Autowired private MailService mailService;
-    @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private OtpService otpService;
     @Autowired private PasswordEncoder passwordEncoder;
+
+    /* ==================== LOGIN ==================== */
 
     @GetMapping("/login")
     public String loginPage(Model model) {
@@ -50,61 +55,109 @@ public class AuthController {
             ra.addFlashAttribute("error", "Email hoặc mật khẩu không đúng");
             return "redirect:/login";
         }
-
         User u = opt.get();
 
-        // Verify password (dùng bean PasswordEncoder đã inject)
         if (!passwordEncoder.matches(req.getPassword(), u.getPassword())) {
             ra.addFlashAttribute("error", "Email hoặc mật khẩu không đúng");
             return "redirect:/login";
         }
+        if (!Boolean.TRUE.equals(u.getEnabled())) {
+            ra.addFlashAttribute("error", "Tài khoản chưa được kích hoạt. Vui lòng xác thực OTP.");
+            return "redirect:/otp/register?email=" + u.getEmail();
+        }
 
-        List<String> roles = u.getRoles().stream()
-                .map(r -> r.getName()).toList();
-        String token = jwtUtil.generateToken(u.getEmail(), roles, u.getId());
+        List<String> roles = u.getRoles().stream().map(r -> r.getName()).toList();
+        String token = jwtUtil.generateToken(u.getEmail(), roles, u.getId(), u.getFullName());
 
         Cookie cookie = new Cookie(JwtAuthenticationFilter.JWT_COOKIE, token);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         cookie.setMaxAge(24 * 3600);
+        cookie.setSecure(false); // bật =true khi chạy HTTPS
         response.addCookie(cookie);
 
-        // Lưu session cho WebSocket + JSP check role
         session.setAttribute("userId",   u.getId());
         session.setAttribute("fullName", u.getFullName());
         session.setAttribute("email",    u.getEmail());
-        session.setAttribute("roles",    roles);   // Lưu LIST roles
+        session.setAttribute("roles",    roles);
 
-        // Redirect theo role (ưu tiên cao nhất)
-        if (roles.contains("ROLE_ADMIN"))   return "redirect:/admin/dashboard";
-        if (roles.contains("ROLE_MANAGER")) return "redirect:/admin/users";
-        if (roles.contains("ROLE_STAFF"))   return "redirect:/admin/orders";
+        // Điều hướng theo role (ưu tiên cao nhất)
+        if (roles.contains(RoleName.ADMIN))   return "redirect:/admin/dashboard";
+        if (roles.contains(RoleName.MANAGER)) return "redirect:/admin/orders";
+        if (roles.contains(RoleName.STAFF))   return "redirect:/admin/orders";
+        if (roles.contains(RoleName.SHIPPER)) return "redirect:/shipper/dashboard";
         return "redirect:/";
     }
 
+    /* ==================== REGISTER ==================== */
+
     @GetMapping("/register")
     public String registerPage(Model model) {
-        model.addAttribute("registerRequest", new RegisterRequest());
+        if (!model.containsAttribute("registerRequest"))
+            model.addAttribute("registerRequest", new RegisterRequest());
         return "user/register";
     }
 
     @PostMapping("/auth/register")
     public String register(@Valid @ModelAttribute RegisterRequest req,
-                           BindingResult result, RedirectAttributes ra) {
-        if (result.hasErrors()) return "user/register";
+                           BindingResult result,
+                           RedirectAttributes ra,
+                           Model model) {
+        if (result.hasErrors()) {
+            model.addAttribute("registerRequest", req);
+            return "user/register";
+        }
         try {
-            User u = userService.register(req);
-            try {
-                mailService.send(u.getEmail(), "Xác nhận đăng ký UTeTra",
-                    "Chào mừng " + u.getFullName() + " đến với UTeTra!");
-            } catch (Exception ignored) {}
-            ra.addFlashAttribute("success", "Đăng ký thành công! Hãy đăng nhập.");
-            return "redirect:/login";
+            User u = userService.registerPending(req);
+            otpService.issue(u.getEmail(), OtpToken.TYPE_REGISTER);
+            ra.addFlashAttribute("success", "Đăng ký thành công! Vui lòng nhập OTP đã gửi qua email.");
+            return "redirect:/otp/register?email=" + u.getEmail();
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/register";
         }
     }
+
+    /* ==================== OTP REGISTER ==================== */
+
+    @GetMapping("/otp/register")
+    public String otpPage(@RequestParam String email, Model model) {
+        OtpVerifyRequest req = new OtpVerifyRequest();
+        req.setEmail(email);
+        model.addAttribute("otpRequest", req);
+        model.addAttribute("email", email);
+        return "user/otp";
+    }
+
+    @PostMapping("/otp/register/verify")
+    public String otpVerify(@ModelAttribute OtpVerifyRequest req, RedirectAttributes ra) {
+        boolean ok = otpService.verify(req.getEmail(), req.getCode(), OtpToken.TYPE_REGISTER);
+        if (!ok) {
+            ra.addFlashAttribute("error", "Mã OTP không đúng hoặc đã hết hạn");
+            return "redirect:/otp/register?email=" + req.getEmail();
+        }
+        userService.activate(req.getEmail());
+        try {
+            mailService.send(req.getEmail(), "Chào mừng đến với UTeTra",
+                    "Tài khoản của bạn đã được kích hoạt. Hãy đăng nhập và trải nghiệm nhé!");
+        } catch (Exception ignored) {}
+
+        ra.addFlashAttribute("success", "Kích hoạt tài khoản thành công! Hãy đăng nhập.");
+        return "redirect:/login";
+    }
+
+    @GetMapping("/otp/register/resend")
+    public String resendOtp(@RequestParam String email, RedirectAttributes ra) {
+        try {
+            otpService.issue(email, OtpToken.TYPE_REGISTER);
+            ra.addFlashAttribute("success", "Đã gửi lại mã OTP. Vui lòng kiểm tra email.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Không thể gửi lại OTP: " + e.getMessage());
+        }
+        return "redirect:/otp/register?email=" + email;
+    }
+
+    /* ==================== LOGOUT ==================== */
 
     @GetMapping("/logout")
     public String logout(HttpServletResponse response, HttpSession session) {
@@ -112,9 +165,7 @@ public class AuthController {
         cookie.setPath("/");
         cookie.setMaxAge(0);
         response.addCookie(cookie);
-
         session.invalidate();
-
         return "redirect:/";
     }
 }

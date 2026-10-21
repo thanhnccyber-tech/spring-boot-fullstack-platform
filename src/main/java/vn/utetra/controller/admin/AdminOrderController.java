@@ -1,10 +1,13 @@
 package vn.utetra.controller.admin;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import vn.utetra.entity.User;
+import vn.utetra.repository.UserRepository;
 import vn.utetra.service.OrderService;
 
 @Controller
@@ -12,10 +15,16 @@ import vn.utetra.service.OrderService;
 public class AdminOrderController {
 
     @Autowired private OrderService orderService;
+    @Autowired private UserRepository userRepo;
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("orders", orderService.all());
+    public String list(Authentication auth, Model model) {
+        User me = userRepo.findByEmail(auth.getName()).orElseThrow();
+        var orders = me.isAdmin()
+                ? orderService.allWithUser()
+                : orderService.ordersForBranch(
+                        me.getBranch() == null ? -1L : me.getBranch().getId());
+        model.addAttribute("orders", orders);
         return "admin/orders";
     }
 

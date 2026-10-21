@@ -23,13 +23,14 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String email, List<String> roles, Long userId) {
+    public String generateToken(String email, List<String> roles, Long userId, String fullName) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expiration);
         return Jwts.builder()
                 .subject(email)
                 .claim("roles", roles)
                 .claim("userId", userId)
+                .claim("fullName", fullName)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(getKey())
@@ -53,16 +54,20 @@ public class JwtUtil {
         }
     }
 
-    public String getEmail(String token) {
-        return parse(token).getSubject();
-    }
+    public String getEmail(String token) { return parse(token).getSubject(); }
 
     public Long getUserId(String token) {
-        return parse(token).get("userId", Long.class);
+        Object v = parse(token).get("userId");
+        return v == null ? null : Long.valueOf(v.toString());
     }
 
     @SuppressWarnings("unchecked")
     public List<String> getRoles(String token) {
         return (List<String>) parse(token).get("roles");
+    }
+
+    public String getFullName(String token) {
+        Object v = parse(token).get("fullName");
+        return v == null ? "" : v.toString();
     }
 }

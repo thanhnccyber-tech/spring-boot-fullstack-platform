@@ -21,7 +21,7 @@ public class CartItem implements Serializable {
     private BigDecimal unitPrice;
 
     public BigDecimal getSubtotal() {
-        if (unitPrice == null) return BigDecimal.ZERO;
-        return unitPrice.multiply(BigDecimal.valueOf(quantity == null ? 0 : quantity));
+        if (unitPrice == null || quantity == null) return BigDecimal.ZERO;
+        return unitPrice.multiply(BigDecimal.valueOf(quantity));
     }
 }

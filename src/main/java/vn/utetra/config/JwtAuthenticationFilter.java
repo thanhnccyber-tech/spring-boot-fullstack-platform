@@ -22,14 +22,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     public static final String JWT_COOKIE = "UTETRA_JWT";
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    @Autowired private JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+                                    FilterChain chain) throws ServletException, IOException {
 
         String token = null;
         if (request.getCookies() != null) {
@@ -40,7 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         }
-        // fallback: Authorization header
         if (token == null) {
             String header = request.getHeader("Authorization");
             if (header != null && header.startsWith("Bearer ")) {
@@ -50,6 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtUtil.isValid(token)
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
+
             String email = jwtUtil.getEmail(token);
             List<String> roles = jwtUtil.getRoles(token);
             List<SimpleGrantedAuthority> authorities = roles.stream()
@@ -61,7 +59,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
-
-        filterChain.doFilter(request, response);
+        chain.doFilter(request, response);
     }
 }

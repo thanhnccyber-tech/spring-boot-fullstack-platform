@@ -16,14 +16,15 @@ public class CloudinaryService {
     private Cloudinary cloudinary;
 
     public String upload(MultipartFile file, String folder) {
+        if (file == null || file.isEmpty()) return null;
         try {
             Map<?, ?> result = cloudinary.uploader().upload(
                     file.getBytes(),
                     ObjectUtils.asMap(
                             "folder", "utetra/" + folder,
-                            "resource_type", "image"
-                    )
-            );
+                            "resource_type", "image",
+                            "quality", "auto"
+                    ));
             return (String) result.get("secure_url");
         } catch (IOException e) {
             throw new RuntimeException("Upload Cloudinary thất bại: " + e.getMessage(), e);

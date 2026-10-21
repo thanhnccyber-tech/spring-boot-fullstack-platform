@@ -10,9 +10,28 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
+    /**
+     * Fetch sẵn user + branch để JSP dùng được khi open-in-view=false
+     */
+    @Query("SELECT o FROM Order o " +
+           "LEFT JOIN FETCH o.user " +
+           "LEFT JOIN FETCH o.branch " +
+           "WHERE o.user.id = :userId " +
+           "ORDER BY o.createdAt DESC")
+    List<Order> findByUserIdWithUser(@Param("userId") Long userId);
 
-    List<Order> findByBranchIdOrderByCreatedAtDesc(Long branchId);
+    @Query("SELECT o FROM Order o " +
+           "LEFT JOIN FETCH o.user " +
+           "LEFT JOIN FETCH o.branch " +
+           "WHERE o.branch.id = :branchId " +
+           "ORDER BY o.createdAt DESC")
+    List<Order> findByBranchIdWithUser(@Param("branchId") Long branchId);
+
+    @Query("SELECT o FROM Order o " +
+           "LEFT JOIN FETCH o.user " +
+           "LEFT JOIN FETCH o.branch " +
+           "ORDER BY o.createdAt DESC")
+    List<Order> findAllWithUser();
 
     @Query("SELECT o FROM Order o WHERE o.createdAt BETWEEN :from AND :to")
     List<Order> findBetween(@Param("from") LocalDateTime from,
@@ -21,18 +40,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o.status, COUNT(o) FROM Order o GROUP BY o.status")
     List<Object[]> countByStatus();
 
-    @Query(value = "SELECT p.name, SUM(od.quantity) as total " +
+    @Query(value = "SELECT p.name, SUM(od.quantity) AS total " +
             "FROM order_details od JOIN products p ON od.product_id = p.id " +
             "GROUP BY p.id ORDER BY total DESC LIMIT 10", nativeQuery = true)
     List<Object[]> topSellingProducts();
 
     /**
-     * Fetch đầy đủ Order + details + product + toppings trong 1 query duy nhất.
-     * Dùng cho màn hình xem chi tiết đơn hàng (admin + user).
-     *
-     * BẮT BUỘC dùng cho mọi chỗ đọc order.details khi open-in-view=false.
+     * Fetch đầy đủ Order + user + branch + details + product + toppings
+     * cho màn hình chi tiết đơn hàng.
      */
     @Query("SELECT DISTINCT o FROM Order o " +
+           "LEFT JOIN FETCH o.user " +
+           "LEFT JOIN FETCH o.branch " +
            "LEFT JOIN FETCH o.details d " +
            "LEFT JOIN FETCH d.product " +
            "LEFT JOIN FETCH d.toppings " +

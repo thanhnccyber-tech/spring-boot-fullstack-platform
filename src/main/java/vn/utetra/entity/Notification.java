@@ -6,12 +6,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "notifications", indexes = {
+        @Index(name = "idx_noti_user", columnList = "user_id")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Notification {
 
-    private static final DateTimeFormatter FMT_DATETIME =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,19 +21,22 @@ public class Notification {
     @Column(name = "user_id")
     private Long userId;
 
+    @Column(nullable = false, length = 200)
     private String title;
-    private String content;
-    private String type; // ORDER, SYSTEM
 
-    @Column(name = "is_read")
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    @Column(length = 20)
+    private String type;
+
+    @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    /* ==================== Derived getter cho JSP ==================== */
-
     public String getCreatedAtFormatted() {
-        return createdAt == null ? "" : createdAt.format(FMT_DATETIME);
+        return createdAt == null ? "" : createdAt.format(FMT);
     }
 }

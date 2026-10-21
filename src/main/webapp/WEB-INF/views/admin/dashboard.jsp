@@ -27,6 +27,9 @@
                 <c:forEach items="${statusCount}" var="e">
                     <span class="badge bg-secondary me-2">${e.key}: ${e.value}</span>
                 </c:forEach>
+                <c:if test="${empty statusCount}">
+                    <span class="text-muted">Chưa có đơn hàng</span>
+                </c:if>
             </div>
         </div>
     </div>
@@ -35,12 +38,15 @@
 <div class="card mt-4">
     <div class="card-header">🔥 Top sản phẩm bán chạy</div>
     <div class="card-body">
-        <table class="table">
+        <table class="table table-striped mb-0">
             <thead><tr><th>Sản phẩm</th><th>Số lượng bán</th></tr></thead>
             <tbody>
                 <c:forEach items="${topProducts}" var="row">
                     <tr><td>${row[0]}</td><td>${row[1]}</td></tr>
                 </c:forEach>
+                <c:if test="${empty topProducts}">
+                    <tr><td colspan="2" class="text-center text-muted">Chưa có dữ liệu</td></tr>
+                </c:if>
             </tbody>
         </table>
     </div>

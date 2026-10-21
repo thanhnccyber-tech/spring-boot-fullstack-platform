@@ -2,7 +2,6 @@ package vn.utetra.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
 
 @Entity
 @Table(name = "categories")
@@ -12,13 +11,15 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
-    private String imageUrl;
-    private Boolean active = true;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
-    private List<Product> products;
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(nullable = false)
+    private Boolean active = true;
 }
