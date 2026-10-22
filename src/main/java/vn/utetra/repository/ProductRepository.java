@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import vn.utetra.entity.Product;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
@@ -24,4 +25,22 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                          @Param("minPrice") BigDecimal minPrice,
                          @Param("maxPrice") BigDecimal maxPrice,
                          Pageable pageable);
+
+    /**
+     * Lấy tất cả sản phẩm và FETCH JOIN luôn Category.
+     * Dùng cho màn hình admin/products để tránh LazyInitializationException.
+     * Sắp xếp theo ID giảm dần để sản phẩm mới nhất lên đầu.
+     */
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category ORDER BY p.id DESC")
+    List<Product> findAllWithCategory();
+
+    /**
+     * Lấy 1 sản phẩm và FETCH JOIN luôn Category và Toppings.
+     * Dùng cho màn hình admin/product-form (edit) để tránh LazyInitializationException.
+     */
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.toppings " +
+           "WHERE p.id = :id")
+    Optional<Product> findByIdWithDetails(@Param("id") Long id);
 }

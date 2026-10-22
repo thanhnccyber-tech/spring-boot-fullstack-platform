@@ -32,7 +32,22 @@ public class ProductService {
         return productRepository.findById(id).orElseThrow();
     }
 
+    /**
+     * Lấy sản phẩm kèm category và toppings (fetch join) để dùng cho form edit.
+     */
+    public Product getWithDetails(Long id) {
+        return productRepository.findByIdWithDetails(id).orElseThrow();
+    }
+
     public Product save(Product p) { return productRepository.save(p); }
     public void delete(Long id) { productRepository.deleteById(id); }
+
     public List<Product> all() { return productRepository.findAll(); }
+
+    /**
+     * Lấy tất cả sản phẩm kèm category (fetch join) để dùng cho trang admin list.
+     */
+    public List<Product> allWithCategory() {
+        return productRepository.findAllWithCategory();
+    }
 }

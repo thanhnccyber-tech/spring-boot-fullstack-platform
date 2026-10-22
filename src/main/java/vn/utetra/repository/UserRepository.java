@@ -15,10 +15,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     /**
-     * @EntityGraph giúp fetch sẵn branch mà KHÔNG bị mất khi kết hợp Pageable.
+     * @EntityGraph giúp fetch sẵn branch VÀ roles mà KHÔNG bị mất khi kết hợp Pageable.
      * Đây là cách chuẩn để fix LazyInitializationException với Page.
+     * - branch: tránh lỗi khi JSP truy cập u.branch.name
+     * - roles: tránh lỗi khi JSP truy cập u.roles (dù đã EAGER, nhưng pagination có thể làm lazy)
      */
-    @EntityGraph(attributePaths = {"branch"})
+    @EntityGraph(attributePaths = {"branch", "roles"})
     @Query("SELECT u FROM User u WHERE " +
            "(:kw IS NULL OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :kw, '%')) " +
            "  OR LOWER(u.email) LIKE LOWER(CONCAT('%', :kw, '%')) " +
@@ -32,4 +34,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
                       @Param("branchId") Long branchId,
                       @Param("enabled") Boolean enabled,
                       Pageable pageable);
+
+    /**
+     * Lấy user kèm roles và branch để dùng cho form edit.
+     * Tránh LazyInitializationException khi JSP truy cập u.roles hoặc u.branch.
+     */
+    @EntityGraph(attributePaths = {"branch", "roles"})
+    @Query("SELECT u FROM User u WHERE u.id = :id")
+    Optional<User> findByIdWithRolesAndBranch(@Param("id") Long id);
 }

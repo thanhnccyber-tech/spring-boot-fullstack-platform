@@ -11,6 +11,7 @@ import vn.utetra.repository.CategoryRepository;
 import vn.utetra.repository.ProductRepository;
 import vn.utetra.repository.ToppingRepository;
 import vn.utetra.service.CloudinaryService;
+import vn.utetra.service.ProductService;
 
 import java.util.List;
 
@@ -22,10 +23,12 @@ public class AdminProductController {
     @Autowired private CategoryRepository categoryRepo;
     @Autowired private ToppingRepository toppingRepo;
     @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private ProductService productService;
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("products", productRepo.findAll());
+        // Dùng fetch join để tránh LazyInitializationException khi JSP truy cập p.category.name
+        model.addAttribute("products", productService.allWithCategory());
         return "admin/products";
     }
 
@@ -39,7 +42,9 @@ public class AdminProductController {
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model) {
-        model.addAttribute("product", productRepo.findById(id).orElseThrow());
+        // Dùng fetch join để tránh LazyInitializationException khi JSP truy cập
+        // product.category.id và product.toppings.contains(...)
+        model.addAttribute("product", productService.getWithDetails(id));
         model.addAttribute("categories", categoryRepo.findAll());
         model.addAttribute("toppings", toppingRepo.findAll());
         return "admin/product-form";

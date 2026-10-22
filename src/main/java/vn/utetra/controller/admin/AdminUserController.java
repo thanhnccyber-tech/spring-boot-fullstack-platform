@@ -99,7 +99,8 @@ public class AdminUserController {
                            Model model, RedirectAttributes ra) {
         User me = me(auth);
         boolean admin = me.isAdmin();
-        User target = userRepo.findById(id).orElseThrow();
+        // Dùng fetch join để tránh LazyInitializationException khi JSP truy cập u.roles và u.branch
+        User target = userRepo.findByIdWithRolesAndBranch(id).orElseThrow();
 
         if (!admin && !(target.isStaff() && sameBranch(me, target))) {
             ra.addFlashAttribute("error", "Bạn không có quyền chỉnh sửa người dùng này");
@@ -197,7 +198,7 @@ public class AdminUserController {
             ra.addFlashAttribute("error", "Không thể tự khóa");
             return "redirect:/admin/users";
         }
-        User target = userRepo.findById(id).orElseThrow();
+        User target = userRepo.findByIdWithRolesAndBranch(id).orElseThrow();
         if (!me.isAdmin() && !(target.isStaff() && sameBranch(me, target))) {
             ra.addFlashAttribute("error", "Không có quyền");
             return "redirect:/admin/users";
