@@ -12,7 +12,8 @@ import java.util.List;
         @Index(name = "idx_order_user",   columnList = "user_id"),
         @Index(name = "idx_order_branch", columnList = "branch_id"),
         @Index(name = "idx_order_status", columnList = "status"),
-        @Index(name = "idx_order_created", columnList = "created_at")
+        @Index(name = "idx_order_created", columnList = "created_at"),
+        @Index(name = "idx_order_shipper", columnList = "shipper_id")
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Order {
@@ -22,6 +23,7 @@ public class Order {
     public static final String STATUS_DELIVERING = "DELIVERING";
     public static final String STATUS_COMPLETED  = "COMPLETED";
     public static final String STATUS_CANCELLED  = "CANCELLED";
+    public static final String STATUS_FAILED     = "FAILED";
 
     private static final DateTimeFormatter FMT_DATETIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DateTimeFormatter FMT_SHORT    = DateTimeFormatter.ofPattern("dd/MM HH:mm");
@@ -41,6 +43,11 @@ public class Order {
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
+    /** Shipper được Admin/Manager phân công giao đơn */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shipper_id")
+    private User shipper;
+
     @Column(name = "shipping_address", length = 500)
     private String shippingAddress;
 
@@ -59,6 +66,10 @@ public class Order {
     @Column(columnDefinition = "TEXT")
     private String note;
 
+    /** Lý do giao thất bại (nếu có) */
+    @Column(name = "failed_reason", length = 500)
+    private String failedReason;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -68,7 +79,6 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetail> details;
 
-    /* Derived getters cho JSP */
     public String getCreatedAtFormatted() {
         return createdAt == null ? "" : createdAt.format(FMT_DATETIME);
     }

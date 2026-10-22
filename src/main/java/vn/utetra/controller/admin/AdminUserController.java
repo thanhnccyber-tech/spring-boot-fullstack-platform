@@ -32,7 +32,15 @@ public class AdminUserController {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private CloudinaryService cloudinaryService;
 
-    private User me(Authentication a) { return userRepo.findByEmail(a.getName()).orElseThrow(); }
+    /**
+     * Lấy user hiện tại (đã fetch roles + branch) để tránh lazy init.
+     */
+    private User me(Authentication a) {
+        User u = userRepo.findByEmail(a.getName()).orElseThrow();
+        // Ép fetch roles và branch bằng cách gọi getter trong transaction
+        // Cách an toàn hơn: dùng findByIdWithRolesAndBranch
+        return userRepo.findByIdWithRolesAndBranch(u.getId()).orElseThrow();
+    }
 
     private List<Role> assignableRoles(User me) {
         if (me.isAdmin()) return roleRepo.findAll();
@@ -99,7 +107,6 @@ public class AdminUserController {
                            Model model, RedirectAttributes ra) {
         User me = me(auth);
         boolean admin = me.isAdmin();
-        // Dùng fetch join để tránh LazyInitializationException khi JSP truy cập u.roles và u.branch
         User target = userRepo.findByIdWithRolesAndBranch(id).orElseThrow();
 
         if (!admin && !(target.isStaff() && sameBranch(me, target))) {
@@ -135,7 +142,7 @@ public class AdminUserController {
 
         if (isNew) user = new User();
         else {
-            user = userRepo.findById(id).orElseThrow();
+            user = userRepo.findByIdWithRolesAndBranch(id).orElseThrow();
             if (!admin && !(user.isStaff() && sameBranch(me, user))) {
                 ra.addFlashAttribute("error", "Không có quyền");
                 return "redirect:/admin/users";

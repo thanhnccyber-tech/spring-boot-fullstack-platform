@@ -88,18 +88,15 @@ public class OrderService {
         return saved;
     }
 
-    /** Đơn hàng của 1 user (fetch sẵn user + branch cho JSP) */
     public List<Order> ordersOf(String email) {
         User u = userRepo.findByEmail(email).orElseThrow();
         return orderRepo.findByUserIdWithUser(u.getId());
     }
 
-    /** Đơn hàng của 1 chi nhánh (fetch sẵn user + branch) */
     public List<Order> ordersForBranch(Long branchId) {
         return orderRepo.findByBranchIdWithUser(branchId);
     }
 
-    /** Toàn bộ đơn (admin, fetch sẵn user + branch) */
     public List<Order> allWithUser() {
         return orderRepo.findAllWithUser();
     }
@@ -115,17 +112,54 @@ public class OrderService {
         o.setUpdatedAt(LocalDateTime.now());
         orderRepo.save(o);
 
+        pushStatusToCustomer(o);
+        saveNotification(o, "Trạng thái mới: " + status);
+    }
+
+    /**
+     * Admin/Manager phân công hoặc bỏ phân công shipper cho đơn hàng.
+     * Nếu có shipperId và trạng thái đang DELIVERING → gán shipper.
+     * Nếu shipperId = null → bỏ phân công.
+     */
+    @Transactional
+    public void assignShipper(Long orderId, Long shipperId) {
+        Order o = orderRepo.findById(orderId).orElseThrow();
+
+        if (shipperId == null) {
+            o.setShipper(null);
+            o.setUpdatedAt(LocalDateTime.now());
+            orderRepo.save(o);
+            return;
+        }
+
+        User shipper = userRepo.findById(shipperId).orElseThrow();
+        if (!shipper.isShipper()) {
+            throw new RuntimeException("Người dùng không phải shipper");
+        }
+
+        o.setShipper(shipper);
+        o.setUpdatedAt(LocalDateTime.now());
+        orderRepo.save(o);
+
+        // Thông báo cho khách
+        pushStatusToCustomer(o);
+        saveNotification(o, "Đơn hàng đã được phân công cho shipper: " + shipper.getFullName());
+    }
+
+    private void pushStatusToCustomer(Order o) {
         Map<String, Object> msg = new HashMap<>();
         msg.put("orderId", o.getId());
         msg.put("orderCode", o.getOrderCode());
-        msg.put("status", status);
+        msg.put("status", o.getStatus());
         msg.put("updatedAt", o.getUpdatedAt().toString());
         messaging.convertAndSend("/topic/order-status/" + o.getUser().getId(), msg);
+    }
 
+    private void saveNotification(Order o, String content) {
         Notification n = new Notification();
         n.setUserId(o.getUser().getId());
         n.setTitle("Đơn hàng " + o.getOrderCode());
-        n.setContent("Trạng thái mới: " + status);
+        n.setContent(content);
         n.setType("ORDER");
         notiRepo.save(n);
     }
