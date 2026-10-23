@@ -37,7 +37,15 @@
                         <input class="form-check-input role-checkbox" type="checkbox"
                                name="roleIds" value="${r.id}"
                                data-rolename="${r.name}"
-                            <c:if test="${user.roles.contains(r)}">checked</c:if>>
+                            <c:choose>
+                                <c:when test="${not empty selectedRoleIds}">
+                                    <c:if test="${selectedRoleIds.contains(r.id)}">checked</c:if>
+                                </c:when>
+                                <c:otherwise>
+                                    <c:if test="${user.roles.contains(r)}">checked</c:if>
+                                </c:otherwise>
+                            </c:choose>
+                        >
                         <label class="form-check-label">${fn:replace(r.name, 'ROLE_', '')}</label>
                     </div>
                 </c:forEach>
@@ -49,7 +57,15 @@
                     <option value="">-- Chọn --</option>
                     <c:forEach items="${branches}" var="b">
                         <option value="${b.id}"
-                            <c:if test="${user.branch != null && user.branch.id == b.id}">selected</c:if>>
+                            <c:choose>
+                                <c:when test="${not empty selectedBranchId}">
+                                    <c:if test="${selectedBranchId == b.id}">selected</c:if>
+                                </c:when>
+                                <c:otherwise>
+                                    <c:if test="${user.branch != null && user.branch.id == b.id}">selected</c:if>
+                                </c:otherwise>
+                            </c:choose>
+                        >
                             ${b.name}
                         </option>
                     </c:forEach>

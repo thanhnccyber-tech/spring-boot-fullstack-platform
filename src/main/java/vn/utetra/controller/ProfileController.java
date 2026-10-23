@@ -6,7 +6,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.User;
 import vn.utetra.service.CloudinaryService;
 import vn.utetra.service.UserService;
@@ -31,27 +30,44 @@ public class ProfileController {
                          @RequestParam(required = false) String phone,
                          @RequestParam(required = false) String address,
                          @RequestParam(required = false) MultipartFile avatar,
-                         RedirectAttributes ra) {
-        String url = null;
-        if (avatar != null && !avatar.isEmpty()) {
-            url = cloudinaryService.upload(avatar, "avatars");
+                         Model model) {
+        try {
+            String url = null;
+            if (avatar != null && !avatar.isEmpty()) {
+                url = cloudinaryService.upload(avatar, "avatars");
+            }
+            userService.updateProfile(auth.getName(), fullName, phone, address, url);
+            User u = userService.findByEmail(auth.getName()).orElseThrow();
+            model.addAttribute("user", u);
+            model.addAttribute("success", "Cập nhật thành công!");
+            return "user/profile";
+        } catch (Exception e) {
+            User u = userService.findByEmail(auth.getName()).orElseThrow();
+            model.addAttribute("user", u);
+            model.addAttribute("formFullName", fullName);
+            model.addAttribute("formPhone", phone);
+            model.addAttribute("formAddress", address);
+            model.addAttribute("error", "Cập nhật thất bại: " + e.getMessage());
+            return "user/profile";
         }
-        userService.updateProfile(auth.getName(), fullName, phone, address, url);
-        ra.addFlashAttribute("success", "Cập nhật thành công!");
-        return "redirect:/profile";
     }
 
     @PostMapping("/change-password")
     public String changePassword(Authentication auth,
                                  @RequestParam String oldPassword,
                                  @RequestParam String newPassword,
-                                 RedirectAttributes ra) {
+                                 Model model) {
         try {
             userService.changePassword(auth.getName(), oldPassword, newPassword);
-            ra.addFlashAttribute("success", "Đổi mật khẩu thành công!");
+            User u = userService.findByEmail(auth.getName()).orElseThrow();
+            model.addAttribute("user", u);
+            model.addAttribute("success", "Đổi mật khẩu thành công!");
+            return "user/profile";
         } catch (Exception e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            User u = userService.findByEmail(auth.getName()).orElseThrow();
+            model.addAttribute("user", u);
+            model.addAttribute("error", e.getMessage());
+            return "user/profile";
         }
-        return "redirect:/profile";
     }
 }

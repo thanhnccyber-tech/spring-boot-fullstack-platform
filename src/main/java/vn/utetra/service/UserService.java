@@ -21,14 +21,20 @@ public class UserService {
     @Autowired private RoleRepository roleRepo;
     @Autowired private PasswordEncoder passwordEncoder;
 
-    /**
-     * Bước 1 đăng ký: tạo user ở trạng thái enabled=false,
-     * password đã mã hóa, chưa kích hoạt.
-     */
     @Transactional
     public User registerPending(RegisterRequest req) {
-        if (userRepo.existsByEmail(req.getEmail()))
-            throw new RuntimeException("Email đã tồn tại trong hệ thống");
+        Optional<User> existing = userRepo.findByEmail(req.getEmail());
+
+        if (existing.isPresent()) {
+            User u = existing.get();
+            if (Boolean.TRUE.equals(u.getEnabled())) {
+                throw new RuntimeException("Email đã tồn tại trong hệ thống");
+            }
+            u.setPassword(passwordEncoder.encode(req.getPassword()));
+            u.setFullName(req.getFullName());
+            u.setPhone(req.getPhone());
+            return userRepo.save(u);
+        }
 
         Role userRole = roleRepo.findByName(RoleName.USER).orElseGet(() -> {
             Role r = new Role();
@@ -75,6 +81,19 @@ public class UserService {
         if (newPwd == null || newPwd.length() < 6)
             throw new RuntimeException("Mật khẩu mới phải từ 6 ký tự");
         u.setPassword(passwordEncoder.encode(newPwd));
+        userRepo.save(u);
+    }
+
+    /**
+     * Đặt lại mật khẩu sau khi user đã xác thực OTP reset thành công.
+     * Không cần mật khẩu cũ.
+     */
+    @Transactional
+    public void resetPassword(String email, String newPassword) {
+        User u = userRepo.findByEmail(email).orElseThrow();
+        if (newPassword == null || newPassword.length() < 6)
+            throw new RuntimeException("Mật khẩu mới phải từ 6 ký tự");
+        u.setPassword(passwordEncoder.encode(newPassword));
         userRepo.save(u);
     }
 }

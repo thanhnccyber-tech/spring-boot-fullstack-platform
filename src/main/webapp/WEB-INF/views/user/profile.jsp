@@ -16,18 +16,22 @@
         <div class="card mb-3">
             <div class="card-header">Cập nhật thông tin</div>
             <div class="card-body">
-                <form action="${pageContext.request.contextPath}/profile/update" method="post" enctype="multipart/form-data">
+                <form action="${pageContext.request.contextPath}/profile/update"
+                      method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label>Họ tên</label>
-                        <input type="text" name="fullName" value="${user.fullName}" class="form-control">
+                        <input type="text" name="fullName" class="form-control"
+                               value="${not empty formFullName ? formFullName : user.fullName}">
                     </div>
                     <div class="mb-3">
                         <label>Điện thoại</label>
-                        <input type="text" name="phone" value="${user.phone}" class="form-control">
+                        <input type="text" name="phone" class="form-control"
+                               value="${not empty formPhone ? formPhone : user.phone}">
                     </div>
                     <div class="mb-3">
                         <label>Địa chỉ</label>
-                        <input type="text" name="address" value="${user.address}" class="form-control">
+                        <input type="text" name="address" class="form-control"
+                               value="${not empty formAddress ? formAddress : user.address}">
                     </div>
                     <div class="mb-3">
                         <label>Avatar (upload lên Cloudinary)</label>

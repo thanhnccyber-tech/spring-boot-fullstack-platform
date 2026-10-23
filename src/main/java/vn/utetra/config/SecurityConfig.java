@@ -28,16 +28,15 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public
                 .requestMatchers(
                         "/", "/home", "/products", "/products/**",
                         "/product/**", "/login", "/register",
                         "/auth/**", "/api/auth/**",
                         "/otp/**",
+                        "/forgot-password", "/reset-password",
                         "/static/**", "/ws/**", "/error"
                 ).permitAll()
 
-                // Admin toàn quyền
                 .requestMatchers("/admin/dashboard/**",
                                  "/admin/products/**",
                                  "/admin/categories/**",
@@ -46,19 +45,15 @@ public class SecurityConfig {
                                  "/admin/reports/**")
                     .hasRole("ADMIN")
 
-                // Đơn hàng: Admin + Manager + Staff
                 .requestMatchers("/admin/orders/**")
                     .hasAnyRole("ADMIN", "MANAGER", "STAFF")
 
-                // Người dùng: Admin + Manager
                 .requestMatchers("/admin/users/**")
                     .hasAnyRole("ADMIN", "MANAGER")
 
-                // Shipper
                 .requestMatchers("/shipper/**")
                     .hasAnyRole("SHIPPER", "ADMIN")
 
-                // Khách đã đăng nhập
                 .requestMatchers(
                         "/cart/**", "/order/**", "/profile/**",
                         "/notifications/**", "/checkout/**"

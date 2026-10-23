@@ -32,14 +32,8 @@ public class AdminUserController {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private CloudinaryService cloudinaryService;
 
-    /**
-     * Lấy user hiện tại (đã fetch roles + branch) để tránh lazy init.
-     */
     private User me(Authentication a) {
-        User u = userRepo.findByEmail(a.getName()).orElseThrow();
-        // Ép fetch roles và branch bằng cách gọi getter trong transaction
-        // Cách an toàn hơn: dùng findByIdWithRolesAndBranch
-        return userRepo.findByIdWithRolesAndBranch(u.getId()).orElseThrow();
+        return userRepo.findByEmail(a.getName()).orElseThrow();
     }
 
     private List<Role> assignableRoles(User me) {
@@ -133,7 +127,7 @@ public class AdminUserController {
                        @RequestParam(required = false) String newPassword,
                        @RequestParam(defaultValue = "false") Boolean enabled,
                        @RequestParam(required = false) MultipartFile avatar,
-                       Authentication auth, RedirectAttributes ra) {
+                       Authentication auth, Model model) {
 
         User me = me(auth);
         boolean admin = me.isAdmin();
@@ -144,22 +138,30 @@ public class AdminUserController {
         else {
             user = userRepo.findByIdWithRolesAndBranch(id).orElseThrow();
             if (!admin && !(user.isStaff() && sameBranch(me, user))) {
-                ra.addFlashAttribute("error", "Không có quyền");
-                return "redirect:/admin/users";
+                model.addAttribute("error", "Không có quyền");
+                model.addAttribute("isNew", isNew);
+                model.addAttribute("user", user);
+                model.addAttribute("roles", assignableRoles(me));
+                model.addAttribute("branches", admin ? branchService.all() : List.of(me.getBranch()));
+                return "admin/user-form";
             }
         }
+
         if (isNew) {
             if (email == null || email.isBlank()) {
-                ra.addFlashAttribute("error", "Email bắt buộc");
-                return "redirect:/admin/users/new";
+                return rejectForm(model, user, isNew, me, admin,
+                        "Email bắt buộc", email, fullName, phone, address,
+                        roleIds, branchId, enabled);
             }
             if (userRepo.existsByEmail(email)) {
-                ra.addFlashAttribute("error", "Email đã tồn tại");
-                return "redirect:/admin/users/new";
+                return rejectForm(model, user, isNew, me, admin,
+                        "Email đã tồn tại", email, fullName, phone, address,
+                        roleIds, branchId, enabled);
             }
             if (newPassword == null || newPassword.isBlank()) {
-                ra.addFlashAttribute("error", "Mật khẩu bắt buộc khi tạo mới");
-                return "redirect:/admin/users/new";
+                return rejectForm(model, user, isNew, me, admin,
+                        "Mật khẩu bắt buộc khi tạo mới", email, fullName, phone, address,
+                        roleIds, branchId, enabled);
             }
             user.setEmail(email);
             user.setPassword(passwordEncoder.encode(newPassword));
@@ -180,8 +182,10 @@ public class AdminUserController {
             if (!admin) user.setBranch(me.getBranch());
             else if (branchId != null) user.setBranch(branchService.get(branchId));
             else {
-                ra.addFlashAttribute("error", "Vui lòng chọn chi nhánh cho STAFF/MANAGER");
-                return "redirect:/admin/users" + (isNew ? "/new" : "/edit/" + id);
+                return rejectForm(model, user, isNew, me, admin,
+                        "Vui lòng chọn chi nhánh cho STAFF/MANAGER",
+                        email, fullName, phone, address,
+                        roleIds, branchId, enabled);
             }
         } else user.setBranch(null);
 
@@ -194,8 +198,31 @@ public class AdminUserController {
             user.setAvatarUrl(cloudinaryService.upload(avatar, "avatars"));
 
         userRepo.save(user);
-        ra.addFlashAttribute("success", isNew ? "Đã thêm" : "Đã cập nhật");
         return "redirect:/admin/users";
+    }
+
+    private String rejectForm(Model model, User user, boolean isNew, User me, boolean admin,
+                              String errorMsg,
+                              String email, String fullName, String phone, String address,
+                              List<Long> roleIds, Long branchId, Boolean enabled) {
+        if (isNew) {
+            user.setEmail(email);
+        }
+        user.setFullName(fullName);
+        user.setPhone(phone);
+        user.setAddress(address);
+        user.setEnabled(enabled);
+
+        model.addAttribute("user", user);
+        model.addAttribute("error", errorMsg);
+        model.addAttribute("isNew", isNew);
+        model.addAttribute("isAdmin", admin);
+        model.addAttribute("roles", assignableRoles(me));
+        model.addAttribute("branches", admin ? branchService.all()
+                : (me.getBranch() != null ? List.of(me.getBranch()) : List.of()));
+        model.addAttribute("selectedRoleIds", roleIds);
+        model.addAttribute("selectedBranchId", branchId);
+        return "admin/user-form";
     }
 
     @PostMapping("/toggle-enabled")

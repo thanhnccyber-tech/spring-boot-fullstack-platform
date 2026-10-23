@@ -12,9 +12,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.config.JwtAuthenticationFilter;
+import vn.utetra.dto.ForgotPasswordRequest;
 import vn.utetra.dto.LoginRequest;
 import vn.utetra.dto.OtpVerifyRequest;
 import vn.utetra.dto.RegisterRequest;
+import vn.utetra.dto.ResetPasswordRequest;
 import vn.utetra.entity.OtpToken;
 import vn.utetra.entity.RoleName;
 import vn.utetra.entity.User;
@@ -46,23 +48,24 @@ public class AuthController {
 
     @PostMapping("/auth/login")
     public String doLogin(@ModelAttribute LoginRequest req,
-                          RedirectAttributes ra,
+                          Model model,
                           HttpServletResponse response,
                           HttpSession session) {
 
         Optional<User> opt = userService.findByEmail(req.getEmail());
         if (opt.isEmpty()) {
-            ra.addFlashAttribute("error", "Email hoặc mật khẩu không đúng");
-            return "redirect:/login";
+            model.addAttribute("loginRequest", req);
+            model.addAttribute("error", "Email hoặc mật khẩu không đúng");
+            return "user/login";
         }
         User u = opt.get();
 
         if (!passwordEncoder.matches(req.getPassword(), u.getPassword())) {
-            ra.addFlashAttribute("error", "Email hoặc mật khẩu không đúng");
-            return "redirect:/login";
+            model.addAttribute("loginRequest", req);
+            model.addAttribute("error", "Email hoặc mật khẩu không đúng");
+            return "user/login";
         }
         if (!Boolean.TRUE.equals(u.getEnabled())) {
-            ra.addFlashAttribute("error", "Tài khoản chưa được kích hoạt. Vui lòng xác thực OTP.");
             return "redirect:/otp/register?email=" + u.getEmail();
         }
 
@@ -73,7 +76,7 @@ public class AuthController {
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         cookie.setMaxAge(24 * 3600);
-        cookie.setSecure(false); // bật =true khi chạy HTTPS
+        cookie.setSecure(false);
         response.addCookie(cookie);
 
         session.setAttribute("userId",   u.getId());
@@ -81,7 +84,6 @@ public class AuthController {
         session.setAttribute("email",    u.getEmail());
         session.setAttribute("roles",    roles);
 
-        // Điều hướng theo role (ưu tiên cao nhất)
         if (roles.contains(RoleName.ADMIN))   return "redirect:/admin/dashboard";
         if (roles.contains(RoleName.MANAGER)) return "redirect:/admin/orders";
         if (roles.contains(RoleName.STAFF))   return "redirect:/admin/orders";
@@ -99,22 +101,29 @@ public class AuthController {
     }
 
     @PostMapping("/auth/register")
-    public String register(@Valid @ModelAttribute RegisterRequest req,
+    public String register(@Valid @ModelAttribute("registerRequest") RegisterRequest req,
                            BindingResult result,
-                           RedirectAttributes ra,
                            Model model) {
         if (result.hasErrors()) {
-            model.addAttribute("registerRequest", req);
             return "user/register";
         }
         try {
             User u = userService.registerPending(req);
-            otpService.issue(u.getEmail(), OtpToken.TYPE_REGISTER);
-            ra.addFlashAttribute("success", "Đăng ký thành công! Vui lòng nhập OTP đã gửi qua email.");
+            try {
+                otpService.issue(u.getEmail(), OtpToken.TYPE_REGISTER);
+            } catch (Exception mailEx) {
+                OtpVerifyRequest oreq = new OtpVerifyRequest();
+                oreq.setEmail(u.getEmail());
+                model.addAttribute("otpRequest", oreq);
+                model.addAttribute("email", u.getEmail());
+                model.addAttribute("error", mailEx.getMessage());
+                return "user/otp";
+            }
             return "redirect:/otp/register?email=" + u.getEmail();
         } catch (Exception e) {
-            ra.addFlashAttribute("error", e.getMessage());
-            return "redirect:/register";
+            model.addAttribute("registerRequest", req);
+            model.addAttribute("error", e.getMessage());
+            return "user/register";
         }
     }
 
@@ -130,11 +139,13 @@ public class AuthController {
     }
 
     @PostMapping("/otp/register/verify")
-    public String otpVerify(@ModelAttribute OtpVerifyRequest req, RedirectAttributes ra) {
+    public String otpVerify(@ModelAttribute OtpVerifyRequest req, Model model) {
         boolean ok = otpService.verify(req.getEmail(), req.getCode(), OtpToken.TYPE_REGISTER);
         if (!ok) {
-            ra.addFlashAttribute("error", "Mã OTP không đúng hoặc đã hết hạn");
-            return "redirect:/otp/register?email=" + req.getEmail();
+            model.addAttribute("otpRequest", req);
+            model.addAttribute("email", req.getEmail());
+            model.addAttribute("error", "Mã OTP không đúng hoặc đã hết hạn");
+            return "user/otp";
         }
         userService.activate(req.getEmail());
         try {
@@ -142,8 +153,7 @@ public class AuthController {
                     "Tài khoản của bạn đã được kích hoạt. Hãy đăng nhập và trải nghiệm nhé!");
         } catch (Exception ignored) {}
 
-        ra.addFlashAttribute("success", "Kích hoạt tài khoản thành công! Hãy đăng nhập.");
-        return "redirect:/login";
+        return "redirect:/login?activated=true";
     }
 
     @GetMapping("/otp/register/resend")
@@ -152,9 +162,107 @@ public class AuthController {
             otpService.issue(email, OtpToken.TYPE_REGISTER);
             ra.addFlashAttribute("success", "Đã gửi lại mã OTP. Vui lòng kiểm tra email.");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", "Không thể gửi lại OTP: " + e.getMessage());
+            ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/otp/register?email=" + email;
+    }
+
+    /* ==================== FORGOT PASSWORD ==================== */
+
+    @GetMapping("/forgot-password")
+    public String forgotPage(Model model) {
+        if (!model.containsAttribute("forgotRequest"))
+            model.addAttribute("forgotRequest", new ForgotPasswordRequest());
+        return "user/forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String forgotSubmit(@ModelAttribute("forgotRequest") ForgotPasswordRequest req,
+                               Model model) {
+        String email = req.getEmail() == null ? "" : req.getEmail().trim();
+        Optional<User> opt = userService.findByEmail(email);
+
+        // Không tiết lộ email có tồn tại hay không để tránh enumeration
+        // Nhưng vì đây là đồ án, có thể thông báo rõ để UX tốt hơn.
+        if (opt.isEmpty()) {
+            model.addAttribute("forgotRequest", req);
+            model.addAttribute("error",
+                    "Không tìm thấy tài khoản với email này.");
+            return "user/forgot-password";
+        }
+
+        try {
+            otpService.issue(email, OtpToken.TYPE_RESET);
+            return "redirect:/otp/reset?email=" + email;
+        } catch (Exception e) {
+            model.addAttribute("forgotRequest", req);
+            model.addAttribute("error", e.getMessage());
+            return "user/forgot-password";
+        }
+    }
+
+    /* ==================== OTP RESET PASSWORD ==================== */
+
+    @GetMapping("/otp/reset")
+    public String otpResetPage(@RequestParam String email, Model model) {
+        OtpVerifyRequest req = new OtpVerifyRequest();
+        req.setEmail(email);
+        model.addAttribute("otpRequest", req);
+        model.addAttribute("email", email);
+        return "user/otp-reset";
+    }
+
+    @PostMapping("/otp/reset/verify")
+    public String otpResetVerify(@ModelAttribute OtpVerifyRequest req, Model model) {
+        boolean ok = otpService.verify(req.getEmail(), req.getCode(), OtpToken.TYPE_RESET);
+        if (!ok) {
+            model.addAttribute("otpRequest", req);
+            model.addAttribute("email", req.getEmail());
+            model.addAttribute("error", "Mã OTP không đúng hoặc đã hết hạn");
+            return "user/otp-reset";
+        }
+        // Verify OK → chuyển sang form đặt mật khẩu mới
+        return "redirect:/reset-password?email=" + req.getEmail();
+    }
+
+    @GetMapping("/otp/reset/resend")
+    public String resendOtpReset(@RequestParam String email, RedirectAttributes ra) {
+        try {
+            otpService.issue(email, OtpToken.TYPE_RESET);
+            ra.addFlashAttribute("success", "Đã gửi lại mã OTP. Vui lòng kiểm tra email.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/otp/reset?email=" + email;
+    }
+
+    /* ==================== RESET PASSWORD FORM ==================== */
+
+    @GetMapping("/reset-password")
+    public String resetPage(@RequestParam String email, Model model) {
+        ResetPasswordRequest req = new ResetPasswordRequest();
+        req.setEmail(email);
+        model.addAttribute("resetRequest", req);
+        return "user/reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String resetSubmit(@ModelAttribute("resetRequest") ResetPasswordRequest req,
+                              Model model) {
+        try {
+            if (req.getNewPassword() == null || req.getNewPassword().length() < 6) {
+                throw new RuntimeException("Mật khẩu mới phải từ 6 ký tự");
+            }
+            if (!req.getNewPassword().equals(req.getConfirmPassword())) {
+                throw new RuntimeException("Xác nhận mật khẩu không khớp");
+            }
+            userService.resetPassword(req.getEmail(), req.getNewPassword());
+            return "redirect:/login?reset=true";
+        } catch (Exception e) {
+            model.addAttribute("resetRequest", req);
+            model.addAttribute("error", e.getMessage());
+            return "user/reset-password";
+        }
     }
 
     /* ==================== LOGOUT ==================== */
