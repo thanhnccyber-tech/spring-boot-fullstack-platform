@@ -11,6 +11,7 @@ import vn.utetra.repository.CategoryRepository;
 import vn.utetra.repository.ProductRepository;
 import vn.utetra.repository.ToppingRepository;
 import vn.utetra.service.CloudinaryService;
+import vn.utetra.service.FileValidator;
 import vn.utetra.service.ProductService;
 
 import java.util.List;
@@ -24,10 +25,10 @@ public class AdminProductController {
     @Autowired private ToppingRepository toppingRepo;
     @Autowired private CloudinaryService cloudinaryService;
     @Autowired private ProductService productService;
+    @Autowired private FileValidator fileValidator;
 
     @GetMapping
     public String list(Model model) {
-        // Dùng fetch join để tránh LazyInitializationException khi JSP truy cập p.category.name
         model.addAttribute("products", productService.allWithCategory());
         return "admin/products";
     }
@@ -42,8 +43,6 @@ public class AdminProductController {
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model) {
-        // Dùng fetch join để tránh LazyInitializationException khi JSP truy cập
-        // product.category.id và product.toppings.contains(...)
         model.addAttribute("product", productService.getWithDetails(id));
         model.addAttribute("categories", categoryRepo.findAll());
         model.addAttribute("toppings", toppingRepo.findAll());
@@ -56,11 +55,26 @@ public class AdminProductController {
                        @RequestParam(required = false) List<Long> toppingIds,
                        @RequestParam(required = false) MultipartFile imageFile,
                        RedirectAttributes ra) {
+
+        boolean isNew = (product.getId() == null);
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                fileValidator.validateImage(imageFile);
+            } catch (IllegalArgumentException ex) {
+                ra.addFlashAttribute("error", ex.getMessage());
+                return "redirect:" + (isNew
+                        ? "/admin/products/new"
+                        : "/admin/products/edit/" + product.getId());
+            }
+        }
+
         if (categoryId != null) product.setCategory(categoryRepo.findById(categoryId).orElse(null));
         if (toppingIds != null && !toppingIds.isEmpty())
             product.setToppings(toppingRepo.findAllById(toppingIds));
         else
             product.setToppings(List.of());
+
         if (imageFile != null && !imageFile.isEmpty())
             product.setImageUrl(cloudinaryService.upload(imageFile, "products"));
 

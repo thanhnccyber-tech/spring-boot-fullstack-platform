@@ -9,6 +9,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Category;
 import vn.utetra.repository.CategoryRepository;
 import vn.utetra.service.CloudinaryService;
+import vn.utetra.service.FileValidator;
 
 @Controller
 @RequestMapping("/admin/categories")
@@ -16,6 +17,7 @@ public class AdminCategoryController {
 
     @Autowired private CategoryRepository repo;
     @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private FileValidator fileValidator;
 
     @GetMapping
     public String list(Model model) {
@@ -39,8 +41,21 @@ public class AdminCategoryController {
     public String save(@ModelAttribute Category c,
                        @RequestParam(required = false) MultipartFile imageFile,
                        RedirectAttributes ra) {
-        if (imageFile != null && !imageFile.isEmpty())
+
+        boolean isNew = (c.getId() == null);
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                fileValidator.validateImage(imageFile);
+            } catch (IllegalArgumentException ex) {
+                ra.addFlashAttribute("error", ex.getMessage());
+                return "redirect:" + (isNew
+                        ? "/admin/categories/new"
+                        : "/admin/categories/edit/" + c.getId());
+            }
             c.setImageUrl(cloudinaryService.upload(imageFile, "categories"));
+        }
+
         repo.save(c);
         ra.addFlashAttribute("success", "Lưu danh mục thành công!");
         return "redirect:/admin/categories";

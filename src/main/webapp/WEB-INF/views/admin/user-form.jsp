@@ -20,7 +20,11 @@
             <div class="mb-3"><label>Địa chỉ</label>
                 <input type="text" name="address" value="${user.address}" class="form-control"></div>
             <div class="mb-3"><label>Avatar</label>
-                <input type="file" name="avatar" class="form-control" accept="image/*">
+                <input type="file" name="avatar" id="userAvatar"
+                       class="form-control"
+                       accept="image/jpeg,image/png,image/gif,image/webp">
+                <small class="text-muted d-block">JPG, PNG, GIF, WEBP. Tối đa 5 MB.</small>
+                <small id="userAvatarError" class="text-danger d-none"></small>
                 <c:if test="${user.avatarUrl != null}">
                     <img src="${user.avatarUrl}" class="rounded-circle mt-2" width="80" height="80">
                 </c:if>
@@ -101,5 +105,31 @@
     }
     roleBoxes.forEach(cb => cb.addEventListener('change', update));
     update();
+})();
+
+(function () {
+    const input = document.getElementById('userAvatar');
+    const errorEl = document.getElementById('userAvatarError');
+    if (!input) return;
+    const MAX = 5 * 1024 * 1024;
+    const ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.classList.remove('d-none');
+        input.value = '';
+    }
+    input.addEventListener('change', function () {
+        errorEl.textContent = '';
+        errorEl.classList.add('d-none');
+        if (!input.files || input.files.length === 0) return;
+        const f = input.files[0];
+        if (f.size > MAX) {
+            showError('Ảnh không được vượt quá 5 MB.');
+            return;
+        }
+        if (ALLOWED.indexOf(f.type.toLowerCase()) === -1) {
+            showError('Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WEBP.');
+        }
+    });
 })();
 </script>

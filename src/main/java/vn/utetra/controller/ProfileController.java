@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.utetra.entity.User;
 import vn.utetra.service.CloudinaryService;
+import vn.utetra.service.FileValidator;
 import vn.utetra.service.UserService;
 
 @Controller
@@ -16,6 +17,7 @@ public class ProfileController {
 
     @Autowired private UserService userService;
     @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private FileValidator fileValidator;
 
     @GetMapping
     public String profile(Authentication auth, Model model) {
@@ -32,6 +34,9 @@ public class ProfileController {
                          @RequestParam(required = false) MultipartFile avatar,
                          Model model) {
         try {
+            if (avatar != null && !avatar.isEmpty()) {
+                fileValidator.validateImage(avatar);
+            }
             String url = null;
             if (avatar != null && !avatar.isEmpty()) {
                 url = cloudinaryService.upload(avatar, "avatars");

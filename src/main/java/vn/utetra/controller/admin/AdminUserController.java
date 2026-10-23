@@ -14,10 +14,10 @@ import vn.utetra.entity.*;
 import vn.utetra.repository.*;
 import vn.utetra.service.BranchService;
 import vn.utetra.service.CloudinaryService;
+import vn.utetra.service.FileValidator;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/users")
@@ -31,14 +31,33 @@ public class AdminUserController {
     @Autowired private BranchService branchService;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private FileValidator fileValidator;
 
     private User me(Authentication a) {
-        return userRepo.findByEmail(a.getName()).orElseThrow();
+        return userRepo.findByEmailWithBranch(a.getName()).orElseThrow();
     }
 
     private List<Role> assignableRoles(User me) {
         if (me.isAdmin()) return roleRepo.findAll();
         return roleRepo.findByName(RoleName.STAFF).map(List::of).orElse(List.of());
+    }
+
+    private Page<User> hydrate(Page<User> page) {
+        List<Long> ids = page.getContent().stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
+        if (ids.isEmpty()) return page;
+
+        List<User> full = userRepo.findByIdsWithRolesAndBranch(ids);
+        Map<Long, User> map = full.stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+
+        List<User> ordered = ids.stream()
+                .map(map::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(ordered, page.getPageable(), page.getTotalElements());
     }
 
     @GetMapping
@@ -47,50 +66,75 @@ public class AdminUserController {
                        @RequestParam(required = false) Long branchId,
                        @RequestParam(required = false) String enabled,
                        @RequestParam(defaultValue = "0") int page,
-                       Authentication auth, Model model) {
+                       Authentication auth, Model model,
+                       RedirectAttributes ra) {
 
         User me = me(auth);
         boolean admin = me.isAdmin();
 
-        if (!admin) {
-            role = RoleName.STAFF;
-            branchId = me.getBranch() != null ? me.getBranch().getId() : -1L;
+        String roleP;
+        String excludeRoleP;
+        Long branchIdP;
+
+        if (admin) {
+            roleP = (role == null || role.isBlank()) ? null : role;
+            excludeRoleP = null;
+            branchIdP = branchId;
+        } else {
+            if (me.getBranch() == null) {
+                ra.addFlashAttribute("error",
+                        "Tài khoản Manager chưa được gán chi nhánh. Vui lòng liên hệ Admin.");
+                return "redirect:/admin/dashboard";
+            }
+            roleP = RoleName.STAFF;
+            excludeRoleP = RoleName.ADMIN;
+            branchIdP = me.getBranch().getId();
         }
+
         String kwP = (kw == null || kw.isBlank()) ? null : kw.trim();
-        String roleP = (role == null || role.isBlank()) ? null : role;
         Boolean enabledP = "true".equalsIgnoreCase(enabled) ? Boolean.TRUE
                 : "false".equalsIgnoreCase(enabled) ? Boolean.FALSE : null;
 
         Pageable pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by("id").descending());
-        Page<User> userPage = userRepo.search(kwP, roleP, branchId, enabledP, pageable);
+        Page<User> raw = userRepo.search(kwP, roleP, excludeRoleP, branchIdP, enabledP, pageable);
+        Page<User> userPage = hydrate(raw);
 
         model.addAttribute("userPage", userPage);
         model.addAttribute("kw", kw);
-        model.addAttribute("roleFilter", role);
-        model.addAttribute("branchFilter", branchId);
+        model.addAttribute("roleFilter", roleP);
+        model.addAttribute("branchFilter", branchIdP);
         model.addAttribute("enabledFilter", enabled);
         model.addAttribute("roles", roleRepo.findAll());
         model.addAttribute("branches", admin ? branchService.all()
-                : (me.getBranch() != null ? List.of(me.getBranch()) : List.of()));
+                : List.of(me.getBranch()));
         model.addAttribute("isAdmin", admin);
         model.addAttribute("currentUserId", me.getId());
+        model.addAttribute("managerBranchName", !admin && me.getBranch() != null
+                ? me.getBranch().getName() : null);
         return "admin/users";
     }
 
     @GetMapping("/new")
-    public String createForm(Authentication auth, Model model) {
+    public String createForm(Authentication auth, Model model, RedirectAttributes ra) {
         User me = me(auth);
         boolean admin = me.isAdmin();
+
+        if (!admin && me.getBranch() == null) {
+            ra.addFlashAttribute("error",
+                    "Tài khoản Manager chưa được gán chi nhánh.");
+            return "redirect:/admin/dashboard";
+        }
+
         User u = new User();
         u.setEnabled(true);
         List<Role> assignable = assignableRoles(me);
         if (!admin && !assignable.isEmpty()) u.setRoles(Set.of(assignable.get(0)));
-        if (!admin && me.getBranch() != null) u.setBranch(me.getBranch());
+        if (!admin) u.setBranch(me.getBranch());
 
         model.addAttribute("user", u);
         model.addAttribute("roles", assignable);
         model.addAttribute("branches", admin ? branchService.all()
-                : (me.getBranch() != null ? List.of(me.getBranch()) : List.of()));
+                : List.of(me.getBranch()));
         model.addAttribute("isNew", true);
         model.addAttribute("isAdmin", admin);
         return "admin/user-form";
@@ -103,14 +147,19 @@ public class AdminUserController {
         boolean admin = me.isAdmin();
         User target = userRepo.findByIdWithRolesAndBranch(id).orElseThrow();
 
-        if (!admin && !(target.isStaff() && sameBranch(me, target))) {
-            ra.addFlashAttribute("error", "Bạn không có quyền chỉnh sửa người dùng này");
-            return "redirect:/admin/users";
+        if (!admin) {
+            boolean isStaffOnly = target.isStaff() && !target.isAdmin()
+                    && !target.isManager() && !target.isShipper();
+            if (!isStaffOnly || !sameBranch(me, target)) {
+                ra.addFlashAttribute("error",
+                        "Bạn không có quyền chỉnh sửa người dùng này.");
+                return "redirect:/admin/users";
+            }
         }
         model.addAttribute("user", target);
         model.addAttribute("roles", assignableRoles(me));
         model.addAttribute("branches", admin ? branchService.all()
-                : (me.getBranch() != null ? List.of(me.getBranch()) : List.of()));
+                : List.of(me.getBranch()));
         model.addAttribute("isNew", false);
         model.addAttribute("isAdmin", admin);
         return "admin/user-form";
@@ -127,7 +176,7 @@ public class AdminUserController {
                        @RequestParam(required = false) String newPassword,
                        @RequestParam(defaultValue = "false") Boolean enabled,
                        @RequestParam(required = false) MultipartFile avatar,
-                       Authentication auth, Model model) {
+                       Authentication auth, Model model, RedirectAttributes ra) {
 
         User me = me(auth);
         boolean admin = me.isAdmin();
@@ -137,13 +186,13 @@ public class AdminUserController {
         if (isNew) user = new User();
         else {
             user = userRepo.findByIdWithRolesAndBranch(id).orElseThrow();
-            if (!admin && !(user.isStaff() && sameBranch(me, user))) {
-                model.addAttribute("error", "Không có quyền");
-                model.addAttribute("isNew", isNew);
-                model.addAttribute("user", user);
-                model.addAttribute("roles", assignableRoles(me));
-                model.addAttribute("branches", admin ? branchService.all() : List.of(me.getBranch()));
-                return "admin/user-form";
+            if (!admin) {
+                boolean isStaffOnly = user.isStaff() && !user.isAdmin()
+                        && !user.isManager() && !user.isShipper();
+                if (!isStaffOnly || !sameBranch(me, user)) {
+                    ra.addFlashAttribute("error", "Không có quyền.");
+                    return "redirect:/admin/users";
+                }
             }
         }
 
@@ -194,10 +243,20 @@ public class AdminUserController {
         user.setAddress(address);
         user.setEnabled(enabled);
         user.setRoles(selected);
-        if (avatar != null && !avatar.isEmpty())
+
+        if (avatar != null && !avatar.isEmpty()) {
+            try {
+                fileValidator.validateImage(avatar);
+            } catch (IllegalArgumentException ex) {
+                return rejectForm(model, user, isNew, me, admin,
+                        ex.getMessage(), email, fullName, phone, address,
+                        roleIds, branchId, enabled);
+            }
             user.setAvatarUrl(cloudinaryService.upload(avatar, "avatars"));
+        }
 
         userRepo.save(user);
+        ra.addFlashAttribute("success", isNew ? "Đã thêm" : "Đã cập nhật");
         return "redirect:/admin/users";
     }
 
@@ -205,9 +264,7 @@ public class AdminUserController {
                               String errorMsg,
                               String email, String fullName, String phone, String address,
                               List<Long> roleIds, Long branchId, Boolean enabled) {
-        if (isNew) {
-            user.setEmail(email);
-        }
+        if (isNew) user.setEmail(email);
         user.setFullName(fullName);
         user.setPhone(phone);
         user.setAddress(address);
@@ -219,7 +276,7 @@ public class AdminUserController {
         model.addAttribute("isAdmin", admin);
         model.addAttribute("roles", assignableRoles(me));
         model.addAttribute("branches", admin ? branchService.all()
-                : (me.getBranch() != null ? List.of(me.getBranch()) : List.of()));
+                : List.of(me.getBranch()));
         model.addAttribute("selectedRoleIds", roleIds);
         model.addAttribute("selectedBranchId", branchId);
         return "admin/user-form";
@@ -233,9 +290,13 @@ public class AdminUserController {
             return "redirect:/admin/users";
         }
         User target = userRepo.findByIdWithRolesAndBranch(id).orElseThrow();
-        if (!me.isAdmin() && !(target.isStaff() && sameBranch(me, target))) {
-            ra.addFlashAttribute("error", "Không có quyền");
-            return "redirect:/admin/users";
+        if (!me.isAdmin()) {
+            boolean isStaffOnly = target.isStaff() && !target.isAdmin()
+                    && !target.isManager() && !target.isShipper();
+            if (!isStaffOnly || !sameBranch(me, target)) {
+                ra.addFlashAttribute("error", "Không có quyền.");
+                return "redirect:/admin/users";
+            }
         }
         target.setEnabled(!Boolean.TRUE.equals(target.getEnabled()));
         userRepo.save(target);
