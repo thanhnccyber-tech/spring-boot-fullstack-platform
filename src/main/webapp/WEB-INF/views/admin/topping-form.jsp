@@ -1,16 +1,43 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<title>Topping</title>
+<title>${isNew ? 'Thêm' : 'Sửa'} topping</title>
+
+<c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
+
 <form action="${pageContext.request.contextPath}/admin/toppings/save" method="post">
     <input type="hidden" name="id" value="${topping.id}">
-    <div class="mb-3"><label>Tên</label>
-        <input type="text" name="name" value="${topping.name}" class="form-control" required></div>
-    <div class="mb-3"><label>Giá</label>
-        <input type="number" name="price" value="${topping.price}" class="form-control" required step="1000"></div>
-    <div class="form-check mb-3">
-        <input type="checkbox" name="active" value="true" class="form-check-input"
-            <c:if test="${topping.active}">checked</c:if>>
-        <label class="form-check-label">Active</label>
+
+    <div class="mb-3">
+        <label>Tên topping <span class="text-danger">*</span></label>
+        <input type="text" name="name" value="${topping.name}"
+               class="form-control" maxlength="100" required>
+        <small class="text-muted">Tối đa 100 ký tự. Không được trùng với topping khác.</small>
     </div>
-    <button class="btn btn-warning">Lưu</button>
+
+    <div class="mb-3">
+        <label>Giá (VNĐ) <span class="text-danger">*</span></label>
+        <input type="number" name="price" value="${topping.price}"
+               class="form-control" min="1" max="10000000" step="1000" required>
+        <small class="text-muted">Lớn hơn 0 và tối đa 10.000.000 ₫.</small>
+    </div>
+
+    <div class="form-check mb-2">
+        <input type="checkbox" name="active" value="true"
+               id="activeCheckbox" class="form-check-input"
+               <c:if test="${topping.active}">checked</c:if>>
+        <label class="form-check-label" for="activeCheckbox">Đang hiển thị</label>
+    </div>
+
+    <div class="form-check mb-3">
+        <input type="checkbox" name="outOfStock" value="true"
+               id="outOfStockCheckbox" class="form-check-input"
+               <c:if test="${topping.outOfStock}">checked</c:if>>
+        <label class="form-check-label text-danger" for="outOfStockCheckbox">
+            Hết hàng (khách không thể chọn topping này)
+        </label>
+    </div>
+
+    <button class="btn btn-warning">${isNew ? 'Tạo mới' : 'Lưu'}</button>
+    <a href="${pageContext.request.contextPath}/admin/toppings"
+       class="btn btn-secondary">Hủy</a>
 </form>

@@ -2,6 +2,7 @@ package vn.utetra.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "categories")
@@ -22,4 +23,10 @@ public class Category {
 
     @Column(nullable = false)
     private Boolean active = true;
+
+    @Column(name = "sort_order", nullable = false, columnDefinition = "int default 0")
+    private Integer sortOrder = 0;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

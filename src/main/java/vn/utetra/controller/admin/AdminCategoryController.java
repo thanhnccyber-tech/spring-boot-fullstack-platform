@@ -1,6 +1,7 @@
 package vn.utetra.controller.admin;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -11,63 +12,101 @@ import vn.utetra.service.CategoryService;
 import vn.utetra.service.CloudinaryService;
 import vn.utetra.service.FileValidator;
 
+import java.util.List;
+import java.util.Map;
+
 @Controller
 @RequestMapping("/admin/categories")
 public class AdminCategoryController {
+
+    private static final int PAGE_SIZE = 10;
 
     @Autowired private CategoryService categoryService;
     @Autowired private CloudinaryService cloudinaryService;
     @Autowired private FileValidator fileValidator;
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("categories", categoryService.all());
+    public String list(@RequestParam(required = false) String kw,
+                       @RequestParam(required = false) String active,
+                       @RequestParam(defaultValue = "0") int page,
+                       Model model) {
+
+        Boolean activeP = "true".equalsIgnoreCase(active) ? Boolean.TRUE
+                        : "false".equalsIgnoreCase(active) ? Boolean.FALSE
+                        : null;
+
+        Page<Category> pageData = categoryService.searchForAdmin(kw, activeP, page, PAGE_SIZE);
+
+        List<Long> ids = pageData.getContent().stream().map(Category::getId).toList();
+        Map<Long, Long> productCounts = categoryService.countProductsByCategoryIds(ids);
+
+        model.addAttribute("pageData", pageData);
+        model.addAttribute("productCounts", productCounts);
+        model.addAttribute("kw", kw);
+        model.addAttribute("activeFilter", active);
         return "admin/categories";
     }
 
     @GetMapping("/new")
     public String create(Model model) {
-        model.addAttribute("category", new Category());
+        Category c = new Category();
+        c.setActive(true);
+        c.setSortOrder(0);
+        model.addAttribute("category", c);
+        model.addAttribute("isNew", true);
         return "admin/category-form";
     }
 
     @GetMapping("/edit/{id}")
     public String edit(@PathVariable Long id, Model model) {
         model.addAttribute("category", categoryService.get(id));
+        model.addAttribute("isNew", false);
         return "admin/category-form";
     }
 
     @PostMapping("/save")
     public String save(@ModelAttribute Category c,
                        @RequestParam(required = false) MultipartFile imageFile,
+                       @RequestParam(defaultValue = "false") Boolean active,
+                       Model model,
                        RedirectAttributes ra) {
 
         boolean isNew = (c.getId() == null);
-
-        if (imageFile != null && !imageFile.isEmpty()) {
-            try {
+        try {
+            if (imageFile != null && !imageFile.isEmpty()) {
                 fileValidator.validateImage(imageFile);
-            } catch (IllegalArgumentException ex) {
-                ra.addFlashAttribute("error", ex.getMessage());
-                return "redirect:" + (isNew
-                        ? "/admin/categories/new"
-                        : "/admin/categories/edit/" + c.getId());
+                c.setImageUrl(cloudinaryService.upload(imageFile, "categories"));
             }
-            c.setImageUrl(cloudinaryService.upload(imageFile, "categories"));
+            c.setActive(active);
+            categoryService.save(c);
+            ra.addFlashAttribute("success",
+                    isNew ? "Đã thêm danh mục." : "Đã cập nhật danh mục.");
+            return "redirect:/admin/categories";
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("category", c);
+            model.addAttribute("isNew", isNew);
+            model.addAttribute("error", ex.getMessage());
+            return "admin/category-form";
         }
-
-        categoryService.save(c);
-        ra.addFlashAttribute("success", "Lưu danh mục thành công!");
-        return "redirect:/admin/categories";
     }
 
-    @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id, RedirectAttributes ra) {
+    @PostMapping("/toggle-active")
+    public String toggleActive(@RequestParam Long id,
+                               @RequestParam(required = false) String returnUrl,
+                               RedirectAttributes ra) {
+        categoryService.toggleActive(id);
+        ra.addFlashAttribute("success", "Đã cập nhật trạng thái danh mục.");
+        return "redirect:" + (returnUrl != null && !returnUrl.isBlank()
+                ? returnUrl : "/admin/categories");
+    }
+
+    @PostMapping("/delete")
+    public String delete(@RequestParam Long id, RedirectAttributes ra) {
         try {
             categoryService.delete(id);
-            ra.addFlashAttribute("success", "Đã xóa danh mục");
-        } catch (Exception e) {
-            ra.addFlashAttribute("error", "Không thể xóa (còn sản phẩm tham chiếu)");
+            ra.addFlashAttribute("success", "Đã xóa danh mục.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/categories";
     }

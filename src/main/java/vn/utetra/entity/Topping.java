@@ -21,4 +21,7 @@ public class Topping {
 
     @Column(nullable = false)
     private Boolean active = true;
+
+    @Column(name = "out_of_stock", nullable = false, columnDefinition = "boolean default false")
+    private Boolean outOfStock = false;
 }

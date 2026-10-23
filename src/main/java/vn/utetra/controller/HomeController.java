@@ -29,7 +29,7 @@ public class HomeController {
     public String home(Model model) {
         model.addAttribute("featured", productService.featured());
         model.addAttribute("newArrivals", productService.newArrivals());
-        model.addAttribute("categories", categoryService.all());
+        model.addAttribute("categories", categoryService.active());
         return "user/home";
     }
 
@@ -57,7 +57,7 @@ public class HomeController {
     public String productDetail(@PathVariable Long id, Model model) {
         Product p = productService.get(id);
         model.addAttribute("product", p);
-        model.addAttribute("toppings", toppingService.active());
+        model.addAttribute("toppings", toppingService.activeInStock());
 
         List<SizeOption> allowedSizes = (p.getSizes() == null || p.getSizes().isEmpty())
                 ? sizeService.active()
