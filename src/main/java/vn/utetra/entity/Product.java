@@ -42,6 +42,9 @@ public class Product {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Column(name = "out_of_stock", nullable = false)
+    private Boolean outOfStock = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 

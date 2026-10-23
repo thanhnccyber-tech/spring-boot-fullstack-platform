@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.dto.CartItem;
 import vn.utetra.entity.*;
 import vn.utetra.service.*;
@@ -53,9 +54,18 @@ public class CartController {
                             @RequestParam(required = false) Long sugarId,
                             @RequestParam(required = false) Long iceId,
                             @RequestParam(required = false) List<Long> toppingIds,
-                            HttpSession session) {
+                            HttpSession session,
+                            RedirectAttributes ra) {
 
         Product p = productService.get(productId);
+
+        // Chặn thêm sản phẩm hết hàng vào giỏ
+        if (Boolean.TRUE.equals(p.getOutOfStock())) {
+            ra.addFlashAttribute("error",
+                    "Sản phẩm \"" + p.getName() + "\" hiện đang hết hàng, vui lòng chọn món khác.");
+            return "redirect:/product/" + p.getId();
+        }
+
         CartItem item = new CartItem();
         item.setProductId(p.getId());
         item.setProductName(p.getName());
@@ -65,7 +75,6 @@ public class CartController {
 
         BigDecimal unit = p.getBasePrice();
 
-        // ===== Size =====
         if (Boolean.TRUE.equals(p.getAllowSize())) {
             SizeOption chosen = null;
             if (sizeId != null) {
@@ -86,7 +95,6 @@ public class CartController {
             }
         }
 
-        // ===== Sugar =====
         if (Boolean.TRUE.equals(p.getAllowSugar())) {
             SugarLevel chosen = null;
             if (sugarId != null) {
@@ -104,7 +112,6 @@ public class CartController {
             }
         }
 
-        // ===== Ice =====
         if (Boolean.TRUE.equals(p.getAllowIce())) {
             IceLevel chosen = null;
             if (iceId != null) {
@@ -122,7 +129,6 @@ public class CartController {
             }
         }
 
-        // ===== Topping =====
         if (toppingIds != null && !toppingIds.isEmpty()) {
             List<Topping> tops = toppingService.all().stream()
                     .filter(t -> toppingIds.contains(t.getId())).toList();
@@ -136,6 +142,7 @@ public class CartController {
 
         item.setUnitPrice(unit);
         getCart(session).add(item);
+        ra.addFlashAttribute("success", "Đã thêm \"" + p.getName() + "\" vào giỏ hàng.");
         return "redirect:/cart";
     }
 

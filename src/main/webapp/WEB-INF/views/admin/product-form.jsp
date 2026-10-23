@@ -170,10 +170,17 @@
                     <c:if test="${product.isNew}">checked</c:if>>
                 <label class="form-check-label">Sản phẩm mới</label>
             </div>
-            <div class="form-check mb-3">
+            <div class="form-check mb-2">
                 <input type="checkbox" name="active" value="true" class="form-check-input"
                     <c:if test="${product.active}">checked</c:if>>
-                <label class="form-check-label">Đang bán</label>
+                <label class="form-check-label">Đang bán (hiển thị trên menu khách)</label>
+            </div>
+            <div class="form-check mb-3">
+                <input type="checkbox" name="outOfStock" value="true" class="form-check-input"
+                    <c:if test="${product.outOfStock}">checked</c:if>>
+                <label class="form-check-label text-danger fw-bold">
+                    <i class="fas fa-times-circle"></i> Hết hàng (không cho khách thêm vào giỏ)
+                </label>
             </div>
         </div>
         <div class="col-md-4">

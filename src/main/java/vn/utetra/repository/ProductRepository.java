@@ -15,6 +15,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByFeaturedTrueAndActiveTrue();
     List<Product> findByIsNewTrueAndActiveTrue();
 
+    /* =====================================================
+     * SEARCH CHO KHÁCH — luôn chỉ lấy sản phẩm active = true
+     * ===================================================== */
     @Query("SELECT p FROM Product p WHERE p.active = true " +
             "AND (:kw IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :kw, '%'))) " +
             "AND (:catId IS NULL OR p.category.id = :catId) " +
@@ -26,14 +29,33 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                          @Param("maxPrice") BigDecimal maxPrice,
                          Pageable pageable);
 
+    /* =====================================================
+     * SEARCH CHO ADMIN — lọc được cả active, fetch luôn category
+     * ===================================================== */
+    @Query(value = "SELECT p FROM Product p " +
+                   "LEFT JOIN FETCH p.category c " +
+                   "WHERE (:kw IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :kw, '%'))) " +
+                   "AND (:catId IS NULL OR c.id = :catId) " +
+                   "AND (:active IS NULL OR p.active = :active) " +
+                   "AND (:minPrice IS NULL OR p.basePrice >= :minPrice) " +
+                   "AND (:maxPrice IS NULL OR p.basePrice <= :maxPrice)",
+           countQuery = "SELECT COUNT(p) FROM Product p " +
+                        "LEFT JOIN p.category c " +
+                        "WHERE (:kw IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :kw, '%'))) " +
+                        "AND (:catId IS NULL OR c.id = :catId) " +
+                        "AND (:active IS NULL OR p.active = :active) " +
+                        "AND (:minPrice IS NULL OR p.basePrice >= :minPrice) " +
+                        "AND (:maxPrice IS NULL OR p.basePrice <= :maxPrice)")
+    Page<Product> searchForAdmin(@Param("kw") String kw,
+                                 @Param("catId") Long catId,
+                                 @Param("active") Boolean active,
+                                 @Param("minPrice") BigDecimal minPrice,
+                                 @Param("maxPrice") BigDecimal maxPrice,
+                                 Pageable pageable);
+
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category ORDER BY p.id DESC")
     List<Product> findAllWithCategory();
 
-    /**
-     * Load chi tiết product cho màn hình ADMIN EDIT.
-     * Fetch TẤT CẢ collection để JSP có thể gọi .contains() mà không cần session.
-     * Dùng Set + DISTINCT để tránh MultipleBagFetchException và duplicate row.
-     */
     @Query("SELECT DISTINCT p FROM Product p " +
            "LEFT JOIN FETCH p.category " +
            "LEFT JOIN FETCH p.toppings " +
@@ -46,10 +68,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "WHERE p.id = :id")
     Optional<Product> findByIdWithDetails(@Param("id") Long id);
 
-    /**
-     * Load product cho màn hình KHÁCH (product-detail).
-     * Không cần fetch toppings vì trang khách load all toppings riêng.
-     */
     @Query("SELECT DISTINCT p FROM Product p " +
            "LEFT JOIN FETCH p.sizes " +
            "LEFT JOIN FETCH p.sugars " +

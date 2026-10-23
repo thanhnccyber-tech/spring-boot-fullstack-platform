@@ -29,13 +29,29 @@ public class ProductService {
 
     public Page<Product> search(String kw, Long catId, BigDecimal min, BigDecimal max,
                                 int page, int size, String sort) {
-        Sort sortBy = "priceAsc".equals(sort) ? Sort.by("basePrice").ascending()
-                    : "priceDesc".equals(sort) ? Sort.by("basePrice").descending()
-                    : Sort.by("createdAt").descending();
+        Sort sortBy = resolveSort(sort);
         return productRepo.search(
                 (kw == null || kw.isBlank()) ? null : kw.trim(),
                 catId, min, max,
                 PageRequest.of(page, size, sortBy));
+    }
+
+    public Page<Product> searchForAdmin(String kw, Long catId, Boolean active,
+                                        BigDecimal min, BigDecimal max,
+                                        int page, int size, String sort) {
+        Sort sortBy = resolveSort(sort);
+        return productRepo.searchForAdmin(
+                (kw == null || kw.isBlank()) ? null : kw.trim(),
+                catId, active, min, max,
+                PageRequest.of(Math.max(page, 0), size, sortBy));
+    }
+
+    private Sort resolveSort(String sort) {
+        if ("priceAsc".equals(sort))  return Sort.by("basePrice").ascending();
+        if ("priceDesc".equals(sort)) return Sort.by("basePrice").descending();
+        if ("nameAsc".equals(sort))   return Sort.by("name").ascending();
+        if ("nameDesc".equals(sort))  return Sort.by("name").descending();
+        return Sort.by("createdAt").descending();
     }
 
     public Product get(Long id) {
@@ -110,6 +126,13 @@ public class ProductService {
     public void toggle(Long id) {
         Product p = productRepo.findById(id).orElseThrow();
         p.setActive(!Boolean.TRUE.equals(p.getActive()));
+        productRepo.save(p);
+    }
+
+    @Transactional
+    public void toggleOutOfStock(Long id) {
+        Product p = productRepo.findById(id).orElseThrow();
+        p.setOutOfStock(!Boolean.TRUE.equals(p.getOutOfStock()));
         productRepo.save(p);
     }
 

@@ -25,8 +25,13 @@
 <div class="row g-3">
     <c:forEach items="${pageData.content}" var="p">
         <div class="col-md-3">
-            <div class="card h-100 shadow-sm">
+            <div class="card h-100 shadow-sm position-relative">
                 <img src="${p.imageUrl}" style="height:180px;object-fit:cover;" class="card-img-top">
+                <c:if test="${p.outOfStock}">
+                    <span class="badge bg-danger position-absolute top-0 end-0 m-2">
+                        <i class="fas fa-times-circle"></i> Hết hàng
+                    </span>
+                </c:if>
                 <div class="card-body">
                     <h6>${p.name}</h6>
                     <p class="text-danger fw-bold"><fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫</p>
