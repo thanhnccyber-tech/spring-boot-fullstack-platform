@@ -16,9 +16,6 @@ import java.util.*;
 @Service
 public class OrderService {
 
-    private static final BigDecimal SIZE_M_SURCHARGE = new BigDecimal("5000");
-    private static final BigDecimal SIZE_L_SURCHARGE = new BigDecimal("10000");
-
     @Autowired private OrderRepository orderRepo;
     @Autowired private OrderDetailRepository orderDetailRepo;
     @Autowired private UserRepository userRepo;
@@ -54,13 +51,12 @@ public class OrderService {
             od.setOrder(saved);
             od.setProduct(p);
             od.setQuantity(ci.getQuantity());
-            od.setSize(ci.getSize());
-            od.setSugarLevel(ci.getSugarLevel());
-            od.setIceLevel(ci.getIceLevel());
+            od.setSize(ci.getSizeName());
+            od.setSugarLevel(ci.getSugarName());
+            od.setIceLevel(ci.getIceName());
 
             BigDecimal unit = p.getBasePrice();
-            if ("M".equalsIgnoreCase(ci.getSize())) unit = unit.add(SIZE_M_SURCHARGE);
-            else if ("L".equalsIgnoreCase(ci.getSize())) unit = unit.add(SIZE_L_SURCHARGE);
+            if (ci.getSizeExtraPrice() != null) unit = unit.add(ci.getSizeExtraPrice());
 
             if (ci.getToppingIds() != null && !ci.getToppingIds().isEmpty()) {
                 Set<Topping> tops = new LinkedHashSet<>(toppingRepo.findAllById(ci.getToppingIds()));
@@ -116,11 +112,6 @@ public class OrderService {
         saveNotification(o, "Trạng thái mới: " + status);
     }
 
-    /**
-     * Admin/Manager phân công hoặc bỏ phân công shipper cho đơn hàng.
-     * Nếu có shipperId và trạng thái đang DELIVERING → gán shipper.
-     * Nếu shipperId = null → bỏ phân công.
-     */
     @Transactional
     public void assignShipper(Long orderId, Long shipperId) {
         Order o = orderRepo.findById(orderId).orElseThrow();
@@ -141,7 +132,6 @@ public class OrderService {
         o.setUpdatedAt(LocalDateTime.now());
         orderRepo.save(o);
 
-        // Thông báo cho khách
         pushStatusToCustomer(o);
         saveNotification(o, "Đơn hàng đã được phân công cho shipper: " + shipper.getFullName());
     }

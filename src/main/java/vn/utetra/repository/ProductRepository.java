@@ -26,21 +26,37 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                          @Param("maxPrice") BigDecimal maxPrice,
                          Pageable pageable);
 
-    /**
-     * Lấy tất cả sản phẩm và FETCH JOIN luôn Category.
-     * Dùng cho màn hình admin/products để tránh LazyInitializationException.
-     * Sắp xếp theo ID giảm dần để sản phẩm mới nhất lên đầu.
-     */
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category ORDER BY p.id DESC")
     List<Product> findAllWithCategory();
 
     /**
-     * Lấy 1 sản phẩm và FETCH JOIN luôn Category và Toppings.
-     * Dùng cho màn hình admin/product-form (edit) để tránh LazyInitializationException.
+     * Load chi tiết product cho màn hình ADMIN EDIT.
+     * Fetch TẤT CẢ collection để JSP có thể gọi .contains() mà không cần session.
+     * Dùng Set + DISTINCT để tránh MultipleBagFetchException và duplicate row.
      */
-    @Query("SELECT p FROM Product p " +
+    @Query("SELECT DISTINCT p FROM Product p " +
            "LEFT JOIN FETCH p.category " +
            "LEFT JOIN FETCH p.toppings " +
+           "LEFT JOIN FETCH p.sizes " +
+           "LEFT JOIN FETCH p.sugars " +
+           "LEFT JOIN FETCH p.ices " +
+           "LEFT JOIN FETCH p.defaultSize " +
+           "LEFT JOIN FETCH p.defaultSugar " +
+           "LEFT JOIN FETCH p.defaultIce " +
            "WHERE p.id = :id")
     Optional<Product> findByIdWithDetails(@Param("id") Long id);
+
+    /**
+     * Load product cho màn hình KHÁCH (product-detail).
+     * Không cần fetch toppings vì trang khách load all toppings riêng.
+     */
+    @Query("SELECT DISTINCT p FROM Product p " +
+           "LEFT JOIN FETCH p.sizes " +
+           "LEFT JOIN FETCH p.sugars " +
+           "LEFT JOIN FETCH p.ices " +
+           "LEFT JOIN FETCH p.defaultSize " +
+           "LEFT JOIN FETCH p.defaultSugar " +
+           "LEFT JOIN FETCH p.defaultIce " +
+           "WHERE p.id = :id")
+    Optional<Product> findByIdWithDefaults(@Param("id") Long id);
 }

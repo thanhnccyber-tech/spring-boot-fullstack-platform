@@ -12,12 +12,21 @@ public class CartItem implements Serializable {
     private String imageUrl;
     private BigDecimal basePrice;
     private Integer quantity;
-    private String size;
-    private String sugarLevel;
-    private String iceLevel;
+
+    private Long sizeId;
+    private String sizeName;
+    private BigDecimal sizeExtraPrice;
+
+    private Long sugarId;
+    private String sugarName;
+
+    private Long iceId;
+    private String iceName;
+
     private List<Long> toppingIds;
     private List<String> toppingNames;
     private BigDecimal toppingPrice;
+
     private BigDecimal unitPrice;
 
     public BigDecimal getSubtotal() {

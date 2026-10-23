@@ -42,6 +42,9 @@ public class SecurityConfig {
                                  "/admin/categories/**",
                                  "/admin/toppings/**",
                                  "/admin/branches/**",
+                                 "/admin/sizes/**",
+                                 "/admin/sugars/**",
+                                 "/admin/ices/**",
                                  "/admin/reports/**")
                     .hasRole("ADMIN")
 

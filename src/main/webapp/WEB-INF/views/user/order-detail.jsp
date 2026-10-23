@@ -15,9 +15,9 @@
         <c:forEach items="${order.details}" var="d">
             <tr>
                 <td>${d.product.name}</td>
-                <td>${d.size}</td>
-                <td>${d.sugarLevel}%</td>
-                <td>${d.iceLevel}%</td>
+                <td>${d.size != null ? d.size : '—'}</td>
+                <td>${d.sugarLevel != null ? d.sugarLevel : '—'}</td>
+                <td>${d.iceLevel != null ? d.iceLevel : '—'}</td>
                 <td>${d.quantity}</td>
                 <td><fmt:formatNumber value="${d.unitPrice}" pattern="#,##0"/> ₫</td>
                 <td><fmt:formatNumber value="${d.subtotal}" pattern="#,##0"/> ₫</td>

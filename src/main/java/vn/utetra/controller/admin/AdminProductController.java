@@ -7,12 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Product;
-import vn.utetra.repository.CategoryRepository;
-import vn.utetra.repository.ProductRepository;
-import vn.utetra.repository.ToppingRepository;
-import vn.utetra.service.CloudinaryService;
-import vn.utetra.service.FileValidator;
-import vn.utetra.service.ProductService;
+import vn.utetra.service.*;
 
 import java.util.List;
 
@@ -20,12 +15,20 @@ import java.util.List;
 @RequestMapping("/admin/products")
 public class AdminProductController {
 
-    @Autowired private ProductRepository productRepo;
-    @Autowired private CategoryRepository categoryRepo;
-    @Autowired private ToppingRepository toppingRepo;
-    @Autowired private CloudinaryService cloudinaryService;
     @Autowired private ProductService productService;
-    @Autowired private FileValidator fileValidator;
+    @Autowired private CategoryService categoryService;
+    @Autowired private ToppingService toppingService;
+    @Autowired private SizeService sizeService;
+    @Autowired private SugarService sugarService;
+    @Autowired private IceService iceService;
+
+    private void loadOptions(Model model) {
+        model.addAttribute("categories", categoryService.all());
+        model.addAttribute("toppings", toppingService.all());
+        model.addAttribute("sizes", sizeService.active());
+        model.addAttribute("sugars", sugarService.active());
+        model.addAttribute("ices", iceService.active());
+    }
 
     @GetMapping
     public String list(Model model) {
@@ -35,17 +38,19 @@ public class AdminProductController {
 
     @GetMapping("/new")
     public String createForm(Model model) {
-        model.addAttribute("product", new Product());
-        model.addAttribute("categories", categoryRepo.findAll());
-        model.addAttribute("toppings", toppingRepo.findAll());
+        Product p = new Product();
+        p.setAllowSize(true);
+        p.setAllowSugar(true);
+        p.setAllowIce(true);
+        model.addAttribute("product", p);
+        loadOptions(model);
         return "admin/product-form";
     }
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("product", productService.getWithDetails(id));
-        model.addAttribute("categories", categoryRepo.findAll());
-        model.addAttribute("toppings", toppingRepo.findAll());
+        loadOptions(model);
         return "admin/product-form";
     }
 
@@ -53,48 +58,45 @@ public class AdminProductController {
     public String save(@ModelAttribute Product product,
                        @RequestParam(required = false) Long categoryId,
                        @RequestParam(required = false) List<Long> toppingIds,
+                       @RequestParam(required = false) List<Long> sizeIds,
+                       @RequestParam(required = false) List<Long> sugarIds,
+                       @RequestParam(required = false) List<Long> iceIds,
+                       @RequestParam(required = false) Long defaultSizeId,
+                       @RequestParam(required = false) Long defaultSugarId,
+                       @RequestParam(required = false) Long defaultIceId,
+                       @RequestParam(defaultValue = "false") Boolean allowSize,
+                       @RequestParam(defaultValue = "false") Boolean allowSugar,
+                       @RequestParam(defaultValue = "false") Boolean allowIce,
                        @RequestParam(required = false) MultipartFile imageFile,
                        RedirectAttributes ra) {
 
         boolean isNew = (product.getId() == null);
-
-        if (imageFile != null && !imageFile.isEmpty()) {
-            try {
-                fileValidator.validateImage(imageFile);
-            } catch (IllegalArgumentException ex) {
-                ra.addFlashAttribute("error", ex.getMessage());
-                return "redirect:" + (isNew
-                        ? "/admin/products/new"
-                        : "/admin/products/edit/" + product.getId());
-            }
+        try {
+            productService.save(product, categoryId, toppingIds,
+                    sizeIds, sugarIds, iceIds,
+                    defaultSizeId, defaultSugarId, defaultIceId,
+                    allowSize, allowSugar, allowIce,
+                    imageFile);
+            ra.addFlashAttribute("success", "Lưu sản phẩm thành công!");
+            return "redirect:/admin/products";
+        } catch (IllegalArgumentException ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+            return "redirect:" + (isNew
+                    ? "/admin/products/new"
+                    : "/admin/products/edit/" + product.getId());
         }
-
-        if (categoryId != null) product.setCategory(categoryRepo.findById(categoryId).orElse(null));
-        if (toppingIds != null && !toppingIds.isEmpty())
-            product.setToppings(toppingRepo.findAllById(toppingIds));
-        else
-            product.setToppings(List.of());
-
-        if (imageFile != null && !imageFile.isEmpty())
-            product.setImageUrl(cloudinaryService.upload(imageFile, "products"));
-
-        productRepo.save(product);
-        ra.addFlashAttribute("success", "Lưu sản phẩm thành công!");
-        return "redirect:/admin/products";
     }
 
     @GetMapping("/toggle/{id}")
     public String toggle(@PathVariable Long id, RedirectAttributes ra) {
-        Product p = productRepo.findById(id).orElseThrow();
-        p.setActive(!Boolean.TRUE.equals(p.getActive()));
-        productRepo.save(p);
+        productService.toggle(id);
         ra.addFlashAttribute("success", "Đã cập nhật trạng thái");
         return "redirect:/admin/products";
     }
 
     @GetMapping("/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
-        productRepo.deleteById(id);
+        productService.delete(id);
         ra.addFlashAttribute("success", "Đã xóa sản phẩm");
         return "redirect:/admin/products";
     }

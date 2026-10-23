@@ -6,17 +6,17 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Topping;
-import vn.utetra.repository.ToppingRepository;
+import vn.utetra.service.ToppingService;
 
 @Controller
 @RequestMapping("/admin/toppings")
 public class AdminToppingController {
 
-    @Autowired private ToppingRepository repo;
+    @Autowired private ToppingService toppingService;
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("toppings", repo.findAll());
+        model.addAttribute("toppings", toppingService.all());
         return "admin/toppings";
     }
 
@@ -28,20 +28,20 @@ public class AdminToppingController {
 
     @GetMapping("/edit/{id}")
     public String edit(@PathVariable Long id, Model model) {
-        model.addAttribute("topping", repo.findById(id).orElseThrow());
+        model.addAttribute("topping", toppingService.get(id));
         return "admin/topping-form";
     }
 
     @PostMapping("/save")
     public String save(@ModelAttribute Topping t, RedirectAttributes ra) {
-        repo.save(t);
+        toppingService.save(t);
         ra.addFlashAttribute("success", "Lưu topping thành công!");
         return "redirect:/admin/toppings";
     }
 
     @GetMapping("/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
-        repo.deleteById(id);
+        toppingService.delete(id);
         ra.addFlashAttribute("success", "Đã xóa topping");
         return "redirect:/admin/toppings";
     }

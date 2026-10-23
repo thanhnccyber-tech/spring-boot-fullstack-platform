@@ -25,6 +25,7 @@ public class OrderDetail {
     @Column(nullable = false)
     private Integer quantity;
 
+    /** Snapshot text — giữ lại để hiển thị lịch sử, không đổi khi admin sửa size/sugar/ice */
     private String size;
     private String sugarLevel;
     private String iceLevel;

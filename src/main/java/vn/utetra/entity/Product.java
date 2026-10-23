@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "products", indexes = {
@@ -48,9 +49,48 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @Column(name = "allow_size", nullable = false)
+    private Boolean allowSize = true;
+
+    @Column(name = "allow_sugar", nullable = false)
+    private Boolean allowSugar = true;
+
+    @Column(name = "allow_ice", nullable = false)
+    private Boolean allowIce = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_size_id")
+    private SizeOption defaultSize;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_sugar_id")
+    private SugarLevel defaultSugar;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_ice_id")
+    private IceLevel defaultIce;
+
     @ManyToMany
     @JoinTable(name = "product_toppings",
             joinColumns = @JoinColumn(name = "product_id"),
             inverseJoinColumns = @JoinColumn(name = "topping_id"))
-    private List<Topping> toppings;
+    private Set<Topping> toppings = new LinkedHashSet<>();
+
+    @ManyToMany
+    @JoinTable(name = "product_sizes",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "size_id"))
+    private Set<SizeOption> sizes = new LinkedHashSet<>();
+
+    @ManyToMany
+    @JoinTable(name = "product_sugars",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "sugar_id"))
+    private Set<SugarLevel> sugars = new LinkedHashSet<>();
+
+    @ManyToMany
+    @JoinTable(name = "product_ices",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "ice_id"))
+    private Set<IceLevel> ices = new LinkedHashSet<>();
 }

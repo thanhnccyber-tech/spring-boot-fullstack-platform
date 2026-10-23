@@ -13,39 +13,54 @@
             <fmt:formatNumber value="${product.basePrice}" pattern="#,##0"/> ₫
         </p>
         <p>${product.description}</p>
+
         <form action="${pageContext.request.contextPath}/cart/add" method="post">
             <input type="hidden" name="productId" value="${product.id}">
 
-            <label class="form-label fw-bold">Size:</label>
-            <div class="mb-3">
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="size" value="S" checked>
-                    <label class="form-check-label">S</label>
+            <c:if test="${product.allowSize}">
+                <label class="form-label fw-bold">Size:</label>
+                <div class="mb-3">
+                    <c:forEach items="${sizes}" var="s" varStatus="st">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="sizeId" value="${s.id}"
+                                <c:if test="${(product.defaultSize != null && product.defaultSize.id == s.id)
+                                              || (product.defaultSize == null && st.first)}">checked</c:if>>
+                            <label class="form-check-label">
+                                ${s.name}
+                                <c:if test="${s.extraPrice > 0}">
+                                    (+<fmt:formatNumber value="${s.extraPrice}" pattern="#,##0"/> ₫)
+                                </c:if>
+                            </label>
+                        </div>
+                    </c:forEach>
                 </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="size" value="M">
-                    <label class="form-check-label">M (+5.000)</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="size" value="L">
-                    <label class="form-check-label">L (+10.000)</label>
-                </div>
-            </div>
+            </c:if>
 
-            <label class="form-label fw-bold">Mức đường:</label>
-            <select name="sugarLevel" class="form-select mb-3">
-                <option value="0">0%</option>
-                <option value="30">30%</option>
-                <option value="50" selected>50%</option>
-                <option value="100">100%</option>
-            </select>
+            <c:if test="${product.allowSugar}">
+                <label class="form-label fw-bold">Mức đường:</label>
+                <select name="sugarId" class="form-select mb-3">
+                    <c:forEach items="${sugars}" var="s">
+                        <option value="${s.id}"
+                            <c:if test="${(product.defaultSugar != null && product.defaultSugar.id == s.id)
+                                          || (product.defaultSugar == null && s.percent == 50)}">selected</c:if>>
+                            ${s.name}
+                        </option>
+                    </c:forEach>
+                </select>
+            </c:if>
 
-            <label class="form-label fw-bold">Mức đá:</label>
-            <select name="iceLevel" class="form-select mb-3">
-                <option value="0">Không đá</option>
-                <option value="50" selected>Ít đá</option>
-                <option value="100">Nhiều đá</option>
-            </select>
+            <c:if test="${product.allowIce}">
+                <label class="form-label fw-bold">Mức đá:</label>
+                <select name="iceId" class="form-select mb-3">
+                    <c:forEach items="${ices}" var="s">
+                        <option value="${s.id}"
+                            <c:if test="${(product.defaultIce != null && product.defaultIce.id == s.id)
+                                          || (product.defaultIce == null && s.percent == 50)}">selected</c:if>>
+                            ${s.name}
+                        </option>
+                    </c:forEach>
+                </select>
+            </c:if>
 
             <label class="form-label fw-bold">Topping:</label>
             <div class="mb-3">

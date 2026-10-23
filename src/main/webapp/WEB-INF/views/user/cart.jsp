@@ -22,9 +22,9 @@
             <tr>
                 <td>${st.index + 1}</td>
                 <td>${item.productName}</td>
-                <td>${item.size}</td>
-                <td>${item.sugarLevel}%</td>
-                <td>${item.iceLevel}%</td>
+                <td>${item.sizeName != null ? item.sizeName : '—'}</td>
+                <td>${item.sugarName != null ? item.sugarName : '—'}</td>
+                <td>${item.iceName != null ? item.iceName : '—'}</td>
                 <td><c:forEach items="${item.toppingNames}" var="tn">${tn}<br/></c:forEach></td>
                 <td>
                     <form action="${pageContext.request.contextPath}/cart/update" method="post" class="d-flex">

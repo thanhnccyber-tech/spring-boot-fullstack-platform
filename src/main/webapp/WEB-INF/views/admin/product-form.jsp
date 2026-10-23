@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>${product.id != null ? 'Sửa' : 'Thêm'} sản phẩm</title>
 
 <c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
@@ -26,6 +27,7 @@
                     </c:forEach>
                 </select>
             </div>
+
             <div class="mb-3"><label>Topping áp dụng</label><br/>
                 <c:forEach items="${toppings}" var="t">
                     <div class="form-check form-check-inline">
@@ -35,6 +37,129 @@
                     </div>
                 </c:forEach>
             </div>
+
+            <hr/>
+            <h6 class="mb-3">⚙️ Cấu hình tùy chọn</h6>
+
+            <!-- ===== SIZE ===== -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="allowSize" value="true" class="form-check-input"
+                               id="allowSize" <c:if test="${product.allowSize}">checked</c:if>>
+                        <label class="form-check-label fw-bold" for="allowSize">
+                            Cho phép chọn Size
+                        </label>
+                    </div>
+                    <div id="sizeGroup">
+                        <label class="form-label small">Size được phép chọn
+                            <span class="text-muted">(để trống = áp dụng tất cả size đang active)</span>
+                        </label>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <c:forEach items="${sizes}" var="s">
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" name="sizeIds" value="${s.id}"
+                                           class="form-check-input"
+                                        <c:if test="${product.sizes != null && product.sizes.contains(s)}">checked</c:if>>
+                                    <label class="form-check-label">
+                                        ${s.name}
+                                        <c:if test="${s.extraPrice > 0}">
+                                            (+${s.extraPrice}đ)
+                                        </c:if>
+                                    </label>
+                                </div>
+                            </c:forEach>
+                        </div>
+                        <label class="form-label small">Size mặc định:</label>
+                        <select name="defaultSizeId" class="form-select">
+                            <option value="">-- Không --</option>
+                            <c:forEach items="${sizes}" var="s">
+                                <option value="${s.id}"
+                                    <c:if test="${product.defaultSize != null && product.defaultSize.id == s.id}">selected</c:if>>
+                                    ${s.name} (+${s.extraPrice}đ)
+                                </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SUGAR ===== -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="allowSugar" value="true" class="form-check-input"
+                               id="allowSugar" <c:if test="${product.allowSugar}">checked</c:if>>
+                        <label class="form-check-label fw-bold" for="allowSugar">
+                            Cho phép chỉnh mức Đường
+                        </label>
+                    </div>
+                    <div id="sugarGroup">
+                        <label class="form-label small">Mức đường được phép chọn
+                            <span class="text-muted">(để trống = áp dụng tất cả)</span>
+                        </label>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <c:forEach items="${sugars}" var="s">
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" name="sugarIds" value="${s.id}"
+                                           class="form-check-input"
+                                        <c:if test="${product.sugars != null && product.sugars.contains(s)}">checked</c:if>>
+                                    <label class="form-check-label">${s.name}</label>
+                                </div>
+                            </c:forEach>
+                        </div>
+                        <label class="form-label small">Mức đường mặc định:</label>
+                        <select name="defaultSugarId" class="form-select">
+                            <option value="">-- Không --</option>
+                            <c:forEach items="${sugars}" var="s">
+                                <option value="${s.id}"
+                                    <c:if test="${product.defaultSugar != null && product.defaultSugar.id == s.id}">selected</c:if>>
+                                    ${s.name}
+                                </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== ICE ===== -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="allowIce" value="true" class="form-check-input"
+                               id="allowIce" <c:if test="${product.allowIce}">checked</c:if>>
+                        <label class="form-check-label fw-bold" for="allowIce">
+                            Cho phép chỉnh mức Đá
+                        </label>
+                    </div>
+                    <div id="iceGroup">
+                        <label class="form-label small">Mức đá được phép chọn
+                            <span class="text-muted">(để trống = áp dụng tất cả)</span>
+                        </label>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <c:forEach items="${ices}" var="s">
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" name="iceIds" value="${s.id}"
+                                           class="form-check-input"
+                                        <c:if test="${product.ices != null && product.ices.contains(s)}">checked</c:if>>
+                                    <label class="form-check-label">${s.name}</label>
+                                </div>
+                            </c:forEach>
+                        </div>
+                        <label class="form-label small">Mức đá mặc định:</label>
+                        <select name="defaultIceId" class="form-select">
+                            <option value="">-- Không --</option>
+                            <c:forEach items="${ices}" var="s">
+                                <option value="${s.id}"
+                                    <c:if test="${product.defaultIce != null && product.defaultIce.id == s.id}">selected</c:if>>
+                                    ${s.name}
+                                </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-check mb-2">
                 <input type="checkbox" name="featured" value="true" class="form-check-input"
                     <c:if test="${product.featured}">checked</c:if>>
@@ -70,6 +195,17 @@
 
 <script>
 (function () {
+    function toggleGroup(cbId, grpId) {
+        const cb = document.getElementById(cbId);
+        const grp = document.getElementById(grpId);
+        function update() { grp.style.display = cb.checked ? 'block' : 'none'; }
+        cb.addEventListener('change', update);
+        update();
+    }
+    toggleGroup('allowSize', 'sizeGroup');
+    toggleGroup('allowSugar', 'sugarGroup');
+    toggleGroup('allowIce', 'iceGroup');
+
     const input = document.getElementById('productImage');
     const errorEl = document.getElementById('productImageError');
     if (!input) return;
@@ -85,10 +221,7 @@
         errorEl.classList.add('d-none');
         if (!input.files || input.files.length === 0) return;
         const f = input.files[0];
-        if (f.size > MAX) {
-            showError('Ảnh không được vượt quá 5 MB.');
-            return;
-        }
+        if (f.size > MAX) { showError('Ảnh không được vượt quá 5 MB.'); return; }
         if (ALLOWED.indexOf(f.type.toLowerCase()) === -1) {
             showError('Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WEBP.');
         }

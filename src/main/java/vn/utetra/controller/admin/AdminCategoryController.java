@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Category;
-import vn.utetra.repository.CategoryRepository;
+import vn.utetra.service.CategoryService;
 import vn.utetra.service.CloudinaryService;
 import vn.utetra.service.FileValidator;
 
@@ -15,13 +15,13 @@ import vn.utetra.service.FileValidator;
 @RequestMapping("/admin/categories")
 public class AdminCategoryController {
 
-    @Autowired private CategoryRepository repo;
+    @Autowired private CategoryService categoryService;
     @Autowired private CloudinaryService cloudinaryService;
     @Autowired private FileValidator fileValidator;
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("categories", repo.findAll());
+        model.addAttribute("categories", categoryService.all());
         return "admin/categories";
     }
 
@@ -33,7 +33,7 @@ public class AdminCategoryController {
 
     @GetMapping("/edit/{id}")
     public String edit(@PathVariable Long id, Model model) {
-        model.addAttribute("category", repo.findById(id).orElseThrow());
+        model.addAttribute("category", categoryService.get(id));
         return "admin/category-form";
     }
 
@@ -56,7 +56,7 @@ public class AdminCategoryController {
             c.setImageUrl(cloudinaryService.upload(imageFile, "categories"));
         }
 
-        repo.save(c);
+        categoryService.save(c);
         ra.addFlashAttribute("success", "Lưu danh mục thành công!");
         return "redirect:/admin/categories";
     }
@@ -64,7 +64,7 @@ public class AdminCategoryController {
     @GetMapping("/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         try {
-            repo.deleteById(id);
+            categoryService.delete(id);
             ra.addFlashAttribute("success", "Đã xóa danh mục");
         } catch (Exception e) {
             ra.addFlashAttribute("error", "Không thể xóa (còn sản phẩm tham chiếu)");
