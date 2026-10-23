@@ -1,6 +1,9 @@
 package vn.utetra.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,7 +13,9 @@ import vn.utetra.entity.*;
 import vn.utetra.repository.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 
 @Service
@@ -95,6 +100,35 @@ public class OrderService {
 
     public List<Order> allWithUser() {
         return orderRepo.findAllWithUser();
+    }
+
+    public Page<Order> searchForAdmin(String kw, String status, Long branchId,
+                                      LocalDate fromDate, LocalDate toDate,
+                                      int page, int size) {
+        String kwP = (kw == null || kw.isBlank()) ? null : kw.trim();
+        String statusP = (status == null || status.isBlank()) ? null : status;
+
+        LocalDateTime from = fromDate == null ? null : fromDate.atStartOfDay();
+        LocalDateTime to = toDate == null ? null : toDate.atTime(LocalTime.MAX);
+
+        Sort sort = Sort.by("createdAt").descending();
+        return orderRepo.searchForAdmin(kwP, statusP, branchId, from, to,
+                PageRequest.of(Math.max(page, 0), size, sort));
+    }
+
+    public Map<String, Long> countByStatus(Long branchId) {
+        Map<String, Long> map = new LinkedHashMap<>();
+        List<Object[]> rows = (branchId == null)
+                ? orderRepo.countByStatus()
+                : orderRepo.countByStatusForBranch(branchId);
+        long total = 0;
+        for (Object[] row : rows) {
+            long c = ((Number) row[1]).longValue();
+            map.put((String) row[0], c);
+            total += c;
+        }
+        map.put("ALL", total);
+        return map;
     }
 
     public Order get(Long id) {

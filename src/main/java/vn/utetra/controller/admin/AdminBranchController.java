@@ -1,6 +1,7 @@
 package vn.utetra.controller.admin;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,11 +13,25 @@ import vn.utetra.service.BranchService;
 @RequestMapping("/admin/branches")
 public class AdminBranchController {
 
+    private static final int PAGE_SIZE = 10;
+
     @Autowired private BranchService branchService;
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("branches", branchService.all());
+    public String list(@RequestParam(required = false) String kw,
+                       @RequestParam(required = false) String active,
+                       @RequestParam(defaultValue = "0") int page,
+                       Model model) {
+
+        Boolean activeP = "true".equalsIgnoreCase(active) ? Boolean.TRUE
+                        : "false".equalsIgnoreCase(active) ? Boolean.FALSE
+                        : null;
+
+        Page<Branch> pageData = branchService.searchForAdmin(kw, activeP, page, PAGE_SIZE);
+
+        model.addAttribute("pageData", pageData);
+        model.addAttribute("kw", kw);
+        model.addAttribute("activeFilter", active);
         return "admin/branches";
     }
 
@@ -55,15 +70,25 @@ public class AdminBranchController {
         }
     }
 
-    @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id, RedirectAttributes ra) {
+    @PostMapping("/toggle-active")
+    public String toggleActive(@RequestParam Long id,
+                               @RequestParam(required = false) String returnUrl,
+                               RedirectAttributes ra) {
+        branchService.toggleActive(id);
+        ra.addFlashAttribute("success", "Đã cập nhật trạng thái chi nhánh.");
+        return "redirect:" + (returnUrl != null && !returnUrl.isBlank()
+                ? returnUrl : "/admin/branches");
+    }
+
+    @PostMapping("/delete")
+    public String delete(@RequestParam Long id, RedirectAttributes ra) {
         branchService.lock(id);
         ra.addFlashAttribute("success", "Đã khóa chi nhánh.");
         return "redirect:/admin/branches";
     }
 
-    @GetMapping("/restore/{id}")
-    public String restore(@PathVariable Long id, RedirectAttributes ra) {
+    @PostMapping("/restore")
+    public String restore(@RequestParam Long id, RedirectAttributes ra) {
         branchService.unlock(id);
         ra.addFlashAttribute("success", "Đã mở khóa chi nhánh.");
         return "redirect:/admin/branches";

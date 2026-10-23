@@ -1,10 +1,14 @@
 package vn.utetra.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.utetra.entity.Branch;
 import vn.utetra.repository.BranchRepository;
+
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -19,11 +23,13 @@ public class BranchService {
     public List<Branch> all()    { return repo.findAll(); }
     public Branch get(Long id)   { return repo.findById(id).orElseThrow(); }
 
-    /**
-     * Lưu chi nhánh có validate name/address/phone.
-     * @param isNew true nếu là tạo mới (để giữ id null)
-     * @throws IllegalArgumentException nếu validate thất bại
-     */
+    public Page<Branch> searchForAdmin(String kw, Boolean active, int page, int size) {
+        String kwP = (kw == null || kw.isBlank()) ? null : kw.trim();
+        Sort sort = Sort.by("id").ascending();
+        return repo.searchForAdmin(kwP, active,
+                PageRequest.of(Math.max(page, 0), size, sort));
+    }
+
     @Transactional
     public Branch save(Branch b, boolean active) {
         String name    = b.getName()    == null ? "" : b.getName().trim();
@@ -43,11 +49,23 @@ public class BranchService {
         if (!PHONE_PATTERN.matcher(phone).matches())
             throw new IllegalArgumentException("Số điện thoại không hợp lệ (phải bắt đầu bằng 0, từ 10 đến 11 chữ số).");
 
+        repo.findByNameIgnoreCase(name).ifPresent(existing -> {
+            if (b.getId() == null || !existing.getId().equals(b.getId()))
+                throw new IllegalArgumentException("Tên chi nhánh đã tồn tại.");
+        });
+
         b.setName(name);
         b.setAddress(address);
         b.setPhone(phone);
         b.setActive(active);
         return repo.save(b);
+    }
+
+    @Transactional
+    public void toggleActive(Long id) {
+        Branch b = repo.findById(id).orElseThrow();
+        b.setActive(!Boolean.TRUE.equals(b.getActive()));
+        repo.save(b);
     }
 
     @Transactional
