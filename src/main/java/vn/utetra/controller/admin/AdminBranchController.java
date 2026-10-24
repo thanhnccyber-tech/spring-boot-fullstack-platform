@@ -1,5 +1,6 @@
 package vn.utetra.controller.admin;
 
+import vn.utetra.security.SafeRedirect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
@@ -76,8 +77,7 @@ public class AdminBranchController {
                                RedirectAttributes ra) {
         branchService.toggleActive(id);
         ra.addFlashAttribute("success", "Đã cập nhật trạng thái chi nhánh.");
-        return "redirect:" + (returnUrl != null && !returnUrl.isBlank()
-                ? returnUrl : "/admin/branches");
+        return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/branches");
     }
 
     @PostMapping("/delete")

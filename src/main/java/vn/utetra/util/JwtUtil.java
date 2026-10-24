@@ -2,6 +2,9 @@ package vn.utetra.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +21,20 @@ public class JwtUtil {
 
     @Value("${jwt.expiration}")
     private long expiration;
+
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
+    private static final String DEFAULT_SECRET_PREFIX = "utetraSecretKey2024";
+
+    @PostConstruct
+    void validateSecret() {
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("jwt.secret phải dài tối thiểu 32 byte (256 bit).");
+        }
+        if (secret.startsWith(DEFAULT_SECRET_PREFIX)) {
+            log.warn("Đang dùng JWT secret MẶC ĐỊNH trong source code. "
+                   + "Hãy đặt JWT_SECRET ngẫu nhiên riêng trong file .env (không commit lên Git).");
+        }
+    }
 
     private SecretKey getKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));

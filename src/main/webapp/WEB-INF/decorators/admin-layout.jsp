@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -93,7 +94,7 @@
 					<span id="noti-bell" class="position-relative me-3"> <i
 						class="fas fa-bell fa-lg"></i> <span id="noti-count"
 						class="badge bg-danger position-absolute top-0 start-100 translate-middle d-none">0</span>
-					</span> <span class="text-muted small"> Xin chào, <b>${sessionScope.fullName}</b>
+					</span> <span class="text-muted small"> Xin chào, <b>${fn:escapeXml(sessionScope.fullName)}</b>
 					</span>
 				</div>
 			</header>

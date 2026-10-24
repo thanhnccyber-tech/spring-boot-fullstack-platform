@@ -12,7 +12,9 @@ import vn.utetra.repository.OtpTokenRepository;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class OtpService {
@@ -27,7 +29,15 @@ public class OtpService {
     /** Số OTP tối đa được phát trong 1 giờ cho cùng email + loại */
     private static final int MAX_PER_HOUR = 5;
 
+    /** Số lần nhập sai tối đa trước khi OTP bị huỷ (buộc phải xin mã mới) */
+    private static final int MAX_WRONG_ATTEMPTS = 5;
+
     private final SecureRandom random = new SecureRandom();
+    private final Map<String, Integer> wrongAttempts = new ConcurrentHashMap<>();
+
+    private static String attemptKey(String email, String type) {
+        return type + ":" + (email == null ? "" : email.toLowerCase());
+    }
 
     @Autowired private OtpTokenRepository repo;
     @Autowired private MailService mailService;
@@ -66,6 +76,7 @@ public class OtpService {
 
         // 3) Xóa OTP cũ, tạo OTP mới
         repo.deleteByEmailAndType(email, type);
+        wrongAttempts.remove(attemptKey(email, type));
 
         String code = generateCode();
         OtpToken otp = new OtpToken();
@@ -88,13 +99,22 @@ public class OtpService {
 
     @Transactional
     public boolean verify(String email, String code, String type) {
+        String key = attemptKey(email, type);
         var opt = repo.findTopByEmailAndCodeAndTypeAndConsumedFalseOrderByCreatedAtDesc(
                 email, code, type);
-        if (opt.isEmpty()) return false;
+        if (opt.isEmpty() || opt.get().getExpiresAt().isBefore(LocalDateTime.now())) {
+            // Chống dò mã 6 số: sai quá MAX_WRONG_ATTEMPTS lần thì huỷ OTP hiện tại
+            int n = wrongAttempts.merge(key, 1, Integer::sum);
+            if (n >= MAX_WRONG_ATTEMPTS) {
+                repo.deleteByEmailAndType(email, type);
+                wrongAttempts.remove(key);
+            }
+            return false;
+        }
         OtpToken otp = opt.get();
-        if (otp.getExpiresAt().isBefore(LocalDateTime.now())) return false;
         otp.setConsumed(true);
         repo.save(otp);
+        wrongAttempts.remove(key);
         return true;
     }
 

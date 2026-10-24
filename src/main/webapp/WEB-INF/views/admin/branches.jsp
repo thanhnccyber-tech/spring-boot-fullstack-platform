@@ -1,16 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Chi nhánh</title>
 
 <c:if test="${success != null}">
     <div class="alert alert-success alert-dismissible fade show">
-        ${success}
+        ${fn:escapeXml(success)}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 </c:if>
 <c:if test="${error != null}">
     <div class="alert alert-danger alert-dismissible fade show">
-        ${error}
+        ${fn:escapeXml(error)}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 </c:if>
@@ -25,7 +26,7 @@
 
 <form class="row g-2 mb-3 bg-white p-3 rounded shadow-sm" method="get">
     <div class="col-md-5">
-        <input type="text" name="kw" value="${kw}" class="form-control"
+        <input type="text" name="kw" value="${fn:escapeXml(kw)}" class="form-control"
                placeholder="Tìm theo tên, địa chỉ hoặc SĐT...">
     </div>
     <div class="col-md-3">
@@ -60,25 +61,25 @@
     <tbody>
         <c:forEach items="${pageData.content}" var="b">
             <tr>
-                <td>${b.id}</td>
-                <td><b>${b.name}</b></td>
-                <td>${b.address}</td>
-                <td>${b.phone}</td>
+                <td>${fn:escapeXml(b.id)}</td>
+                <td><b>${fn:escapeXml(b.name)}</b></td>
+                <td>${fn:escapeXml(b.address)}</td>
+                <td>${fn:escapeXml(b.phone)}</td>
                 <td class="text-center">
                     <form action="${pageContext.request.contextPath}/admin/branches/toggle-active"
                           method="post" style="display:inline">
-                        <input type="hidden" name="id" value="${b.id}">
+                        <input type="hidden" name="id" value="${fn:escapeXml(b.id)}">
                         <input type="hidden" name="returnUrl"
-                               value="/admin/branches?page=${pageData.number}&kw=${kw}&active=${activeFilter}">
-                        <button class="badge ${b.active ? 'bg-success' : 'bg-secondary'} border-0"
-                                title="${b.active ? 'Bấm để khóa' : 'Bấm để mở khóa'}">
-                            <i class="fas ${b.active ? 'fa-check-circle' : 'fa-lock'}"></i>
-                            ${b.active ? 'Đang hoạt động' : 'Đã khóa'}
+                               value="/admin/branches?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}">
+                        <button class="badge ${fn:escapeXml(b.active ? 'bg-success' : 'bg-secondary')} border-0"
+                                title="${fn:escapeXml(b.active ? 'Bấm để khóa' : 'Bấm để mở khóa')}">
+                            <i class="fas ${fn:escapeXml(b.active ? 'fa-check-circle' : 'fa-lock')}"></i>
+                            ${fn:escapeXml(b.active ? 'Đang hoạt động' : 'Đã khóa')}
                         </button>
                     </form>
                 </td>
                 <td>
-                    <a href="${pageContext.request.contextPath}/admin/branches/edit/${b.id}"
+                    <a href="${pageContext.request.contextPath}/admin/branches/edit/${fn:escapeXml(b.id)}"
                        class="btn btn-sm btn-primary">
                         <i class="fas fa-edit"></i> Sửa
                     </a>
@@ -87,7 +88,7 @@
                             <form action="${pageContext.request.contextPath}/admin/branches/delete"
                                   method="post" style="display:inline"
                                   onsubmit="return confirm('Khóa chi nhánh này?')">
-                                <input type="hidden" name="id" value="${b.id}">
+                                <input type="hidden" name="id" value="${fn:escapeXml(b.id)}">
                                 <button class="btn btn-sm btn-danger">
                                     <i class="fas fa-lock"></i> Khóa
                                 </button>
@@ -97,7 +98,7 @@
                             <form action="${pageContext.request.contextPath}/admin/branches/restore"
                                   method="post" style="display:inline"
                                   onsubmit="return confirm('Mở khóa chi nhánh này?')">
-                                <input type="hidden" name="id" value="${b.id}">
+                                <input type="hidden" name="id" value="${fn:escapeXml(b.id)}">
                                 <button class="btn btn-sm btn-success">
                                     <i class="fas fa-unlock"></i> Mở khóa
                                 </button>
@@ -118,8 +119,8 @@
 <c:if test="${pageData.totalPages > 1}">
     <nav>
         <ul class="pagination justify-content-center">
-            <li class="page-item ${pageData.first ? 'disabled' : ''}">
-                <a class="page-link" href="?page=${pageData.number - 1}&kw=${kw}&active=${activeFilter}">«</a>
+            <li class="page-item ${fn:escapeXml(pageData.first ? 'disabled' : '')}">
+                <a class="page-link" href="?page=${fn:escapeXml(pageData.number - 1)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}">«</a>
             </li>
             <c:set var="startPage" value="${pageData.number - 2}"/>
             <c:if test="${startPage < 0}"><c:set var="startPage" value="0"/></c:if>
@@ -130,12 +131,12 @@
                 <c:if test="${startPage < 0}"><c:set var="startPage" value="0"/></c:if>
             </c:if>
             <c:forEach begin="${startPage}" end="${endPage}" var="i">
-                <li class="page-item ${i == pageData.number ? 'active' : ''}">
-                    <a class="page-link" href="?page=${i}&kw=${kw}&active=${activeFilter}">${i + 1}</a>
+                <li class="page-item ${fn:escapeXml(i == pageData.number ? 'active' : '')}">
+                    <a class="page-link" href="?page=${fn:escapeXml(i)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}">${fn:escapeXml(i + 1)}</a>
                 </li>
             </c:forEach>
-            <li class="page-item ${pageData.last ? 'disabled' : ''}">
-                <a class="page-link" href="?page=${pageData.number + 1}&kw=${kw}&active=${activeFilter}">»</a>
+            <li class="page-item ${fn:escapeXml(pageData.last ? 'disabled' : '')}">
+                <a class="page-link" href="?page=${fn:escapeXml(pageData.number + 1)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}">»</a>
             </li>
         </ul>
     </nav>

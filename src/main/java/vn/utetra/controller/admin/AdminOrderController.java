@@ -1,5 +1,8 @@
 package vn.utetra.controller.admin;
 
+import vn.utetra.security.ErrorMessages;
+import org.springframework.security.access.AccessDeniedException;
+import vn.utetra.security.SafeRedirect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -55,10 +58,24 @@ public class AdminOrderController {
         return "admin/orders";
     }
 
+    /** Admin xem mọi chi nhánh; Manager/Staff chỉ đơn thuộc chi nhánh của mình (chống truy cập chéo chi nhánh). */
+    private Order requireAccess(Long orderId, Authentication auth) {
+        User me = userRepo.findByEmail(auth.getName()).orElseThrow();
+        Order order = orderService.get(orderId);
+        if (!me.isAdmin()) {
+            Long myBranch = me.getBranch() == null ? null : me.getBranch().getId();
+            Long orderBranch = order.getBranch() == null ? null : order.getBranch().getId();
+            if (myBranch == null || !myBranch.equals(orderBranch)) {
+                throw new AccessDeniedException("Đơn hàng không thuộc chi nhánh của bạn");
+            }
+        }
+        return order;
+    }
+
     @GetMapping("/detail/{id}")
     public String detail(@PathVariable Long id, Authentication auth, Model model) {
         User me = userRepo.findByEmail(auth.getName()).orElseThrow();
-        Order order = orderService.get(id);
+        Order order = requireAccess(id, auth);
 
         model.addAttribute("order", order);
         Long branchId = order.getBranch() != null ? order.getBranch().getId() : null;
@@ -70,9 +87,15 @@ public class AdminOrderController {
     @PostMapping("/update-status")
     public String updateStatus(@RequestParam Long id,
                                @RequestParam String status,
+                               Authentication auth,
                                RedirectAttributes ra) {
-        orderService.updateStatus(id, status);
-        ra.addFlashAttribute("success", "Cập nhật trạng thái thành công");
+        requireAccess(id, auth);
+        try {
+            orderService.updateStatus(id, status);
+            ra.addFlashAttribute("success", "Cập nhật trạng thái thành công");
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", ErrorMessages.safe(e));
+        }
         return "redirect:/admin/orders/detail/" + id;
     }
 
@@ -80,27 +103,30 @@ public class AdminOrderController {
     public String quickStatus(@RequestParam Long id,
                               @RequestParam String status,
                               @RequestParam(required = false) String returnUrl,
+                              Authentication auth,
                               RedirectAttributes ra) {
+        requireAccess(id, auth);
         try {
             orderService.updateStatus(id, status);
             ra.addFlashAttribute("success", "Đã chuyển trạng thái");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("error", ErrorMessages.safe(e));
         }
-        return "redirect:" + (returnUrl != null && !returnUrl.isBlank()
-                ? returnUrl : "/admin/orders");
+        return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/orders");
     }
 
     @PostMapping("/assign-shipper")
     public String assignShipper(@RequestParam Long id,
                                 @RequestParam(required = false) Long shipperId,
+                                Authentication auth,
                                 RedirectAttributes ra) {
+        requireAccess(id, auth);
         try {
             orderService.assignShipper(id, shipperId);
             ra.addFlashAttribute("success",
                     shipperId != null ? "Đã phân công shipper" : "Đã bỏ phân công shipper");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("error", ErrorMessages.safe(e));
         }
         return "redirect:/admin/orders/detail/" + id;
     }

@@ -1,17 +1,18 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<title>${size.id != null ? 'Sửa' : 'Thêm'} Size</title>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<title>${fn:escapeXml(size.id != null ? 'Sửa' : 'Thêm')} Size</title>
 
-<c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
+<c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
 
 <form action="${pageContext.request.contextPath}/admin/sizes/save" method="post">
-    <input type="hidden" name="id" value="${size.id}">
+    <input type="hidden" name="id" value="${fn:escapeXml(size.id)}">
     <div class="mb-3"><label>Tên *</label>
-        <input type="text" name="name" value="${size.name}" class="form-control" required maxlength="20"></div>
+        <input type="text" name="name" value="${fn:escapeXml(size.name)}" class="form-control" required maxlength="20"></div>
     <div class="mb-3"><label>Phụ thu (VNĐ) *</label>
-        <input type="number" name="extraPrice" value="${size.extraPrice}" class="form-control" required min="0" step="1000"></div>
+        <input type="number" name="extraPrice" value="${fn:escapeXml(size.extraPrice)}" class="form-control" required min="0" step="1000"></div>
     <div class="mb-3"><label>Thứ tự</label>
-        <input type="number" name="sortOrder" value="${size.sortOrder}" class="form-control" min="0"></div>
+        <input type="number" name="sortOrder" value="${fn:escapeXml(size.sortOrder)}" class="form-control" min="0"></div>
     <div class="form-check mb-3">
         <input type="checkbox" name="active" value="true" class="form-check-input"
             <c:if test="${size.active}">checked</c:if>>

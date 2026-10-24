@@ -1,5 +1,6 @@
 package vn.utetra.controller.admin;
 
+import vn.utetra.security.SafeRedirect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
@@ -96,8 +97,7 @@ public class AdminCategoryController {
                                RedirectAttributes ra) {
         categoryService.toggleActive(id);
         ra.addFlashAttribute("success", "Đã cập nhật trạng thái danh mục.");
-        return "redirect:" + (returnUrl != null && !returnUrl.isBlank()
-                ? returnUrl : "/admin/categories");
+        return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/categories");
     }
 
     @PostMapping("/delete")

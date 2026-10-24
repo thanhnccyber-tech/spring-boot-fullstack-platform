@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Đăng ký - UTeTra</title>
 
 <div class="row justify-content-center">
@@ -10,10 +11,10 @@
                 <h3 class="text-center mb-3">📝 Đăng ký tài khoản</h3>
 
                 <c:if test="${error != null}">
-                    <div class="alert alert-danger">${error}</div>
+                    <div class="alert alert-danger">${fn:escapeXml(error)}</div>
                 </c:if>
                 <c:if test="${success != null}">
-                    <div class="alert alert-success">${success}</div>
+                    <div class="alert alert-success">${fn:escapeXml(success)}</div>
                 </c:if>
 
                 <form:form action="${pageContext.request.contextPath}/auth/register"

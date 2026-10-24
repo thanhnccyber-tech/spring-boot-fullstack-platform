@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Giỏ hàng</title>
 
 <h3>🛒 Giỏ hàng của bạn</h3>
@@ -20,23 +21,23 @@
     <tbody>
         <c:forEach items="${cart}" var="item" varStatus="st">
             <tr>
-                <td>${st.index + 1}</td>
-                <td>${item.productName}</td>
-                <td>${item.sizeName != null ? item.sizeName : '—'}</td>
-                <td>${item.sugarName != null ? item.sugarName : '—'}</td>
-                <td>${item.iceName != null ? item.iceName : '—'}</td>
-                <td><c:forEach items="${item.toppingNames}" var="tn">${tn}<br/></c:forEach></td>
+                <td>${fn:escapeXml(st.index + 1)}</td>
+                <td>${fn:escapeXml(item.productName)}</td>
+                <td>${fn:escapeXml(item.sizeName != null ? item.sizeName : '—')}</td>
+                <td>${fn:escapeXml(item.sugarName != null ? item.sugarName : '—')}</td>
+                <td>${fn:escapeXml(item.iceName != null ? item.iceName : '—')}</td>
+                <td><c:forEach items="${item.toppingNames}" var="tn">${fn:escapeXml(tn)}<br/></c:forEach></td>
                 <td>
                     <form action="${pageContext.request.contextPath}/cart/update" method="post" class="d-flex">
-                        <input type="hidden" name="index" value="${st.index}">
-                        <input type="number" name="quantity" value="${item.quantity}" min="1" class="form-control form-control-sm" style="width:70px">
+                        <input type="hidden" name="index" value="${fn:escapeXml(st.index)}">
+                        <input type="number" name="quantity" value="${fn:escapeXml(item.quantity)}" min="1" class="form-control form-control-sm" style="width:70px">
                         <button class="btn btn-sm btn-outline-secondary ms-1">✓</button>
                     </form>
                 </td>
                 <td><fmt:formatNumber value="${item.unitPrice}" pattern="#,##0"/> ₫</td>
                 <td class="text-danger fw-bold"><fmt:formatNumber value="${item.subtotal}" pattern="#,##0"/> ₫</td>
                 <td>
-                    <a href="${pageContext.request.contextPath}/cart/remove/${st.index}" class="btn btn-sm btn-danger">✕</a>
+                    <a href="${pageContext.request.contextPath}/cart/remove/${fn:escapeXml(st.index)}" class="btn btn-sm btn-danger">✕</a>
                 </td>
             </tr>
         </c:forEach>

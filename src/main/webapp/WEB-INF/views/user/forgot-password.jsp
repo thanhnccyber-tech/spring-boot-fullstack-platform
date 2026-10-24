@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Quên mật khẩu - UTeTra</title>
 
 <div class="row justify-content-center">
@@ -12,14 +13,14 @@
                 </p>
 
                 <c:if test="${error != null}">
-                    <div class="alert alert-danger">${error}</div>
+                    <div class="alert alert-danger">${fn:escapeXml(error)}</div>
                 </c:if>
 
                 <form action="${pageContext.request.contextPath}/forgot-password" method="post">
                     <div class="mb-3">
                         <label class="form-label">Email</label>
                         <input type="email" name="email" class="form-control"
-                               value="${forgotRequest.email}" required autofocus>
+                               value="${fn:escapeXml(forgotRequest.email)}" required autofocus>
                     </div>
                     <button class="btn btn-warning w-100">Gửi mã OTP</button>
                 </form>

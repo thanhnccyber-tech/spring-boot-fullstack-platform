@@ -10,6 +10,7 @@ import vn.utetra.entity.RoleName;
 import vn.utetra.entity.User;
 import vn.utetra.repository.RoleRepository;
 import vn.utetra.repository.UserRepository;
+import vn.utetra.security.PasswordPolicy;
 
 import java.util.Optional;
 import java.util.Set;
@@ -65,10 +66,20 @@ public class UserService {
     @Transactional
     public void updateProfile(String email, String fullName, String phone,
                               String address, String avatarUrl) {
+        String name = fullName == null ? "" : fullName.trim();
+        if (name.isEmpty() || name.length() > 100)
+            throw new IllegalArgumentException("Họ tên không được để trống và tối đa 100 ký tự.");
+        String ph = phone == null ? "" : phone.trim();
+        if (!ph.matches("^(0[0-9]{9,10})?$"))
+            throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
+        String addr = address == null ? "" : address.trim();
+        if (addr.length() > 255)
+            throw new IllegalArgumentException("Địa chỉ tối đa 255 ký tự.");
+
         User u = userRepo.findByEmail(email).orElseThrow();
-        u.setFullName(fullName);
-        u.setPhone(phone);
-        u.setAddress(address);
+        u.setFullName(name);
+        u.setPhone(ph.isEmpty() ? null : ph);
+        u.setAddress(addr.isEmpty() ? null : addr);
         if (avatarUrl != null) u.setAvatarUrl(avatarUrl);
         userRepo.save(u);
     }
@@ -78,8 +89,7 @@ public class UserService {
         User u = userRepo.findByEmail(email).orElseThrow();
         if (!passwordEncoder.matches(oldPwd, u.getPassword()))
             throw new RuntimeException("Mật khẩu cũ không đúng");
-        if (newPwd == null || newPwd.length() < 6)
-            throw new RuntimeException("Mật khẩu mới phải từ 6 ký tự");
+        PasswordPolicy.require(newPwd);
         u.setPassword(passwordEncoder.encode(newPwd));
         userRepo.save(u);
     }
@@ -91,8 +101,7 @@ public class UserService {
     @Transactional
     public void resetPassword(String email, String newPassword) {
         User u = userRepo.findByEmail(email).orElseThrow();
-        if (newPassword == null || newPassword.length() < 6)
-            throw new RuntimeException("Mật khẩu mới phải từ 6 ký tự");
+        PasswordPolicy.require(newPassword);
         u.setPassword(passwordEncoder.encode(newPassword));
         userRepo.save(u);
     }

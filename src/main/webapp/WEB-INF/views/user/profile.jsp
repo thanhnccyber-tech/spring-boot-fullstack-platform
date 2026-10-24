@@ -1,16 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Thông tin cá nhân</title>
 
-<c:if test="${success != null}"><div class="alert alert-success">${success}</div></c:if>
-<c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
+<c:if test="${success != null}"><div class="alert alert-success">${fn:escapeXml(success)}</div></c:if>
+<c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
 
 <div class="row">
     <div class="col-md-4 text-center">
-        <img src="${user.avatarUrl != null ? user.avatarUrl : 'https://via.placeholder.com/200'}"
+        <img src="${fn:escapeXml(user.avatarUrl != null ? user.avatarUrl : 'https://via.placeholder.com/200')}"
              class="rounded-circle mb-3" style="width:200px;height:200px;object-fit:cover;">
-        <h5>${user.fullName}</h5>
-        <p class="text-muted">${user.email}</p>
+        <h5>${fn:escapeXml(user.fullName)}</h5>
+        <p class="text-muted">${fn:escapeXml(user.email)}</p>
     </div>
     <div class="col-md-8">
         <div class="card mb-3">
@@ -21,17 +22,17 @@
                     <div class="mb-3">
                         <label>Họ tên</label>
                         <input type="text" name="fullName" class="form-control"
-                               value="${not empty formFullName ? formFullName : user.fullName}">
+                               value="${fn:escapeXml(not empty formFullName ? formFullName : user.fullName)}">
                     </div>
                     <div class="mb-3">
                         <label>Điện thoại</label>
                         <input type="text" name="phone" class="form-control"
-                               value="${not empty formPhone ? formPhone : user.phone}">
+                               value="${fn:escapeXml(not empty formPhone ? formPhone : user.phone)}">
                     </div>
                     <div class="mb-3">
                         <label>Địa chỉ</label>
                         <input type="text" name="address" class="form-control"
-                               value="${not empty formAddress ? formAddress : user.address}">
+                               value="${fn:escapeXml(not empty formAddress ? formAddress : user.address)}">
                     </div>
                     <div class="mb-3">
                         <label>Avatar (upload lên Cloudinary)</label>

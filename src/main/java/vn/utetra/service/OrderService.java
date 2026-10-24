@@ -30,10 +30,43 @@ public class OrderService {
     @Autowired private NotificationRepository notiRepo;
     @Autowired private SimpMessagingTemplate messaging;
 
+    private static final Set<String> PAYMENT_METHODS = Set.of("CASH", "BANK", "COD");
+    private static final Set<String> STATUSES = Set.of(
+            Order.STATUS_PENDING, Order.STATUS_PREPARING, Order.STATUS_DELIVERING,
+            Order.STATUS_COMPLETED, Order.STATUS_CANCELLED, Order.STATUS_FAILED);
+    private static final int MAX_ITEMS = 30;
+    private static final int MAX_QTY = 50;
+
+    /** Kiểm tra dữ liệu đặt hàng ở phía server (không tin dữ liệu từ form). */
+    private void validateOrderRequest(OrderRequest req) {
+        if (req == null || req.getItems() == null || req.getItems().isEmpty())
+            throw new IllegalArgumentException("Giỏ hàng trống.");
+        if (req.getItems().size() > MAX_ITEMS)
+            throw new IllegalArgumentException("Giỏ hàng tối đa " + MAX_ITEMS + " món.");
+        if (req.getBranchId() == null)
+            throw new IllegalArgumentException("Vui lòng chọn chi nhánh.");
+
+        String addr = req.getShippingAddress() == null ? "" : req.getShippingAddress().trim();
+        if (addr.isEmpty() || addr.length() > 500)
+            throw new IllegalArgumentException("Địa chỉ nhận hàng không hợp lệ (tối đa 500 ký tự).");
+        req.setShippingAddress(addr);
+
+        if (req.getPaymentMethod() == null || !PAYMENT_METHODS.contains(req.getPaymentMethod()))
+            throw new IllegalArgumentException("Phương thức thanh toán không hợp lệ.");
+
+        String note = req.getNote() == null ? "" : req.getNote().trim();
+        if (note.length() > 1000)
+            throw new IllegalArgumentException("Ghi chú tối đa 1000 ký tự.");
+        req.setNote(note.isEmpty() ? null : note);
+    }
+
     @Transactional
     public Order placeOrder(String email, OrderRequest req) {
+        validateOrderRequest(req);
         User user = userRepo.findByEmail(email).orElseThrow();
-        Branch branch = branchRepo.findById(req.getBranchId()).orElseThrow();
+        Branch branch = branchRepo.findById(req.getBranchId())
+                .filter(b -> Boolean.TRUE.equals(b.getActive()))
+                .orElseThrow(() -> new IllegalArgumentException("Chi nhánh không tồn tại hoặc đã ngừng hoạt động."));
 
         Order order = new Order();
         order.setOrderCode("UTE" + System.currentTimeMillis());
@@ -51,7 +84,12 @@ public class OrderService {
         List<OrderDetail> details = new ArrayList<>();
 
         for (CartItem ci : req.getItems()) {
-            Product p = productRepo.findById(ci.getProductId()).orElseThrow();
+            Product p = productRepo.findById(ci.getProductId())
+                    .orElseThrow(() -> new IllegalArgumentException("Có sản phẩm trong giỏ không còn tồn tại."));
+            if (!Boolean.TRUE.equals(p.getActive()) || Boolean.TRUE.equals(p.getOutOfStock()))
+                throw new IllegalArgumentException("Sản phẩm \"" + p.getName() + "\" hiện không còn bán.");
+            if (ci.getQuantity() == null || ci.getQuantity() < 1 || ci.getQuantity() > MAX_QTY)
+                throw new IllegalArgumentException("Số lượng mỗi món phải từ 1 đến " + MAX_QTY + ".");
             OrderDetail od = new OrderDetail();
             od.setOrder(saved);
             od.setProduct(p);
@@ -137,6 +175,8 @@ public class OrderService {
 
     @Transactional
     public void updateStatus(Long id, String status) {
+        if (status == null || !STATUSES.contains(status))
+            throw new IllegalArgumentException("Trạng thái đơn hàng không hợp lệ.");
         Order o = orderRepo.findById(id).orElseThrow();
         o.setStatus(status);
         o.setUpdatedAt(LocalDateTime.now());

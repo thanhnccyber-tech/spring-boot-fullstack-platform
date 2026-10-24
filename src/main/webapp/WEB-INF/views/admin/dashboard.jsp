@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Dashboard</title>
 
 <!-- ============ CARDS THỐNG KÊ ============ -->
@@ -9,7 +10,7 @@
         <div class="card text-bg-primary">
             <div class="card-body">
                 <h6><i class="fas fa-receipt"></i> Đơn hàng hôm nay</h6>
-                <h2>${todayOrderCount}</h2>
+                <h2>${fn:escapeXml(todayOrderCount)}</h2>
             </div>
         </div>
     </div>
@@ -26,7 +27,7 @@
             <div class="card-header"><i class="fas fa-chart-pie"></i> Trạng thái đơn hàng</div>
             <div class="card-body">
                 <c:forEach items="${statusCount}" var="e">
-                    <span class="badge bg-secondary me-2 fs-6 mb-1">${e.key}: ${e.value}</span>
+                    <span class="badge bg-secondary me-2 fs-6 mb-1">${fn:escapeXml(e.key)}: ${fn:escapeXml(e.value)}</span>
                 </c:forEach>
                 <c:if test="${empty statusCount}">
                     <span class="text-muted">Chưa có đơn hàng</span>
@@ -80,7 +81,7 @@
                     <thead><tr><th>Sản phẩm</th><th class="text-end">Số lượng bán</th></tr></thead>
                     <tbody>
                         <c:forEach items="${topProducts}" var="row">
-                            <tr><td>${row[0]}</td><td class="text-end">${row[1]}</td></tr>
+                            <tr><td>${fn:escapeXml(row[0])}</td><td class="text-end">${fn:escapeXml(row[1])}</td></tr>
                         </c:forEach>
                         <c:if test="${empty topProducts}">
                             <tr><td colspan="2" class="text-center text-muted">Chưa có dữ liệu</td></tr>
@@ -98,7 +99,7 @@
                     <thead><tr><th>Topping</th><th class="text-end">Số lượng dùng</th></tr></thead>
                     <tbody>
                         <c:forEach items="${topToppings}" var="row">
-                            <tr><td>${row[0]}</td><td class="text-end">${row[1]}</td></tr>
+                            <tr><td>${fn:escapeXml(row[0])}</td><td class="text-end">${fn:escapeXml(row[1])}</td></tr>
                         </c:forEach>
                         <c:if test="${empty topToppings}">
                             <tr><td colspan="2" class="text-center text-muted">Chưa có dữ liệu</td></tr>
@@ -115,7 +116,7 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     // ---------- Chart doanh thu 7 ngày ----------
-    const labels7 = [<c:forEach items="${labels7}" var="l" varStatus="s">'${l}'<c:if test="${!s.last}">,</c:if></c:forEach>];
+    const labels7 = [<c:forEach items="${labels7}" var="l" varStatus="s">'${fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(l, '\\', ''), "'", ''), '"', ''), '<', ''), '>', ''), '&', '')}'<c:if test="${!s.last}">,</c:if></c:forEach>];
     const data7   = [<c:forEach items="${data7}"   var="d" varStatus="s">${d}<c:if test="${!s.last}">,</c:if></c:forEach>];
 
     new Chart(document.getElementById('revenue7Chart'), {
@@ -151,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ---------- Chart doanh thu 12 tháng ----------
-    const labels12 = [<c:forEach items="${labels12}" var="l" varStatus="s">'${l}'<c:if test="${!s.last}">,</c:if></c:forEach>];
+    const labels12 = [<c:forEach items="${labels12}" var="l" varStatus="s">'${fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(l, '\\', ''), "'", ''), '"', ''), '<', ''), '>', ''), '&', '')}'<c:if test="${!s.last}">,</c:if></c:forEach>];
     const data12   = [<c:forEach items="${data12}"   var="d" varStatus="s">${d}<c:if test="${!s.last}">,</c:if></c:forEach>];
 
     new Chart(document.getElementById('revenue12Chart'), {
@@ -190,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ---------- Chart trạng thái (Pie) ----------
-    const statusLabels = [<c:forEach items="${statusCount}" var="e" varStatus="s">'${e.key}'<c:if test="${!s.last}">,</c:if></c:forEach>];
+    const statusLabels = [<c:forEach items="${statusCount}" var="e" varStatus="s">'${fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(e.key, '\\', ''), "'", ''), '"', ''), '<', ''), '>', ''), '&', '')}'<c:if test="${!s.last}">,</c:if></c:forEach>];
     const statusData   = [<c:forEach items="${statusCount}" var="e" varStatus="s">${e.value}<c:if test="${!s.last}">,</c:if></c:forEach>];
 
     new Chart(document.getElementById('statusChart'), {

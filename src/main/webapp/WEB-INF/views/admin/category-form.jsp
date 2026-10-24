@@ -1,31 +1,32 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<title>${isNew ? 'Thêm' : 'Sửa'} danh mục</title>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<title>${fn:escapeXml(isNew ? 'Thêm' : 'Sửa')} danh mục</title>
 
-<c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
+<c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
 
 <form action="${pageContext.request.contextPath}/admin/categories/save"
       method="post" enctype="multipart/form-data">
-    <input type="hidden" name="id" value="${category.id}">
+    <input type="hidden" name="id" value="${fn:escapeXml(category.id)}">
 
     <div class="row">
         <div class="col-md-8">
             <div class="mb-3">
                 <label>Tên danh mục <span class="text-danger">*</span></label>
-                <input type="text" name="name" value="${category.name}"
+                <input type="text" name="name" value="${fn:escapeXml(category.name)}"
                        class="form-control" maxlength="100" required>
                 <small class="text-muted">Tối đa 100 ký tự.</small>
             </div>
             <div class="mb-3">
                 <label>Mô tả</label>
                 <textarea name="description" class="form-control" rows="3"
-                          maxlength="2000">${category.description}</textarea>
+                          maxlength="2000">${fn:escapeXml(category.description)}</textarea>
             </div>
         </div>
         <div class="col-md-4">
             <div class="mb-3">
                 <label>Thứ tự hiển thị</label>
-                <input type="number" name="sortOrder" value="${category.sortOrder}"
+                <input type="number" name="sortOrder" value="${fn:escapeXml(category.sortOrder)}"
                        class="form-control" min="0">
                 <small class="text-muted">Số nhỏ hiển thị trước.</small>
             </div>
@@ -37,7 +38,7 @@
                 <small class="text-muted d-block">JPG, PNG, GIF, WEBP. Tối đa 5 MB.</small>
                 <small id="categoryImageError" class="text-danger d-none"></small>
                 <c:if test="${not empty category.imageUrl}">
-                    <img src="${category.imageUrl}" class="img-fluid mt-2 rounded">
+                    <img src="${fn:escapeXml(category.imageUrl)}" class="img-fluid mt-2 rounded">
                 </c:if>
             </div>
 
@@ -50,7 +51,7 @@
         </div>
     </div>
 
-    <button class="btn btn-warning">${isNew ? 'Tạo mới' : 'Lưu'}</button>
+    <button class="btn btn-warning">${fn:escapeXml(isNew ? 'Tạo mới' : 'Lưu')}</button>
     <a href="${pageContext.request.contextPath}/admin/categories"
        class="btn btn-secondary">Hủy</a>
 </form>

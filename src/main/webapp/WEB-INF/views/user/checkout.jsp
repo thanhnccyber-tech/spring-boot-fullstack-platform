@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Đặt hàng</title>
 
 <h3>📦 Thông tin đặt hàng</h3>
@@ -8,7 +9,7 @@
         <label class="form-label">Chọn chi nhánh</label>
         <select name="branchId" class="form-select" required>
             <c:forEach items="${branches}" var="b">
-                <option value="${b.id}">${b.name} - ${b.address}</option>
+                <option value="${fn:escapeXml(b.id)}">${fn:escapeXml(b.name)} - ${fn:escapeXml(b.address)}</option>
             </c:forEach>
         </select>
     </div>

@@ -1,5 +1,6 @@
 package vn.utetra.controller;
 
+import org.springframework.security.access.AccessDeniedException;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -40,7 +41,13 @@ public class OrderController {
             return "redirect:/cart";
         }
         req.setItems(cart);
-        Order o = orderService.placeOrder(auth.getName(), req);
+        Order o;
+        try {
+            o = orderService.placeOrder(auth.getName(), req);
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/order/checkout";
+        }
         session.removeAttribute("CART");
         ra.addFlashAttribute("success", "Đặt hàng thành công! Mã: " + o.getOrderCode());
         return "redirect:/order/history";
@@ -53,8 +60,13 @@ public class OrderController {
     }
 
     @GetMapping("/detail/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("order", orderService.get(id));
+    public String detail(@PathVariable Long id, Authentication auth, Model model) {
+        Order order = orderService.get(id);
+        // Chống IDOR: khách chỉ được xem đơn của chính mình
+        if (order.getUser() == null || !order.getUser().getEmail().equalsIgnoreCase(auth.getName())) {
+            throw new AccessDeniedException("Không có quyền xem đơn hàng này");
+        }
+        model.addAttribute("order", order);
         return "user/order-detail";
     }
 }

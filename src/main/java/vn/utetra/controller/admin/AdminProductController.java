@@ -1,5 +1,6 @@
 package vn.utetra.controller.admin;
 
+import vn.utetra.security.SafeRedirect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
@@ -121,8 +122,7 @@ public class AdminProductController {
                                RedirectAttributes ra) {
         productService.toggle(id);
         ra.addFlashAttribute("success", "Đã cập nhật trạng thái hiển thị");
-        return "redirect:" + (returnUrl != null && !returnUrl.isBlank()
-                ? returnUrl : "/admin/products");
+        return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/products");
     }
 
     @PostMapping("/toggle-stock")
@@ -131,8 +131,7 @@ public class AdminProductController {
                               RedirectAttributes ra) {
         productService.toggleOutOfStock(id);
         ra.addFlashAttribute("success", "Đã cập nhật trạng thái tồn kho");
-        return "redirect:" + (returnUrl != null && !returnUrl.isBlank()
-                ? returnUrl : "/admin/products");
+        return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/products");
     }
 
     @PostMapping("/delete")

@@ -3,15 +3,15 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Người dùng</title>
 
-<c:if test="${success != null}"><div class="alert alert-success">${success}</div></c:if>
-<c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
+<c:if test="${success != null}"><div class="alert alert-success">${fn:escapeXml(success)}</div></c:if>
+<c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h5 class="mb-0">👥 Quản lý người dùng</h5>
         <c:if test="${!isAdmin && managerBranchName != null}">
             <small class="text-muted">
-                Chi nhánh: <b>${managerBranchName}</b>
+                Chi nhánh: <b>${fn:escapeXml(managerBranchName)}</b>
                 — Chỉ hiển thị nhân viên (Staff) trong chi nhánh của bạn.
             </small>
         </c:if>
@@ -23,7 +23,7 @@
 
 <form class="row g-2 mb-3 bg-white p-3 rounded shadow-sm" method="get">
     <div class="col-md-3">
-        <input type="text" name="kw" value="${kw}" class="form-control" placeholder="Tên/email/SĐT">
+        <input type="text" name="kw" value="${fn:escapeXml(kw)}" class="form-control" placeholder="Tên/email/SĐT">
     </div>
 
     <c:choose>
@@ -32,7 +32,7 @@
                 <input type="text" class="form-control" value="Staff" disabled>
             </div>
             <div class="col-md-3">
-                <input type="text" class="form-control" value="${managerBranchName}" disabled>
+                <input type="text" class="form-control" value="${fn:escapeXml(managerBranchName)}" disabled>
             </div>
         </c:when>
         <c:otherwise>
@@ -40,8 +40,8 @@
                 <select name="role" class="form-select">
                     <option value="">-- Vai trò --</option>
                     <c:forEach items="${roles}" var="r">
-                        <option value="${r.name}" <c:if test="${roleFilter == r.name}">selected</c:if>>
-                            ${fn:replace(r.name, 'ROLE_', '')}
+                        <option value="${fn:escapeXml(r.name)}" <c:if test="${roleFilter == r.name}">selected</c:if>>
+                            ${fn:escapeXml(fn:replace(r.name, 'ROLE_', ''))}
                         </option>
                     </c:forEach>
                 </select>
@@ -50,7 +50,7 @@
                 <select name="branchId" class="form-select">
                     <option value="">-- Chi nhánh --</option>
                     <c:forEach items="${branches}" var="b">
-                        <option value="${b.id}" <c:if test="${branchFilter == b.id}">selected</c:if>>${b.name}</option>
+                        <option value="${fn:escapeXml(b.id)}" <c:if test="${branchFilter == b.id}">selected</c:if>>${fn:escapeXml(b.name)}</option>
                     </c:forEach>
                 </select>
             </div>
@@ -84,33 +84,33 @@
     <tbody>
         <c:forEach items="${userPage.content}" var="u" varStatus="st">
             <tr>
-                <td>${userPage.number * userPage.size + st.index + 1}</td>
-                <td>${u.email}
+                <td>${fn:escapeXml(userPage.number * userPage.size + st.index + 1)}</td>
+                <td>${fn:escapeXml(u.email)}
                     <c:if test="${u.id == currentUserId}">
                         <span class="badge bg-info ms-1">Bạn</span>
                     </c:if>
                 </td>
-                <td>${u.fullName}</td>
+                <td>${fn:escapeXml(u.fullName)}</td>
                 <td>
                     <c:forEach items="${u.roles}" var="r">
-                        <span class="badge bg-secondary">${fn:replace(r.name, 'ROLE_', '')}</span>
+                        <span class="badge bg-secondary">${fn:escapeXml(fn:replace(r.name, 'ROLE_', ''))}</span>
                     </c:forEach>
                 </td>
-                <td>${u.branch != null ? u.branch.name : '—'}</td>
+                <td>${fn:escapeXml(u.branch != null ? u.branch.name : '—')}</td>
                 <td>
-                    <span class="badge ${u.enabled ? 'bg-success' : 'bg-danger'}">
-                        ${u.enabled ? 'Hoạt động' : 'Đã khóa'}
+                    <span class="badge ${fn:escapeXml(u.enabled ? 'bg-success' : 'bg-danger')}">
+                        ${fn:escapeXml(u.enabled ? 'Hoạt động' : 'Đã khóa')}
                     </span>
                 </td>
                 <td>
-                    <a href="${pageContext.request.contextPath}/admin/users/edit/${u.id}"
+                    <a href="${pageContext.request.contextPath}/admin/users/edit/${fn:escapeXml(u.id)}"
                        class="btn btn-sm btn-primary">Sửa</a>
                     <c:if test="${u.id != currentUserId}">
                         <form action="${pageContext.request.contextPath}/admin/users/toggle-enabled"
                               method="post" style="display:inline">
-                            <input type="hidden" name="id" value="${u.id}">
-                            <button class="btn btn-sm ${u.enabled ? 'btn-warning' : 'btn-success'}">
-                                ${u.enabled ? 'Khóa' : 'Mở khóa'}
+                            <input type="hidden" name="id" value="${fn:escapeXml(u.id)}">
+                            <button class="btn btn-sm ${fn:escapeXml(u.enabled ? 'btn-warning' : 'btn-success')}">
+                                ${fn:escapeXml(u.enabled ? 'Khóa' : 'Mở khóa')}
                             </button>
                         </form>
                     </c:if>
@@ -127,10 +127,10 @@
     <nav>
         <ul class="pagination justify-content-center">
             <c:forEach begin="0" end="${userPage.totalPages - 1}" var="i">
-                <li class="page-item ${i == userPage.number ? 'active' : ''}">
+                <li class="page-item ${fn:escapeXml(i == userPage.number ? 'active' : '')}">
                     <a class="page-link"
-                       href="?page=${i}&kw=${kw}&role=${roleFilter}&branchId=${branchFilter}&enabled=${enabledFilter}">
-                        ${i + 1}
+                       href="?page=${fn:escapeXml(i)}&kw=${fn:escapeXml(kw)}&role=${fn:escapeXml(roleFilter)}&branchId=${fn:escapeXml(branchFilter)}&enabled=${fn:escapeXml(enabledFilter)}">
+                        ${fn:escapeXml(i + 1)}
                     </a>
                 </li>
             </c:forEach>

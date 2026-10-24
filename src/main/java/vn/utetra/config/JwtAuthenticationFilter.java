@@ -12,10 +12,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import vn.utetra.entity.User;
+import vn.utetra.repository.UserRepository;
 import vn.utetra.util.JwtUtil;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -23,6 +26,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public static final String JWT_COOKIE = "UTETRA_JWT";
 
     @Autowired private JwtUtil jwtUtil;
+    @Autowired private UserRepository userRepo;
+
+    /** Tài nguyên tĩnh không cần xác thực nên bỏ qua (đỡ truy vấn DB). */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getRequestURI().startsWith(request.getContextPath() + "/static/");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -49,15 +59,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             String email = jwtUtil.getEmail(token);
-            List<String> roles = jwtUtil.getRoles(token);
-            List<SimpleGrantedAuthority> authorities = roles.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .toList();
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(email, null, authorities);
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            // Đối chiếu lại với database: tài khoản bị khoá/xoá thì token cũ vô hiệu ngay,
+            // và quyền (role) luôn lấy mới nhất từ DB thay vì tin quyền cũ trong token.
+            Optional<User> user = userRepo.findByEmail(email);
+            if (user.isPresent() && Boolean.TRUE.equals(user.get().getEnabled())) {
+                List<SimpleGrantedAuthority> authorities = user.get().getRoles().stream()
+                        .map(r -> new SimpleGrantedAuthority(r.getName()))
+                        .toList();
+
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(email, null, authorities);
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
         }
         chain.doFilter(request, response);
     }

@@ -1,10 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Quản lý sản phẩm</title>
 
-<c:if test="${success != null}"><div class="alert alert-success">${success}</div></c:if>
-<c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
+<c:if test="${success != null}"><div class="alert alert-success">${fn:escapeXml(success)}</div></c:if>
+<c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="mb-0">☕ Quản lý sản phẩm</h5>
@@ -17,7 +18,7 @@
 <form class="row g-2 mb-3 bg-white p-3 rounded shadow-sm" method="get">
 
     <div class="col-md-3">
-        <input type="text" name="kw" value="${kw}"
+        <input type="text" name="kw" value="${fn:escapeXml(kw)}"
                class="form-control" placeholder="Tìm theo tên...">
     </div>
 
@@ -25,9 +26,9 @@
         <select name="categoryId" class="form-select">
             <option value="">-- Danh mục --</option>
             <c:forEach items="${categories}" var="c">
-                <option value="${c.id}"
+                <option value="${fn:escapeXml(c.id)}"
                     <c:if test="${categoryId == c.id}">selected</c:if>>
-                    ${c.name}
+                    ${fn:escapeXml(c.name)}
                 </option>
             </c:forEach>
         </select>
@@ -42,12 +43,12 @@
     </div>
 
     <div class="col-md-2">
-        <input type="number" name="minPrice" value="${minPrice}"
+        <input type="number" name="minPrice" value="${fn:escapeXml(minPrice)}"
                class="form-control" placeholder="Giá từ" min="0" step="1000">
     </div>
 
     <div class="col-md-2">
-        <input type="number" name="maxPrice" value="${maxPrice}"
+        <input type="number" name="maxPrice" value="${fn:escapeXml(maxPrice)}"
                class="form-control" placeholder="Giá đến" min="0" step="1000">
     </div>
 
@@ -72,7 +73,7 @@
         </a>
 
         <span class="ms-auto align-self-center text-muted small">
-            Tổng: <b>${pageData.totalElements}</b> sản phẩm
+            Tổng: <b>${fn:escapeXml(pageData.totalElements)}</b> sản phẩm
         </span>
     </div>
 </form>
@@ -94,26 +95,26 @@
     <tbody>
         <c:forEach items="${pageData.content}" var="p">
             <tr>
-                <td>${p.id}</td>
+                <td>${fn:escapeXml(p.id)}</td>
                 <td>
-                    <img src="${p.imageUrl}" width="60"
-                         style="object-fit:cover;height:60px" alt="${p.name}">
+                    <img src="${fn:escapeXml(p.imageUrl)}" width="60"
+                         style="object-fit:cover;height:60px" alt="${fn:escapeXml(p.name)}">
                 </td>
-                <td>${p.name}</td>
-                <td>${p.category != null ? p.category.name : '-'}</td>
+                <td>${fn:escapeXml(p.name)}</td>
+                <td>${fn:escapeXml(p.category != null ? p.category.name : '-')}</td>
                 <td><fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫</td>
 
                 <%-- Cột Hiển thị: nút POST toggle-active --%>
                 <td>
                     <form action="${pageContext.request.contextPath}/admin/products/toggle-active"
                           method="post" style="display:inline">
-                        <input type="hidden" name="id" value="${p.id}">
+                        <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
                         <input type="hidden" name="returnUrl"
-                               value="/admin/products?page=${pageData.number}&kw=${kw}&categoryId=${categoryId}&active=${activeFilter}&minPrice=${minPrice}&maxPrice=${maxPrice}&sort=${sort}">
-                        <button class="badge ${p.active ? 'bg-success' : 'bg-secondary'} border-0"
-                                title="${p.active ? 'Bấm để ẩn sản phẩm' : 'Bấm để hiện sản phẩm'}">
-                            <i class="fas ${p.active ? 'fa-eye' : 'fa-eye-slash'}"></i>
-                            ${p.active ? 'Đang hiện' : 'Đã ẩn'}
+                               value="/admin/products?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">
+                        <button class="badge ${fn:escapeXml(p.active ? 'bg-success' : 'bg-secondary')} border-0"
+                                title="${fn:escapeXml(p.active ? 'Bấm để ẩn sản phẩm' : 'Bấm để hiện sản phẩm')}">
+                            <i class="fas ${fn:escapeXml(p.active ? 'fa-eye' : 'fa-eye-slash')}"></i>
+                            ${fn:escapeXml(p.active ? 'Đang hiện' : 'Đã ẩn')}
                         </button>
                     </form>
                 </td>
@@ -122,24 +123,24 @@
                 <td>
                     <form action="${pageContext.request.contextPath}/admin/products/toggle-stock"
                           method="post" style="display:inline">
-                        <input type="hidden" name="id" value="${p.id}">
+                        <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
                         <input type="hidden" name="returnUrl"
-                               value="/admin/products?page=${pageData.number}&kw=${kw}&categoryId=${categoryId}&active=${activeFilter}&minPrice=${minPrice}&maxPrice=${maxPrice}&sort=${sort}">
-                        <button class="badge ${p.outOfStock ? 'bg-danger' : 'bg-success'} border-0"
-                                title="${p.outOfStock ? 'Bấm để đánh dấu còn hàng' : 'Bấm để đánh dấu hết hàng'}">
-                            <i class="fas ${p.outOfStock ? 'fa-times-circle' : 'fa-check-circle'}"></i>
-                            ${p.outOfStock ? 'Hết hàng' : 'Còn hàng'}
+                               value="/admin/products?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">
+                        <button class="badge ${fn:escapeXml(p.outOfStock ? 'bg-danger' : 'bg-success')} border-0"
+                                title="${fn:escapeXml(p.outOfStock ? 'Bấm để đánh dấu còn hàng' : 'Bấm để đánh dấu hết hàng')}">
+                            <i class="fas ${fn:escapeXml(p.outOfStock ? 'fa-times-circle' : 'fa-check-circle')}"></i>
+                            ${fn:escapeXml(p.outOfStock ? 'Hết hàng' : 'Còn hàng')}
                         </button>
                     </form>
                 </td>
 
                 <td>
-                    <a href="${pageContext.request.contextPath}/admin/products/edit/${p.id}"
+                    <a href="${pageContext.request.contextPath}/admin/products/edit/${fn:escapeXml(p.id)}"
                        class="btn btn-sm btn-primary">Sửa</a>
                     <form action="${pageContext.request.contextPath}/admin/products/delete"
                           method="post" style="display:inline"
                           onsubmit="return confirm('Xóa sản phẩm này?')">
-                        <input type="hidden" name="id" value="${p.id}">
+                        <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
                         <button class="btn btn-sm btn-danger">Xóa</button>
                     </form>
                 </td>
@@ -159,9 +160,9 @@
 <c:if test="${pageData.totalPages > 1}">
     <nav>
         <ul class="pagination justify-content-center">
-            <li class="page-item ${pageData.first ? 'disabled' : ''}">
+            <li class="page-item ${fn:escapeXml(pageData.first ? 'disabled' : '')}">
                 <a class="page-link"
-                   href="?page=${pageData.number - 1}&kw=${kw}&categoryId=${categoryId}&active=${activeFilter}&minPrice=${minPrice}&maxPrice=${maxPrice}&sort=${sort}">«</a>
+                   href="?page=${fn:escapeXml(pageData.number - 1)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">«</a>
             </li>
 
             <c:set var="startPage" value="${pageData.number - 2}" />
@@ -174,15 +175,15 @@
             </c:if>
 
             <c:forEach begin="${startPage}" end="${endPage}" var="i">
-                <li class="page-item ${i == pageData.number ? 'active' : ''}">
+                <li class="page-item ${fn:escapeXml(i == pageData.number ? 'active' : '')}">
                     <a class="page-link"
-                       href="?page=${i}&kw=${kw}&categoryId=${categoryId}&active=${activeFilter}&minPrice=${minPrice}&maxPrice=${maxPrice}&sort=${sort}">${i + 1}</a>
+                       href="?page=${fn:escapeXml(i)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">${fn:escapeXml(i + 1)}</a>
                 </li>
             </c:forEach>
 
-            <li class="page-item ${pageData.last ? 'disabled' : ''}">
+            <li class="page-item ${fn:escapeXml(pageData.last ? 'disabled' : '')}">
                 <a class="page-link"
-                   href="?page=${pageData.number + 1}&kw=${kw}&categoryId=${categoryId}&active=${activeFilter}&minPrice=${minPrice}&maxPrice=${maxPrice}&sort=${sort}">»</a>
+                   href="?page=${fn:escapeXml(pageData.number + 1)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">»</a>
             </li>
         </ul>
     </nav>

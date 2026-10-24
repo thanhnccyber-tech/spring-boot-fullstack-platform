@@ -1,30 +1,31 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<title>${product.name}</title>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<title>${fn:escapeXml(product.name)}</title>
 
 <c:if test="${not empty error}">
-    <div class="alert alert-danger">${error}</div>
+    <div class="alert alert-danger">${fn:escapeXml(error)}</div>
 </c:if>
 
 <div class="row">
     <div class="col-md-5">
-        <img src="${product.imageUrl}" class="img-fluid rounded shadow">
+        <img src="${fn:escapeXml(product.imageUrl)}" class="img-fluid rounded shadow">
     </div>
     <div class="col-md-7">
-        <h2>${product.name}
+        <h2>${fn:escapeXml(product.name)}
             <c:if test="${product.outOfStock}">
                 <span class="badge bg-danger fs-6 align-middle">Hết hàng</span>
             </c:if>
         </h2>
         <a href="#reviews" class="text-decoration-none d-inline-block mb-2">
             <span class="text-warning">
-                <c:forEach begin="1" end="5" var="i"><i class="${i <= ratingSummary.rounded ? 'fas' : 'far'} fa-star"></i></c:forEach>
+                <c:forEach begin="1" end="5" var="i"><i class="${fn:escapeXml(i <= ratingSummary.rounded ? 'fas' : 'far')} fa-star"></i></c:forEach>
             </span>
             <span class="text-muted small">
                 <c:choose>
                     <c:when test="${ratingSummary.count > 0}">
-                        <fmt:formatNumber value="${ratingSummary.average}" maxFractionDigits="1"/>/5 · ${ratingSummary.count} đánh giá
+                        <fmt:formatNumber value="${ratingSummary.average}" maxFractionDigits="1"/>/5 · ${fn:escapeXml(ratingSummary.count)} đánh giá
                     </c:when>
                     <c:otherwise>Chưa có đánh giá</c:otherwise>
                 </c:choose>
@@ -33,7 +34,7 @@
         <p class="text-danger fs-3 fw-bold">
             <fmt:formatNumber value="${product.basePrice}" pattern="#,##0"/> ₫
         </p>
-        <p>${product.description}</p>
+        <p>${fn:escapeXml(product.description)}</p>
 
         <c:if test="${product.outOfStock}">
             <div class="alert alert-warning">
@@ -43,19 +44,19 @@
         </c:if>
 
         <form action="${pageContext.request.contextPath}/cart/add" method="post">
-            <input type="hidden" name="productId" value="${product.id}">
+            <input type="hidden" name="productId" value="${fn:escapeXml(product.id)}">
 
             <c:if test="${product.allowSize}">
                 <label class="form-label fw-bold">Size:</label>
                 <div class="mb-3">
                     <c:forEach items="${sizes}" var="s" varStatus="st">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="sizeId" value="${s.id}" data-price="${s.extraPrice}"
+                            <input class="form-check-input" type="radio" name="sizeId" value="${fn:escapeXml(s.id)}" data-price="${fn:escapeXml(s.extraPrice)}"
                                 <c:if test="${(product.defaultSize != null && product.defaultSize.id == s.id)
                                               || (product.defaultSize == null && st.first)}">checked</c:if>
                                 <c:if test="${product.outOfStock}">disabled</c:if>>
                             <label class="form-check-label">
-                                ${s.name}
+                                ${fn:escapeXml(s.name)}
                                 <c:if test="${s.extraPrice > 0}">
                                     (+<fmt:formatNumber value="${s.extraPrice}" pattern="#,##0"/> ₫)
                                 </c:if>
@@ -69,10 +70,10 @@
                 <label class="form-label fw-bold">Mức đường:</label>
                 <select name="sugarId" class="form-select mb-3" <c:if test="${product.outOfStock}">disabled</c:if>>
                     <c:forEach items="${sugars}" var="s">
-                        <option value="${s.id}"
+                        <option value="${fn:escapeXml(s.id)}"
                             <c:if test="${(product.defaultSugar != null && product.defaultSugar.id == s.id)
                                           || (product.defaultSugar == null && s.percent == 50)}">selected</c:if>>
-                            ${s.name}
+                            ${fn:escapeXml(s.name)}
                         </option>
                     </c:forEach>
                 </select>
@@ -82,10 +83,10 @@
                 <label class="form-label fw-bold">Mức đá:</label>
                 <select name="iceId" class="form-select mb-3" <c:if test="${product.outOfStock}">disabled</c:if>>
                     <c:forEach items="${ices}" var="s">
-                        <option value="${s.id}"
+                        <option value="${fn:escapeXml(s.id)}"
                             <c:if test="${(product.defaultIce != null && product.defaultIce.id == s.id)
                                           || (product.defaultIce == null && s.percent == 50)}">selected</c:if>>
-                            ${s.name}
+                            ${fn:escapeXml(s.name)}
                         </option>
                     </c:forEach>
                 </select>
@@ -95,10 +96,10 @@
             <div class="mb-3">
                 <c:forEach items="${toppings}" var="t">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="toppingIds" value="${t.id}" data-price="${t.price}"
+                        <input class="form-check-input" type="checkbox" name="toppingIds" value="${fn:escapeXml(t.id)}" data-price="${fn:escapeXml(t.price)}"
                                <c:if test="${product.outOfStock}">disabled</c:if>>
                         <label class="form-check-label">
-                            ${t.name} (+<fmt:formatNumber value="${t.price}" pattern="#,##0"/> ₫)
+                            ${fn:escapeXml(t.name)} (+<fmt:formatNumber value="${t.price}" pattern="#,##0"/> ₫)
                         </label>
                     </div>
                 </c:forEach>
@@ -139,13 +140,13 @@
         <c:if test="${ratingSummary.count > 0}">
             <small class="text-muted fs-6">
                 — <fmt:formatNumber value="${ratingSummary.average}" maxFractionDigits="1"/>/5
-                (${ratingSummary.count} đánh giá)
+                (${fn:escapeXml(ratingSummary.count)} đánh giá)
             </small>
         </c:if>
     </h4>
 
-    <c:if test="${not empty reviewSuccess}"><div class="alert alert-success">${reviewSuccess}</div></c:if>
-    <c:if test="${not empty reviewError}"><div class="alert alert-danger">${reviewError}</div></c:if>
+    <c:if test="${not empty reviewSuccess}"><div class="alert alert-success">${fn:escapeXml(reviewSuccess)}</div></c:if>
+    <c:if test="${not empty reviewError}"><div class="alert alert-danger">${fn:escapeXml(reviewError)}</div></c:if>
 
     <c:choose>
         <c:when test="${not loggedIn}">
@@ -159,7 +160,7 @@
             </div>
         </c:when>
         <c:otherwise>
-            <form action="${pageContext.request.contextPath}/review/${product.id}" method="post"
+            <form action="${pageContext.request.contextPath}/review/${fn:escapeXml(product.id)}" method="post"
                   class="card card-body shadow-sm mb-4">
                 <label class="form-label fw-bold">
                     <c:choose>
@@ -211,20 +212,20 @@
                     <div>
                         <strong><c:out value="${empty r.user.fullName ? 'Khách hàng' : r.user.fullName}"/></strong>
                         <span class="text-warning ms-2">
-                            <c:forEach begin="1" end="5" var="i"><i class="${i <= r.rating ? 'fas' : 'far'} fa-star"></i></c:forEach>
+                            <c:forEach begin="1" end="5" var="i"><i class="${fn:escapeXml(i <= r.rating ? 'fas' : 'far')} fa-star"></i></c:forEach>
                         </span>
                     </div>
                     <small class="text-muted">
-                        ${r.createdAtFormatted}<c:if test="${r.edited}"> (đã chỉnh sửa)</c:if>
+                        ${fn:escapeXml(r.createdAtFormatted)}<c:if test="${r.edited}"> (đã chỉnh sửa)</c:if>
                     </small>
                 </div>
                 <c:if test="${not empty r.comment}">
                     <div class="review-text mt-1"><c:out value="${r.comment}"/></div>
                 </c:if>
                 <c:if test="${loggedIn and (r.user.id == currentUserId or isAdminUser)}">
-                    <form action="${pageContext.request.contextPath}/review/${r.id}/delete" method="post"
+                    <form action="${pageContext.request.contextPath}/review/${fn:escapeXml(r.id)}/delete" method="post"
                           class="mt-1" onsubmit="return confirm('Xoá đánh giá này?');">
-                        <input type="hidden" name="productId" value="${product.id}">
+                        <input type="hidden" name="productId" value="${fn:escapeXml(product.id)}">
                         <button class="btn btn-link btn-sm text-danger p-0">
                             <i class="fas fa-trash"></i> Xoá
                         </button>

@@ -1,28 +1,28 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<title>${product.id != null ? 'Sửa' : 'Thêm'} sản phẩm</title>
+<title>${fn:escapeXml(product.id != null ? 'Sửa' : 'Thêm')} sản phẩm</title>
 
-<c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
+<c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
 
 <form action="${pageContext.request.contextPath}/admin/products/save"
       method="post" enctype="multipart/form-data">
-    <input type="hidden" name="id" value="${product.id}">
+    <input type="hidden" name="id" value="${fn:escapeXml(product.id)}">
 
     <div class="row">
         <div class="col-md-8">
             <div class="mb-3"><label>Tên sản phẩm</label>
-                <input type="text" name="name" value="${product.name}" class="form-control" required></div>
+                <input type="text" name="name" value="${fn:escapeXml(product.name)}" class="form-control" required></div>
             <div class="mb-3"><label>Giá cơ bản (VNĐ)</label>
-                <input type="number" name="basePrice" value="${product.basePrice}" class="form-control" required step="1000"></div>
+                <input type="number" name="basePrice" value="${fn:escapeXml(product.basePrice)}" class="form-control" required step="1000"></div>
             <div class="mb-3"><label>Mô tả</label>
-                <textarea name="description" class="form-control" rows="3">${product.description}</textarea></div>
+                <textarea name="description" class="form-control" rows="3">${fn:escapeXml(product.description)}</textarea></div>
             <div class="mb-3"><label>Danh mục</label>
                 <select name="categoryId" class="form-select">
                     <c:forEach items="${categories}" var="c">
-                        <option value="${c.id}"
+                        <option value="${fn:escapeXml(c.id)}"
                             <c:if test="${product.category != null && product.category.id == c.id}">selected</c:if>>
-                            ${c.name}
+                            ${fn:escapeXml(c.name)}
                         </option>
                     </c:forEach>
                 </select>
@@ -31,9 +31,9 @@
             <div class="mb-3"><label>Topping áp dụng</label><br/>
                 <c:forEach items="${toppings}" var="t">
                     <div class="form-check form-check-inline">
-                        <input type="checkbox" name="toppingIds" value="${t.id}" class="form-check-input"
+                        <input type="checkbox" name="toppingIds" value="${fn:escapeXml(t.id)}" class="form-check-input"
                             <c:if test="${product.toppings != null && product.toppings.contains(t)}">checked</c:if>>
-                        <label class="form-check-label">${t.name}</label>
+                        <label class="form-check-label">${fn:escapeXml(t.name)}</label>
                     </div>
                 </c:forEach>
             </div>
@@ -58,13 +58,13 @@
                         <div class="d-flex flex-wrap gap-2 mb-2">
                             <c:forEach items="${sizes}" var="s">
                                 <div class="form-check form-check-inline">
-                                    <input type="checkbox" name="sizeIds" value="${s.id}"
+                                    <input type="checkbox" name="sizeIds" value="${fn:escapeXml(s.id)}"
                                            class="form-check-input"
                                         <c:if test="${product.sizes != null && product.sizes.contains(s)}">checked</c:if>>
                                     <label class="form-check-label">
-                                        ${s.name}
+                                        ${fn:escapeXml(s.name)}
                                         <c:if test="${s.extraPrice > 0}">
-                                            (+${s.extraPrice}đ)
+                                            (+${fn:escapeXml(s.extraPrice)}đ)
                                         </c:if>
                                     </label>
                                 </div>
@@ -74,9 +74,9 @@
                         <select name="defaultSizeId" class="form-select">
                             <option value="">-- Không --</option>
                             <c:forEach items="${sizes}" var="s">
-                                <option value="${s.id}"
+                                <option value="${fn:escapeXml(s.id)}"
                                     <c:if test="${product.defaultSize != null && product.defaultSize.id == s.id}">selected</c:if>>
-                                    ${s.name} (+${s.extraPrice}đ)
+                                    ${fn:escapeXml(s.name)} (+${fn:escapeXml(s.extraPrice)}đ)
                                 </option>
                             </c:forEach>
                         </select>
@@ -101,10 +101,10 @@
                         <div class="d-flex flex-wrap gap-2 mb-2">
                             <c:forEach items="${sugars}" var="s">
                                 <div class="form-check form-check-inline">
-                                    <input type="checkbox" name="sugarIds" value="${s.id}"
+                                    <input type="checkbox" name="sugarIds" value="${fn:escapeXml(s.id)}"
                                            class="form-check-input"
                                         <c:if test="${product.sugars != null && product.sugars.contains(s)}">checked</c:if>>
-                                    <label class="form-check-label">${s.name}</label>
+                                    <label class="form-check-label">${fn:escapeXml(s.name)}</label>
                                 </div>
                             </c:forEach>
                         </div>
@@ -112,9 +112,9 @@
                         <select name="defaultSugarId" class="form-select">
                             <option value="">-- Không --</option>
                             <c:forEach items="${sugars}" var="s">
-                                <option value="${s.id}"
+                                <option value="${fn:escapeXml(s.id)}"
                                     <c:if test="${product.defaultSugar != null && product.defaultSugar.id == s.id}">selected</c:if>>
-                                    ${s.name}
+                                    ${fn:escapeXml(s.name)}
                                 </option>
                             </c:forEach>
                         </select>
@@ -139,10 +139,10 @@
                         <div class="d-flex flex-wrap gap-2 mb-2">
                             <c:forEach items="${ices}" var="s">
                                 <div class="form-check form-check-inline">
-                                    <input type="checkbox" name="iceIds" value="${s.id}"
+                                    <input type="checkbox" name="iceIds" value="${fn:escapeXml(s.id)}"
                                            class="form-check-input"
                                         <c:if test="${product.ices != null && product.ices.contains(s)}">checked</c:if>>
-                                    <label class="form-check-label">${s.name}</label>
+                                    <label class="form-check-label">${fn:escapeXml(s.name)}</label>
                                 </div>
                             </c:forEach>
                         </div>
@@ -150,9 +150,9 @@
                         <select name="defaultIceId" class="form-select">
                             <option value="">-- Không --</option>
                             <c:forEach items="${ices}" var="s">
-                                <option value="${s.id}"
+                                <option value="${fn:escapeXml(s.id)}"
                                     <c:if test="${product.defaultIce != null && product.defaultIce.id == s.id}">selected</c:if>>
-                                    ${s.name}
+                                    ${fn:escapeXml(s.name)}
                                 </option>
                             </c:forEach>
                         </select>
@@ -191,7 +191,7 @@
             <small class="text-muted d-block">JPG, PNG, GIF, WEBP. Tối đa 5 MB.</small>
             <small id="productImageError" class="text-danger d-none"></small>
             <c:if test="${product.imageUrl != null}">
-                <img src="${product.imageUrl}" class="img-fluid mt-2 rounded">
+                <img src="${fn:escapeXml(product.imageUrl)}" class="img-fluid mt-2 rounded">
             </c:if>
         </div>
     </div>

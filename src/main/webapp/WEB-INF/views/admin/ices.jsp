@@ -1,9 +1,10 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Quản lý Mức Đá</title>
 
-<c:if test="${success != null}"><div class="alert alert-success">${success}</div></c:if>
-<c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
+<c:if test="${success != null}"><div class="alert alert-success">${fn:escapeXml(success)}</div></c:if>
+<c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
 
 <a href="${pageContext.request.contextPath}/admin/ices/new" class="btn btn-warning mb-3">
     <i class="fas fa-plus"></i> Thêm Mức Đá
@@ -16,10 +17,10 @@
     <tbody>
         <c:forEach items="${ices}" var="s">
             <tr>
-                <td>${s.id}</td>
-                <td>${s.name}</td>
-                <td>${s.percent}%</td>
-                <td>${s.sortOrder}</td>
+                <td>${fn:escapeXml(s.id)}</td>
+                <td>${fn:escapeXml(s.name)}</td>
+                <td>${fn:escapeXml(s.percent)}%</td>
+                <td>${fn:escapeXml(s.sortOrder)}</td>
                 <td>
                     <c:choose>
                         <c:when test="${s.active}"><span class="badge bg-success">Đang dùng</span></c:when>
@@ -27,14 +28,14 @@
                     </c:choose>
                 </td>
                 <td>
-                    <a href="${pageContext.request.contextPath}/admin/ices/edit/${s.id}" class="btn btn-sm btn-primary">Sửa</a>
+                    <a href="${pageContext.request.contextPath}/admin/ices/edit/${fn:escapeXml(s.id)}" class="btn btn-sm btn-primary">Sửa</a>
                     <c:choose>
                         <c:when test="${s.active}">
-                            <a href="${pageContext.request.contextPath}/admin/ices/delete/${s.id}" class="btn btn-sm btn-danger"
+                            <a href="${pageContext.request.contextPath}/admin/ices/delete/${fn:escapeXml(s.id)}" class="btn btn-sm btn-danger"
                                onclick="return confirm('Khóa mức đá này?')">Khóa</a>
                         </c:when>
                         <c:otherwise>
-                            <a href="${pageContext.request.contextPath}/admin/ices/restore/${s.id}" class="btn btn-sm btn-success">Mở</a>
+                            <a href="${pageContext.request.contextPath}/admin/ices/restore/${fn:escapeXml(s.id)}" class="btn btn-sm btn-success">Mở</a>
                         </c:otherwise>
                     </c:choose>
                 </td>

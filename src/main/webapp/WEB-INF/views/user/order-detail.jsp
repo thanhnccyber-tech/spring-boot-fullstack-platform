@@ -1,12 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Chi tiết đơn hàng</title>
 
-<h3>Đơn hàng ${order.orderCode}</h3>
-<p>Trạng thái: <span class="badge bg-info">${order.status}</span></p>
-<p>Địa chỉ: ${order.shippingAddress}</p>
-<p>Thanh toán: ${order.paymentMethod}</p>
+<h3>Đơn hàng ${fn:escapeXml(order.orderCode)}</h3>
+<p>Trạng thái: <span class="badge bg-info">${fn:escapeXml(order.status)}</span></p>
+<p>Địa chỉ: ${fn:escapeXml(order.shippingAddress)}</p>
+<p>Thanh toán: ${fn:escapeXml(order.paymentMethod)}</p>
 <p>Tổng: <span class="text-danger fw-bold"><fmt:formatNumber value="${order.totalAmount}" pattern="#,##0"/> ₫</span></p>
 
 <table class="table">
@@ -14,11 +15,11 @@
     <tbody>
         <c:forEach items="${order.details}" var="d">
             <tr>
-                <td>${d.product.name}</td>
-                <td>${d.size != null ? d.size : '—'}</td>
-                <td>${d.sugarLevel != null ? d.sugarLevel : '—'}</td>
-                <td>${d.iceLevel != null ? d.iceLevel : '—'}</td>
-                <td>${d.quantity}</td>
+                <td>${fn:escapeXml(d.product.name)}</td>
+                <td>${fn:escapeXml(d.size != null ? d.size : '—')}</td>
+                <td>${fn:escapeXml(d.sugarLevel != null ? d.sugarLevel : '—')}</td>
+                <td>${fn:escapeXml(d.iceLevel != null ? d.iceLevel : '—')}</td>
+                <td>${fn:escapeXml(d.quantity)}</td>
                 <td><fmt:formatNumber value="${d.unitPrice}" pattern="#,##0"/> ₫</td>
                 <td><fmt:formatNumber value="${d.subtotal}" pattern="#,##0"/> ₫</td>
             </tr>

@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Xác thực OTP - UTeTra</title>
 
 <div class="row justify-content-center">
@@ -9,11 +10,11 @@
             <div class="card-body p-4 text-center">
                 <h3>📧 Xác thực OTP</h3>
                 <p class="text-muted">
-                    Mã OTP đã được gửi tới <b>${email}</b>. Mã có hiệu lực trong 5 phút.
+                    Mã OTP đã được gửi tới <b>${fn:escapeXml(email)}</b>. Mã có hiệu lực trong 5 phút.
                 </p>
 
-                <c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
-                <c:if test="${success != null}"><div class="alert alert-success">${success}</div></c:if>
+                <c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
+                <c:if test="${success != null}"><div class="alert alert-success">${fn:escapeXml(success)}</div></c:if>
 
                 <form:form action="${pageContext.request.contextPath}/otp/register/verify"
                            method="post" modelAttribute="otpRequest">
@@ -27,7 +28,7 @@
                 </form:form>
 
                 <p class="mt-3">
-                    <a href="${pageContext.request.contextPath}/otp/register/resend?email=${email}">
+                    <a href="${pageContext.request.contextPath}/otp/register/resend?email=${fn:escapeXml(email)}">
                         Gửi lại mã OTP
                     </a>
                 </p>

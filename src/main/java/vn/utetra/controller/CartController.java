@@ -19,6 +19,14 @@ import java.util.List;
 public class CartController {
 
 	private static final String CART = "CART";
+	private static final int MAX_QTY = 50;
+	private static final int MAX_CART_ITEMS = 30;
+
+	/** Ép số lượng về 1..MAX_QTY (chống số âm / số quá lớn làm sai tổng tiền). */
+	private static int clampQty(Integer q) {
+		if (q == null) return 1;
+		return Math.max(1, Math.min(q, MAX_QTY));
+	}
 
 	@Autowired
 	private ProductService productService;
@@ -59,6 +67,15 @@ public class CartController {
 
 		Product p = productService.get(productId);
 
+		if (!Boolean.TRUE.equals(p.getActive())) {
+			ra.addFlashAttribute("error", "Sản phẩm này hiện không còn bán.");
+			return "redirect:/products";
+		}
+		if (getCart(session).size() >= MAX_CART_ITEMS) {
+			ra.addFlashAttribute("error", "Giỏ hàng tối đa " + MAX_CART_ITEMS + " món.");
+			return "redirect:/cart";
+		}
+
 		// Chặn thêm sản phẩm hết hàng vào giỏ
 		if (Boolean.TRUE.equals(p.getOutOfStock())) {
 			ra.addFlashAttribute("error",
@@ -71,7 +88,7 @@ public class CartController {
 		item.setProductName(p.getName());
 		item.setImageUrl(p.getImageUrl());
 		item.setBasePrice(p.getBasePrice());
-		item.setQuantity(quantity);
+		item.setQuantity(clampQty(quantity));
 
 		BigDecimal unit = p.getBasePrice();
 
@@ -152,7 +169,7 @@ public class CartController {
 	public String update(@RequestParam int index, @RequestParam int quantity, HttpSession session) {
 		List<CartItem> cart = getCart(session);
 		if (index >= 0 && index < cart.size()) {
-			cart.get(index).setQuantity(quantity);
+			cart.get(index).setQuantity(clampQty(quantity));
 		}
 		return "redirect:/cart";
 	}

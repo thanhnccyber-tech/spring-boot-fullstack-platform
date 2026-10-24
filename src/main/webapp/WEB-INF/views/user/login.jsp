@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Đăng nhập - UTeTra</title>
 
 <div class="row justify-content-center">
@@ -19,14 +20,14 @@
                     </div>
                 </c:if>
                 <c:if test="${error != null}">
-                    <div class="alert alert-danger">${error}</div>
+                    <div class="alert alert-danger">${fn:escapeXml(error)}</div>
                 </c:if>
 
                 <form action="${pageContext.request.contextPath}/auth/login" method="post">
                     <div class="mb-3">
                         <label class="form-label">Email</label>
                         <input type="email" name="email" class="form-control"
-                               value="${loginRequest.email}" required autofocus>
+                               value="${fn:escapeXml(loginRequest.email)}" required autofocus>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Mật khẩu</label>

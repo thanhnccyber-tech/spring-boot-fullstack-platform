@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Lịch sử đơn hàng</title>
 
 <h3>📋 Lịch sử đơn hàng</h3>
@@ -15,15 +16,15 @@
     <tbody>
         <c:forEach items="${orders}" var="o">
             <tr>
-                <td>${o.orderCode}</td>
-                <td>${o.branch.name}</td>
-                <td>${o.createdAtFormatted}</td>
+                <td>${fn:escapeXml(o.orderCode)}</td>
+                <td>${fn:escapeXml(o.branch.name)}</td>
+                <td>${fn:escapeXml(o.createdAtFormatted)}</td>
                 <td class="text-danger">
                     <fmt:formatNumber value="${o.totalAmount}" pattern="#,##0"/> ₫
                 </td>
-                <td><span class="badge bg-info">${o.status}</span></td>
+                <td><span class="badge bg-info">${fn:escapeXml(o.status)}</span></td>
                 <td>
-                    <a href="${pageContext.request.contextPath}/order/detail/${o.id}"
+                    <a href="${pageContext.request.contextPath}/order/detail/${fn:escapeXml(o.id)}"
                        class="btn btn-sm btn-outline-primary">Xem</a>
                 </td>
             </tr>

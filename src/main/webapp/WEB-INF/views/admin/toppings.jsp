@@ -1,10 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Quản lý Topping</title>
 
-<c:if test="${success != null}"><div class="alert alert-success">${success}</div></c:if>
-<c:if test="${error != null}"><div class="alert alert-danger">${error}</div></c:if>
+<c:if test="${success != null}"><div class="alert alert-success">${fn:escapeXml(success)}</div></c:if>
+<c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="mb-0">🍦 Quản lý Topping</h5>
@@ -16,7 +17,7 @@
 
 <form class="row g-2 mb-3 bg-white p-3 rounded shadow-sm" method="get">
     <div class="col-md-4">
-        <input type="text" name="kw" value="${kw}" class="form-control"
+        <input type="text" name="kw" value="${fn:escapeXml(kw)}" class="form-control"
                placeholder="Tìm theo tên topping...">
     </div>
     <div class="col-md-2">
@@ -58,44 +59,44 @@
     <tbody>
         <c:forEach items="${pageData.content}" var="t">
             <tr>
-                <td>${t.id}</td>
-                <td><b>${t.name}</b></td>
+                <td>${fn:escapeXml(t.id)}</td>
+                <td><b>${fn:escapeXml(t.name)}</b></td>
                 <td class="text-end">
                     <fmt:formatNumber value="${t.price}" pattern="#,##0"/> ₫
                 </td>
                 <td class="text-center">
                     <form action="${pageContext.request.contextPath}/admin/toppings/toggle-active"
                           method="post" style="display:inline">
-                        <input type="hidden" name="id" value="${t.id}">
+                        <input type="hidden" name="id" value="${fn:escapeXml(t.id)}">
                         <input type="hidden" name="returnUrl"
-                               value="/admin/toppings?page=${pageData.number}&kw=${kw}&active=${activeFilter}&outOfStock=${outOfStockFilter}">
-                        <button class="badge ${t.active ? 'bg-success' : 'bg-secondary'} border-0"
-                                title="${t.active ? 'Bấm để ẩn' : 'Bấm để hiện'}">
-                            <i class="fas ${t.active ? 'fa-eye' : 'fa-eye-slash'}"></i>
-                            ${t.active ? 'Đang hiện' : 'Đã ẩn'}
+                               value="/admin/toppings?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}&outOfStock=${fn:escapeXml(outOfStockFilter)}">
+                        <button class="badge ${fn:escapeXml(t.active ? 'bg-success' : 'bg-secondary')} border-0"
+                                title="${fn:escapeXml(t.active ? 'Bấm để ẩn' : 'Bấm để hiện')}">
+                            <i class="fas ${fn:escapeXml(t.active ? 'fa-eye' : 'fa-eye-slash')}"></i>
+                            ${fn:escapeXml(t.active ? 'Đang hiện' : 'Đã ẩn')}
                         </button>
                     </form>
                 </td>
                 <td class="text-center">
                     <form action="${pageContext.request.contextPath}/admin/toppings/toggle-stock"
                           method="post" style="display:inline">
-                        <input type="hidden" name="id" value="${t.id}">
+                        <input type="hidden" name="id" value="${fn:escapeXml(t.id)}">
                         <input type="hidden" name="returnUrl"
-                               value="/admin/toppings?page=${pageData.number}&kw=${kw}&active=${activeFilter}&outOfStock=${outOfStockFilter}">
-                        <button class="badge ${t.outOfStock ? 'bg-danger' : 'bg-success'} border-0"
-                                title="${t.outOfStock ? 'Bấm để đánh dấu còn hàng' : 'Bấm để đánh dấu hết hàng'}">
-                            <i class="fas ${t.outOfStock ? 'fa-times-circle' : 'fa-check-circle'}"></i>
-                            ${t.outOfStock ? 'Hết hàng' : 'Còn hàng'}
+                               value="/admin/toppings?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}&outOfStock=${fn:escapeXml(outOfStockFilter)}">
+                        <button class="badge ${fn:escapeXml(t.outOfStock ? 'bg-danger' : 'bg-success')} border-0"
+                                title="${fn:escapeXml(t.outOfStock ? 'Bấm để đánh dấu còn hàng' : 'Bấm để đánh dấu hết hàng')}">
+                            <i class="fas ${fn:escapeXml(t.outOfStock ? 'fa-times-circle' : 'fa-check-circle')}"></i>
+                            ${fn:escapeXml(t.outOfStock ? 'Hết hàng' : 'Còn hàng')}
                         </button>
                     </form>
                 </td>
                 <td>
-                    <a href="${pageContext.request.contextPath}/admin/toppings/edit/${t.id}"
+                    <a href="${pageContext.request.contextPath}/admin/toppings/edit/${fn:escapeXml(t.id)}"
                        class="btn btn-sm btn-primary">Sửa</a>
                     <form action="${pageContext.request.contextPath}/admin/toppings/delete"
                           method="post" style="display:inline"
                           onsubmit="return confirm('Xóa topping này?')">
-                        <input type="hidden" name="id" value="${t.id}">
+                        <input type="hidden" name="id" value="${fn:escapeXml(t.id)}">
                         <button class="btn btn-sm btn-danger">Xóa</button>
                     </form>
                 </td>
@@ -112,19 +113,19 @@
 <c:if test="${pageData.totalPages > 1}">
     <nav>
         <ul class="pagination justify-content-center">
-            <li class="page-item ${pageData.first ? 'disabled' : ''}">
+            <li class="page-item ${fn:escapeXml(pageData.first ? 'disabled' : '')}">
                 <a class="page-link"
-                   href="?page=${pageData.number - 1}&kw=${kw}&active=${activeFilter}&outOfStock=${outOfStockFilter}">«</a>
+                   href="?page=${fn:escapeXml(pageData.number - 1)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}&outOfStock=${fn:escapeXml(outOfStockFilter)}">«</a>
             </li>
             <c:forEach begin="0" end="${pageData.totalPages - 1}" var="i">
-                <li class="page-item ${i == pageData.number ? 'active' : ''}">
+                <li class="page-item ${fn:escapeXml(i == pageData.number ? 'active' : '')}">
                     <a class="page-link"
-                       href="?page=${i}&kw=${kw}&active=${activeFilter}&outOfStock=${outOfStockFilter}">${i + 1}</a>
+                       href="?page=${fn:escapeXml(i)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}&outOfStock=${fn:escapeXml(outOfStockFilter)}">${fn:escapeXml(i + 1)}</a>
                 </li>
             </c:forEach>
-            <li class="page-item ${pageData.last ? 'disabled' : ''}">
+            <li class="page-item ${fn:escapeXml(pageData.last ? 'disabled' : '')}">
                 <a class="page-link"
-                   href="?page=${pageData.number + 1}&kw=${kw}&active=${activeFilter}&outOfStock=${outOfStockFilter}">»</a>
+                   href="?page=${fn:escapeXml(pageData.number + 1)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}&outOfStock=${fn:escapeXml(outOfStockFilter)}">»</a>
             </li>
         </ul>
     </nav>

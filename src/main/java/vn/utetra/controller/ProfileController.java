@@ -1,5 +1,6 @@
 package vn.utetra.controller;
 
+import vn.utetra.security.ErrorMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -52,7 +53,7 @@ public class ProfileController {
             model.addAttribute("formFullName", fullName);
             model.addAttribute("formPhone", phone);
             model.addAttribute("formAddress", address);
-            model.addAttribute("error", "Cập nhật thất bại: " + e.getMessage());
+            model.addAttribute("error", "Cập nhật thất bại: " + ErrorMessages.safe(e));
             return "user/profile";
         }
     }
@@ -71,7 +72,7 @@ public class ProfileController {
         } catch (Exception e) {
             User u = userService.findByEmail(auth.getName()).orElseThrow();
             model.addAttribute("user", u);
-            model.addAttribute("error", e.getMessage());
+            model.addAttribute("error", ErrorMessages.safe(e));
             return "user/profile";
         }
     }
