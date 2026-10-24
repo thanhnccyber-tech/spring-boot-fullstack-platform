@@ -22,6 +22,18 @@
                 </c:if>
                 <div class="card-body">
                     <h6 class="card-title">${p.name}</h6>
+                    <c:set var="rs" value="${ratings[p.id]}"/>
+                    <div class="small mb-1">
+                        <span class="text-warning">
+                            <c:forEach begin="1" end="5" var="i"><i class="${(not empty rs and i <= rs.rounded) ? 'fas' : 'far'} fa-star"></i></c:forEach>
+                        </span>
+                        <span class="text-muted">
+                            <c:choose>
+                                <c:when test="${not empty rs}">(<fmt:formatNumber value="${rs.average}" maxFractionDigits="1"/> · ${rs.count})</c:when>
+                                <c:otherwise>Chưa có đánh giá</c:otherwise>
+                            </c:choose>
+                        </span>
+                    </div>
                     <p class="text-danger fw-bold"><fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫</p>
                     <a href="${pageContext.request.contextPath}/product/${p.id}" class="btn btn-sm btn-warning w-100">Xem</a>
                 </div>
@@ -43,6 +55,18 @@
                 </c:if>
                 <div class="card-body">
                     <h6>${p.name}</h6>
+                    <c:set var="rs" value="${ratings[p.id]}"/>
+                    <div class="small mb-1">
+                        <span class="text-warning">
+                            <c:forEach begin="1" end="5" var="i"><i class="${(not empty rs and i <= rs.rounded) ? 'fas' : 'far'} fa-star"></i></c:forEach>
+                        </span>
+                        <span class="text-muted">
+                            <c:choose>
+                                <c:when test="${not empty rs}">(<fmt:formatNumber value="${rs.average}" maxFractionDigits="1"/> · ${rs.count})</c:when>
+                                <c:otherwise>Chưa có đánh giá</c:otherwise>
+                            </c:choose>
+                        </span>
+                    </div>
                     <p class="text-danger fw-bold"><fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫</p>
                     <a href="${pageContext.request.contextPath}/product/${p.id}" class="btn btn-sm btn-warning w-100">Xem</a>
                 </div>

@@ -23,6 +23,7 @@ public class ProductService {
     @Autowired private IceLevelRepository iceRepo;
     @Autowired private CloudinaryService cloudinaryService;
     @Autowired private FileValidator fileValidator;
+    @Autowired private ReviewRepository reviewRepo;
 
     public List<Product> featured() { return productRepo.findByFeaturedTrueAndActiveTrue(); }
     public List<Product> newArrivals() { return productRepo.findByIsNewTrueAndActiveTrue(); }
@@ -138,6 +139,7 @@ public class ProductService {
 
     @Transactional
     public void delete(Long id) {
+        reviewRepo.deleteByProductId(id);
         productRepo.deleteById(id);
     }
 }

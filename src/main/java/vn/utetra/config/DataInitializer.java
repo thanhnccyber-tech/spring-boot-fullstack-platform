@@ -182,7 +182,7 @@ public class DataInitializer implements CommandLineRunner {
         p.setFeatured(featured);
         p.setIsNew(isNew);
         p.setCategory(cat);
-        p.setToppings(new LinkedHashSet<>(tops));
+        p.setToppings(tops == null ? new LinkedHashSet<>() : new LinkedHashSet<>(tops));
         p.setAllowSize(true);
         p.setAllowSugar(true);
         p.setAllowIce(true);

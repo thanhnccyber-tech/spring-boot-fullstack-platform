@@ -59,7 +59,7 @@ public class SecurityConfig {
 
                 .requestMatchers(
                         "/cart/**", "/order/**", "/profile/**",
-                        "/notifications/**", "/checkout/**"
+                        "/notifications/**", "/checkout/**", "/review/**"
                 ).authenticated()
 
                 .anyRequest().permitAll()
