@@ -59,6 +59,14 @@
 						href="${pageContext.request.contextPath}/admin/branches"> <i
 							class="fas fa-store"></i> Chi nhánh
 					</a></li>
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/vouchers"> <i
+							class="fas fa-ticket"></i> Mã giảm giá
+					</a></li>
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/promotions"> <i
+							class="fas fa-bullhorn"></i> Khuyến mãi
+					</a></li>
 				</c:if>
 				<c:if
 					test="${sessionScope.roles.contains('ROLE_ADMIN')

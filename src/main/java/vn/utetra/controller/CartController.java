@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.dto.CartItem;
 import vn.utetra.entity.*;
+import vn.utetra.security.SafeRedirect;
 import vn.utetra.service.*;
 
 import java.math.BigDecimal;
@@ -157,20 +158,27 @@ public class CartController {
 		return "redirect:/cart";
 	}
 
-	@GetMapping("/remove/{index}")
-	public String remove(@PathVariable int index, HttpSession session) {
+	/** Xoá món (POST để không bị link từ trang khác tự xoá giỏ). back = trang quay lại (chỉ đường dẫn nội bộ). */
+	@PostMapping("/remove")
+	public String remove(@RequestParam int index,
+			@RequestParam(required = false) String back, HttpSession session) {
 		List<CartItem> cart = getCart(session);
 		if (index >= 0 && index < cart.size())
 			cart.remove(index);
-		return "redirect:/cart";
+		return "redirect:" + SafeRedirect.localPath(back, "/cart");
 	}
 
 	@PostMapping("/update")
-	public String update(@RequestParam int index, @RequestParam int quantity, HttpSession session) {
+	public String update(@RequestParam int index, @RequestParam int quantity,
+			@RequestParam(required = false) String back, HttpSession session) {
 		List<CartItem> cart = getCart(session);
 		if (index >= 0 && index < cart.size()) {
-			cart.get(index).setQuantity(clampQty(quantity));
+			if (quantity < 1) {
+				cart.remove(index); // bấm "−" khi còn 1 ly = bỏ món
+			} else {
+				cart.get(index).setQuantity(clampQty(quantity));
+			}
 		}
-		return "redirect:/cart";
+		return "redirect:" + SafeRedirect.localPath(back, "/cart");
 	}
 }

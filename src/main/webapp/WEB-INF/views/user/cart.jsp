@@ -4,51 +4,66 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Giỏ hàng</title>
 
-<h3>🛒 Giỏ hàng của bạn</h3>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<h3 class="mb-3">🛒 Giỏ hàng của bạn</h3>
 
 <c:if test="${empty cart}">
-    <div class="alert alert-info">Giỏ hàng đang trống. <a href="${pageContext.request.contextPath}/products">Mua sắm ngay</a></div>
+    <div class="checkout-box text-center py-5">
+        <i class="fas fa-cart-shopping fa-3x text-muted mb-3"></i>
+        <p class="mb-3">Giỏ hàng đang trống.</p>
+        <a href="${ctx}/products" class="btn btn-warning">Xem menu và đặt mua</a>
+    </div>
 </c:if>
 
 <c:if test="${not empty cart}">
-<table class="table align-middle">
-    <thead>
-        <tr>
-            <th>#</th><th>Sản phẩm</th><th>Size</th><th>Đường</th><th>Đá</th>
-            <th>Topping</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th><th></th>
-        </tr>
-    </thead>
-    <tbody>
-        <c:forEach items="${cart}" var="item" varStatus="st">
-            <tr>
-                <td>${fn:escapeXml(st.index + 1)}</td>
-                <td>${fn:escapeXml(item.productName)}</td>
-                <td>${fn:escapeXml(item.sizeName != null ? item.sizeName : '—')}</td>
-                <td>${fn:escapeXml(item.sugarName != null ? item.sugarName : '—')}</td>
-                <td>${fn:escapeXml(item.iceName != null ? item.iceName : '—')}</td>
-                <td><c:forEach items="${item.toppingNames}" var="tn">${fn:escapeXml(tn)}<br/></c:forEach></td>
-                <td>
-                    <form action="${pageContext.request.contextPath}/cart/update" method="post" class="d-flex">
-                        <input type="hidden" name="index" value="${fn:escapeXml(st.index)}">
-                        <input type="number" name="quantity" value="${fn:escapeXml(item.quantity)}" min="1" class="form-control form-control-sm" style="width:70px">
-                        <button class="btn btn-sm btn-outline-secondary ms-1">✓</button>
-                    </form>
-                </td>
-                <td><fmt:formatNumber value="${item.unitPrice}" pattern="#,##0"/> ₫</td>
-                <td class="text-danger fw-bold"><fmt:formatNumber value="${item.subtotal}" pattern="#,##0"/> ₫</td>
-                <td>
-                    <a href="${pageContext.request.contextPath}/cart/remove/${fn:escapeXml(st.index)}" class="btn btn-sm btn-danger">✕</a>
-                </td>
-            </tr>
-        </c:forEach>
-    </tbody>
-    <tfoot>
-        <tr>
-            <th colspan="8" class="text-end">Tổng cộng:</th>
-            <th colspan="2" class="text-danger fs-5"><fmt:formatNumber value="${total}" pattern="#,##0"/> ₫</th>
-        </tr>
-    </tfoot>
-</table>
-
-<a href="${pageContext.request.contextPath}/order/checkout" class="btn btn-warning btn-lg">Tiến hành đặt hàng →</a>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="checkout-box">
+            <c:forEach items="${cart}" var="item" varStatus="st">
+                <div class="cart-line">
+                    <c:if test="${not empty item.imageUrl}"><img src="${fn:escapeXml(item.imageUrl)}" alt=""></c:if>
+                    <div class="flex-grow-1">
+                        <a class="fw-bold text-decoration-none text-dark" href="${ctx}/product/${fn:escapeXml(item.productId)}">${fn:escapeXml(item.productName)}</a>
+                        <div class="small text-muted">
+                            Size: ${fn:escapeXml(item.sizeName != null ? item.sizeName : '—')}
+                            · Ngọt: ${fn:escapeXml(item.sugarName != null ? item.sugarName : '—')}
+                            · Đá: ${fn:escapeXml(item.iceName != null ? item.iceName : '—')}
+                            <c:if test="${not empty item.toppingNames}"><br>Topping: <c:forEach items="${item.toppingNames}" var="tn" varStatus="ts">${fn:escapeXml(tn)}<c:if test="${!ts.last}">, </c:if></c:forEach></c:if>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span><fmt:formatNumber value="${item.unitPrice}" pattern="#,##0"/> ₫ × ${fn:escapeXml(item.quantity)} =
+                                <b class="text-success"><fmt:formatNumber value="${item.subtotal}" pattern="#,##0"/> ₫</b></span>
+                            <div class="d-flex align-items-center gap-1">
+                                <form action="${ctx}/cart/update" method="post" class="d-inline">
+                                    <input type="hidden" name="index" value="${fn:escapeXml(st.index)}">
+                                    <input type="hidden" name="quantity" value="${fn:escapeXml(item.quantity - 1)}">
+                                    <button class="qty-btn" aria-label="Giảm">−</button>
+                                </form>
+                                <span class="px-2">${fn:escapeXml(item.quantity)}</span>
+                                <form action="${ctx}/cart/update" method="post" class="d-inline">
+                                    <input type="hidden" name="index" value="${fn:escapeXml(st.index)}">
+                                    <input type="hidden" name="quantity" value="${fn:escapeXml(item.quantity + 1)}">
+                                    <button class="qty-btn" aria-label="Tăng">+</button>
+                                </form>
+                                <form action="${ctx}/cart/remove" method="post" class="d-inline ms-2" onsubmit="return confirm('Bỏ món này khỏi giỏ?')">
+                                    <input type="hidden" name="index" value="${fn:escapeXml(st.index)}">
+                                    <button class="btn btn-link text-danger p-0" aria-label="Xoá món"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </c:forEach>
+            <a href="${ctx}/products" class="btn btn-link px-0 mt-2">← Chọn thêm món</a>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="checkout-box">
+            <h5 class="mb-3">Tạm tính</h5>
+            <div class="sum-row border-0"><b>Tổng cộng</b><span class="sum-total"><fmt:formatNumber value="${total}" pattern="#,##0"/> ₫</span></div>
+            <div class="small text-muted mb-3">Phí giao hàng và mã giảm giá được tính ở bước thanh toán.</div>
+            <a href="${ctx}/order/checkout" class="btn btn-warning btn-lg w-100 fw-bold">Tiến hành thanh toán</a>
+        </div>
+    </div>
+</div>
 </c:if>

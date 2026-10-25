@@ -24,6 +24,8 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private SizeOptionRepository sizeRepo;
     @Autowired private SugarLevelRepository sugarRepo;
     @Autowired private IceLevelRepository iceRepo;
+    @Autowired private VoucherRepository voucherRepo;
+    @Autowired private PromotionRepository promoRepo;
     @Autowired private PasswordEncoder encoder;
 
     @Override
@@ -108,6 +110,52 @@ public class DataInitializer implements CommandLineRunner {
                     "Trà đào tươi mát kết hợp cam sả",
                     "38000", true, false, ttc, null, sSize, sSugar, sIce);
         }
+
+        seedMarketing();
+    }
+
+    private void seedMarketing() {
+        if (voucherRepo.count() == 0) {
+            Voucher a = new Voucher();
+            a.setCode("WELCOME10");
+            a.setDescription("Giảm 10% (tối đa 30.000đ) cho đơn từ 50.000đ");
+            a.setDiscountType(Voucher.PERCENT);
+            a.setDiscountValue(new BigDecimal("10"));
+            a.setMinOrderAmount(new BigDecimal("50000"));
+            a.setMaxDiscountAmount(new BigDecimal("30000"));
+            voucherRepo.save(a);
+
+            Voucher b = new Voucher();
+            b.setCode("GIAM15K");
+            b.setDescription("Giảm 15.000đ cho đơn từ 80.000đ");
+            b.setDiscountType(Voucher.AMOUNT);
+            b.setDiscountValue(new BigDecimal("15000"));
+            b.setMinOrderAmount(new BigDecimal("80000"));
+            voucherRepo.save(b);
+        }
+        if (promoRepo.count() == 0) {
+            createPromo("Khai trương: giảm 10% đơn đầu tiên",
+                    "Nhập mã WELCOME10 khi thanh toán để được giảm 10%, tối đa 30.000đ.",
+                    "Chào mừng bạn đến với UTeTra! Nhập mã WELCOME10 ở bước thanh toán để được giảm 10% (tối đa 30.000đ) cho đơn từ 50.000đ.",
+                    "WELCOME10");
+            createPromo("Giảm ngay 15.000đ cho đơn từ 80.000đ",
+                    "Nhập mã GIAM15K, áp dụng cho cả giao hàng và đến lấy tại cửa hàng.",
+                    "Đặt nhóm cùng bạn bè? Nhập mã GIAM15K để được giảm 15.000đ cho đơn từ 80.000đ.",
+                    "GIAM15K");
+            createPromo("Tích điểm đổi quà: 10.000đ = 1 điểm",
+                    "Mỗi đơn hoàn thành đều được cộng điểm hội viên tự động.",
+                    "Mỗi 10.000đ bạn chi tiêu được 1 điểm hội viên. Điểm được cộng sau khi đơn hoàn thành.",
+                    null);
+        }
+    }
+
+    private void createPromo(String title, String summary, String content, String voucher) {
+        Promotion p = new Promotion();
+        p.setTitle(title);
+        p.setSummary(summary);
+        p.setContent(content);
+        p.setVoucherCode(voucher);
+        promoRepo.save(p);
     }
 
     private Role ensureRole(String name, String description) {

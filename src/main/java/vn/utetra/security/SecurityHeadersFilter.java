@@ -28,7 +28,7 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
         response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-        response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+        response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(self), payment=()");
         response.setHeader("Content-Security-Policy", CSP);
         response.setHeader("X-XSS-Protection", "0");
         chain.doFilter(request, response);

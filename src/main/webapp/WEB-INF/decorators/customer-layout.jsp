@@ -14,78 +14,169 @@
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
-    <div class="container">
-        <a class="navbar-brand fw-bold text-warning" href="${pageContext.request.contextPath}/">
-            <i class="fas fa-mug-hot"></i> UTeTra
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navMenu">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="${pageContext.request.contextPath}/">
-                    <i class="fas fa-home"></i> Trang chủ</a></li>
-                <li class="nav-item"><a class="nav-link" href="${pageContext.request.contextPath}/products">
-                    <i class="fas fa-coffee"></i> Sản phẩm</a></li>
-            </ul>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="${pageContext.request.contextPath}/cart">
-                        <i class="fas fa-shopping-cart"></i> Giỏ hàng
-                    </a>
-                </li>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<c:set var="cartCount" value="0"/>
+<c:forEach items="${sessionScope.CART}" var="ci"><c:set var="cartCount" value="${cartCount + ci.quantity}"/></c:forEach>
+<c:set var="uri" value="${not empty requestScope['jakarta.servlet.forward.request_uri'] ? requestScope['jakarta.servlet.forward.request_uri'] : pageContext.request.requestURI}"/>
+
+<!-- ========== Hàng 1: logo | tìm kiếm | cách nhận hàng | thông báo | tài khoản ========== -->
+<header class="site-header sticky-top bg-white shadow-sm">
+    <div class="container py-2 d-flex align-items-center gap-2 gap-md-3">
+        <a class="brand text-decoration-none" href="${ctx}/"><i class="fas fa-mug-hot"></i> UTeTra</a>
+
+        <form class="header-search flex-grow-1" action="${ctx}/products" method="get" role="search">
+            <i class="fas fa-search"></i>
+            <input type="text" name="kw" maxlength="100" value="${fn:escapeXml(param.kw)}"
+                   placeholder="Bạn muốn uống gì..." aria-label="Tìm sản phẩm" autocomplete="off">
+        </form>
+
+        <button type="button" class="btn receive-btn d-none d-md-inline-flex" data-bs-toggle="modal" data-bs-target="#receiveModal">
+            <i class="fas fa-motorcycle"></i>
+            <span class="text-start">
                 <c:choose>
-                    <c:when test="${not empty sessionScope.userId}">
-                        <li class="nav-item">
-                            <a class="nav-link" href="${pageContext.request.contextPath}/notifications">
-                                <i class="fas fa-bell"></i>
-                            </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle"></i> ${fn:escapeXml(sessionScope.fullName)}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/profile">
-                                    <i class="fas fa-user"></i> Thông tin cá nhân</a></li>
-                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/order/history">
-                                    <i class="fas fa-receipt"></i> Đơn hàng của tôi</a></li>
-                                <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')
-                                            || sessionScope.roles.contains('ROLE_MANAGER')
-                                            || sessionScope.roles.contains('ROLE_STAFF')}">
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/admin/dashboard">
-                                        <i class="fas fa-tachometer-alt"></i> Trang quản trị</a></li>
-                                </c:if>
-                                <c:if test="${sessionScope.roles.contains('ROLE_SHIPPER')}">
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/shipper/dashboard">
-                                        <i class="fas fa-truck"></i> Giao hàng</a></li>
-                                </c:if>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="${pageContext.request.contextPath}/logout">
-                                    <i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-                            </ul>
-                        </li>
+                    <c:when test="${not empty sessionScope.RECV_METHOD}">
+                        <small class="d-block text-muted">${fn:escapeXml(sessionScope.RECV_METHOD == 'PICKUP' ? 'Đến lấy tại' : 'Giao hàng từ')}</small>
+                        <b>${fn:escapeXml(sessionScope.RECV_BRANCH_NAME)}</b>
                     </c:when>
-                    <c:otherwise>
-                        <li class="nav-item"><a class="nav-link" href="${pageContext.request.contextPath}/login">
-                            <i class="fas fa-sign-in-alt"></i> Đăng nhập</a></li>
-                        <li class="nav-item">
-                            <a class="btn btn-warning btn-sm ms-2 mt-1"
-                               href="${pageContext.request.contextPath}/register">Đăng ký</a>
-                        </li>
-                    </c:otherwise>
+                    <c:otherwise><b>Chọn phương thức nhận hàng</b></c:otherwise>
                 </c:choose>
+            </span>
+        </button>
+
+        <c:choose>
+            <c:when test="${not empty sessionScope.userId}">
+                <a class="icon-btn" href="${ctx}/notifications" title="Thông báo"><i class="fas fa-bell"></i></a>
+                <div class="dropdown">
+                    <a class="icon-btn" href="#" data-bs-toggle="dropdown" title="Tài khoản"><i class="fas fa-user-circle"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li class="dropdown-header">${fn:escapeXml(sessionScope.fullName)}</li>
+                        <li><a class="dropdown-item" href="${ctx}/profile"><i class="fas fa-user"></i> Thông tin cá nhân</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/order/history"><i class="fas fa-receipt"></i> Đơn hàng của tôi</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/hoi-vien"><i class="fas fa-id-card"></i> Thẻ hội viên &amp; điểm</a></li>
+                        <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')
+                                    || sessionScope.roles.contains('ROLE_MANAGER')
+                                    || sessionScope.roles.contains('ROLE_STAFF')}">
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="${ctx}/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Trang quản trị</a></li>
+                        </c:if>
+                        <c:if test="${sessionScope.roles.contains('ROLE_SHIPPER')}">
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="${ctx}/shipper/dashboard"><i class="fas fa-truck"></i> Giao hàng</a></li>
+                        </c:if>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="${ctx}/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                    </ul>
+                </div>
+            </c:when>
+            <c:otherwise>
+                <a class="btn btn-outline-dark btn-sm" href="${ctx}/login">Đăng nhập</a>
+                <a class="btn btn-warning btn-sm d-none d-sm-inline-block" href="${ctx}/register">Đăng ký</a>
+            </c:otherwise>
+        </c:choose>
+    </div>
+
+    <!-- ========== Hàng 2: menu chính + mega-menu ========== -->
+    <nav class="main-nav border-top">
+        <div class="container">
+            <button class="btn btn-sm d-md-none my-1" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Mở menu">
+                <i class="fas fa-bars"></i> Menu
+            </button>
+            <ul class="nav justify-content-center collapse d-md-flex" id="mainNav">
+                <li class="nav-item"><a class="nav-link" href="${ctx}/">Trang chủ</a></li>
+                <li class="nav-item mega">
+                    <a class="nav-link" href="${ctx}/products">Menu <i class="fas fa-chevron-down small"></i></a>
+                    <div class="mega-panel">
+                        <div class="mega-col">
+                            <h6>Thức uống &amp; bánh</h6>
+                            <a href="${ctx}/products">Tất cả sản phẩm</a>
+                            <c:forEach items="${menuCategories}" var="mc">
+                                <a href="${ctx}/products?categoryId=${fn:escapeXml(mc.id)}">${fn:escapeXml(mc.name)}</a>
+                            </c:forEach>
+                        </div>
+                        <div class="mega-col">
+                            <h6>Gợi ý nhanh</h6>
+                            <a href="${ctx}/products?sort=priceAsc">Giá tốt nhất</a>
+                            <a href="${ctx}/products?sort=newest">Món mới</a>
+                        </div>
+                    </div>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="${ctx}/khuyen-mai">Khuyến mãi</a></li>
+                <li class="nav-item"><a class="nav-link" href="${ctx}/hoi-vien">Hội viên</a></li>
+                <li class="nav-item"><a class="nav-link" href="${ctx}/cua-hang">Cửa hàng</a></li>
+                <li class="nav-item d-md-none"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#receiveModal">Chọn cách nhận hàng</a></li>
             </ul>
         </div>
+    </nav>
+</header>
+
+<!-- ========== Popup: Chọn phương thức nhận hàng ========== -->
+<div class="modal fade" id="receiveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="${ctx}/receive/set" method="post" id="receiveForm">
+        <input type="hidden" name="returnUrl" id="receiveReturn" value="/products">
+        <input type="hidden" name="method" id="receiveMethod" value="${fn:escapeXml(sessionScope.RECV_METHOD == 'PICKUP' ? 'PICKUP' : 'DELIVERY')}">
+        <div class="modal-header border-0 pb-0">
+          <ul class="nav nav-pills w-100 recv-tabs" role="tablist">
+            <li class="nav-item flex-fill text-center"><button type="button" class="nav-link w-100 ${fn:escapeXml(sessionScope.RECV_METHOD == 'PICKUP' ? '' : 'active')}" data-recv="DELIVERY"><i class="fas fa-truck-fast"></i> GIAO HÀNG</button></li>
+            <li class="nav-item flex-fill text-center"><button type="button" class="nav-link w-100 ${fn:escapeXml(sessionScope.RECV_METHOD == 'PICKUP' ? 'active' : '')}" data-recv="PICKUP"><i class="fas fa-store"></i> ĐẾN LẤY</button></li>
+          </ul>
+          <button type="button" class="btn-close position-absolute top-0 end-0 m-2" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body">
+          <div id="recvAddressBox" class="mb-3">
+            <label class="form-label small text-muted mb-1">Địa chỉ nhận hàng</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="fas fa-location-dot"></i></span>
+              <input type="text" class="form-control" name="address" id="recvAddress" maxlength="500"
+                     placeholder="Vui lòng nhập địa chỉ" value="${fn:escapeXml(sessionScope.RECV_ADDR)}">
+            </div>
+            <button type="button" class="btn btn-link px-0 mt-1" id="recvLocate"><i class="fas fa-crosshairs"></i> Vị trí hiện tại của quý khách</button>
+            <div class="small text-muted" id="recvLocateMsg"></div>
+          </div>
+          <label class="form-label small text-muted mb-1" id="recvBranchLabel">Cửa hàng phục vụ</label>
+          <div class="list-group branch-list">
+            <c:forEach items="${receiveBranches}" var="rb" varStatus="st">
+              <label class="list-group-item d-flex gap-2 align-items-start">
+                <input class="form-check-input mt-1" type="radio" name="branchId" value="${fn:escapeXml(rb.id)}" required
+                       <c:if test="${(not empty sessionScope.RECV_BRANCH and sessionScope.RECV_BRANCH == rb.id) or (empty sessionScope.RECV_BRANCH and st.first)}">checked</c:if>>
+                <span><b>${fn:escapeXml(rb.name)}</b><br><small class="text-muted">${fn:escapeXml(rb.address)} · ${fn:escapeXml(rb.phone)}</small></span>
+              </label>
+            </c:forEach>
+            <c:if test="${empty receiveBranches}"><div class="list-group-item text-muted">Hiện chưa có cửa hàng nào hoạt động.</div></c:if>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button class="btn btn-warning w-100 fw-bold">XÁC NHẬN</button>
+        </div>
+      </form>
     </div>
-</nav>
+  </div>
+</div>
 
 <main class="container my-4">
+    <%-- Thông báo sau thao tác (flash). Các trang tự hiển thị lỗi riêng thì bỏ qua để không lặp --%>
+    <c:if test="${not (fn:contains(uri, '/login') or fn:contains(uri, '/register') or fn:contains(uri, '/otp')
+                        or fn:contains(uri, '/forgot-password') or fn:contains(uri, '/reset-password')
+                        or fn:contains(uri, '/profile') or fn:contains(uri, '/product/'))}">
+        <c:if test="${not empty success}">
+            <div class="alert alert-success alert-dismissible fade show auto-hide" role="alert">${fn:escapeXml(success)}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        </c:if>
+        <c:if test="${not empty error}">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">${fn:escapeXml(error)}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        </c:if>
+    </c:if>
     <sitemesh:write property="body"/>
 </main>
+
+<!-- ========== Nút nổi: giỏ hàng + gọi hotline ========== -->
+<div class="float-actions">
+    <a class="float-btn float-cart" href="${ctx}/cart" title="Giỏ hàng" aria-label="Giỏ hàng">
+        <i class="fas fa-cart-shopping"></i>
+        <span class="float-badge" id="cartBadge">${fn:escapeXml(cartCount)}</span>
+    </a>
+    <a class="float-btn float-call" href="tel:19001234" title="Gọi hotline 1900 1234" aria-label="Gọi hotline"><i class="fas fa-phone"></i></a>
+</div>
 
 <footer class="bg-dark text-white text-center py-3 mt-5">
     <p class="mb-0">&copy; 2025 UTeTra - Chuỗi trà sữa UTe. Hotline: 1900 1234</p>

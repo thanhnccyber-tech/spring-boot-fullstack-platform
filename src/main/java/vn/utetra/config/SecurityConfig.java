@@ -40,7 +40,9 @@ public class SecurityConfig {
                         "/auth/**", "/api/auth/**",
                         "/otp/**",
                         "/forgot-password", "/reset-password",
-                        "/static/**", "/ws/**", "/error", "/logout", "/favicon.ico"
+                        "/static/**", "/ws/**", "/error", "/logout", "/favicon.ico",
+                        // Trang thương hiệu công khai + chọn cách nhận hàng (khách chưa đăng nhập vẫn dùng được)
+                        "/khuyen-mai", "/khuyen-mai/**", "/hoi-vien", "/cua-hang", "/receive/**"
                 ).permitAll()
 
                 .requestMatchers("/admin/dashboard/**",
@@ -51,6 +53,8 @@ public class SecurityConfig {
                                  "/admin/sizes/**",
                                  "/admin/sugars/**",
                                  "/admin/ices/**",
+                                 "/admin/vouchers/**",
+                                 "/admin/promotions/**",
                                  "/admin/reports/**")
                     .hasRole("ADMIN")
 

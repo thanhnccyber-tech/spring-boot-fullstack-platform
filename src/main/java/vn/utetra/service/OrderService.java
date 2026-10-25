@@ -1,6 +1,7 @@
 package vn.utetra.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -13,6 +14,9 @@ import vn.utetra.entity.*;
 import vn.utetra.repository.*;
 
 import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.regex.Pattern;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -29,6 +33,33 @@ public class OrderService {
     @Autowired private ToppingRepository toppingRepo;
     @Autowired private NotificationRepository notiRepo;
     @Autowired private SimpMessagingTemplate messaging;
+    @Autowired private VoucherService voucherService;
+
+    /** Phí giao hàng cố định (đ). Đặt trong application.properties: shop.shipping-fee */
+    @Value("${shop.shipping-fee:25000}")
+    private long shippingFee;
+
+    /** Miễn phí giao hàng khi tiền hàng từ mức này trở lên; 0 = không áp dụng. */
+    @Value("${shop.free-ship-from:0}")
+    private long freeShipFrom;
+
+    /** 10.000đ chi tiêu = 1 điểm (đúng quy tắc hội viên mô tả ở trang Hội viên). */
+    public static final long POINT_UNIT = 10000L;
+
+    private static final Pattern PHONE = Pattern.compile("^(0|\\+84)[0-9]{9,10}$");
+    private static final Pattern EMAIL = Pattern.compile("^[^@\\s]{1,64}@[^@\\s]{1,255}$");
+    private static final DateTimeFormatter FMT_SLOT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    /** Phí ship cho một đơn: đến lấy = 0; giao hàng = phí cố định (hoặc 0 nếu đủ mức miễn phí). */
+    public BigDecimal shippingFeeFor(String method, BigDecimal subtotal) {
+        if (Order.METHOD_PICKUP.equals(method)) return BigDecimal.ZERO;
+        if (freeShipFrom > 0 && subtotal != null && subtotal.compareTo(BigDecimal.valueOf(freeShipFrom)) >= 0)
+            return BigDecimal.ZERO;
+        return BigDecimal.valueOf(shippingFee);
+    }
+
+    public long getShippingFee() { return shippingFee; }
+    public long getFreeShipFrom() { return freeShipFrom; }
 
     private static final Set<String> PAYMENT_METHODS = Set.of("CASH", "BANK", "COD");
     private static final Set<String> STATUSES = Set.of(
@@ -46,18 +77,66 @@ public class OrderService {
         if (req.getBranchId() == null)
             throw new IllegalArgumentException("Vui lòng chọn chi nhánh.");
 
+        String method = req.getDeliveryMethod() == null ? Order.METHOD_DELIVERY : req.getDeliveryMethod();
+        if (!Order.METHOD_DELIVERY.equals(method) && !Order.METHOD_PICKUP.equals(method))
+            throw new IllegalArgumentException("Phương thức nhận hàng không hợp lệ.");
+        req.setDeliveryMethod(method);
+
+        String phone = req.getPhone() == null ? "" : req.getPhone().trim().replace(" ", "");
+        if (!PHONE.matcher(phone).matches())
+            throw new IllegalArgumentException("Số điện thoại không hợp lệ (ví dụ 0912345678).");
+        req.setPhone(phone);
+
         String addr = req.getShippingAddress() == null ? "" : req.getShippingAddress().trim();
-        if (addr.isEmpty() || addr.length() > 500)
-            throw new IllegalArgumentException("Địa chỉ nhận hàng không hợp lệ (tối đa 500 ký tự).");
+        if (Order.METHOD_DELIVERY.equals(method) && addr.isEmpty())
+            throw new IllegalArgumentException("Vui lòng nhập địa chỉ nhận hàng.");
+        if (addr.length() > 500)
+            throw new IllegalArgumentException("Địa chỉ nhận hàng tối đa 500 ký tự.");
         req.setShippingAddress(addr);
 
         if (req.getPaymentMethod() == null || !PAYMENT_METHODS.contains(req.getPaymentMethod()))
             throw new IllegalArgumentException("Phương thức thanh toán không hợp lệ.");
+        // Tiền mặt chỉ khi đến lấy tại quầy; COD chỉ khi giao tận nơi
+        if (Order.METHOD_PICKUP.equals(method) && "COD".equals(req.getPaymentMethod()))
+            throw new IllegalArgumentException("Đơn đến lấy tại cửa hàng không dùng COD, vui lòng chọn cách thanh toán khác.");
+        if (Order.METHOD_DELIVERY.equals(method) && "CASH".equals(req.getPaymentMethod()))
+            throw new IllegalArgumentException("Tiền mặt tại quầy chỉ áp dụng khi đến lấy tại cửa hàng.");
+
+        if (!req.isAgreeTerms())
+            throw new IllegalArgumentException("Bạn cần đồng ý với điều khoản và chính sách để đặt hàng.");
+
+        if (req.isVat()) {
+            String comp = req.getVatCompany() == null ? "" : req.getVatCompany().trim();
+            String tax = req.getVatTaxCode() == null ? "" : req.getVatTaxCode().trim();
+            String mail = req.getVatEmail() == null ? "" : req.getVatEmail().trim();
+            if (comp.isEmpty() || comp.length() > 200)
+                throw new IllegalArgumentException("Hoá đơn VAT: vui lòng nhập tên công ty (tối đa 200 ký tự).");
+            if (!tax.matches("[0-9-]{10,14}"))
+                throw new IllegalArgumentException("Hoá đơn VAT: mã số thuế không hợp lệ (10-14 chữ số).");
+            if (!EMAIL.matcher(mail).matches())
+                throw new IllegalArgumentException("Hoá đơn VAT: email nhận hoá đơn không hợp lệ.");
+            req.setVatCompany(comp); req.setVatTaxCode(tax); req.setVatEmail(mail);
+        }
 
         String note = req.getNote() == null ? "" : req.getNote().trim();
         if (note.length() > 1000)
             throw new IllegalArgumentException("Ghi chú tối đa 1000 ký tự.");
         req.setNote(note.isEmpty() ? null : note);
+    }
+
+    /** "ASAP" hoặc giờ hẹn hợp lệ (từ 20 phút đến 3 ngày tới). Trả về chuỗi để lưu. */
+    private String parseDeliveryTime(String raw) {
+        if (raw == null || raw.isBlank() || "ASAP".equalsIgnoreCase(raw.trim())) return "ASAP";
+        try {
+            LocalDateTime t = LocalDateTime.parse(raw.trim());
+            if (t.isBefore(LocalDateTime.now().plusMinutes(20)))
+                throw new IllegalArgumentException("Giờ nhận hàng phải sau thời điểm hiện tại ít nhất 20 phút.");
+            if (t.isAfter(LocalDateTime.now().plusDays(3)))
+                throw new IllegalArgumentException("Chỉ nhận hẹn giờ trong vòng 3 ngày tới.");
+            return t.format(FMT_SLOT);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Giờ nhận hàng không hợp lệ.");
+        }
     }
 
     @Transactional
@@ -75,6 +154,16 @@ public class OrderService {
         order.setShippingAddress(req.getShippingAddress());
         order.setPaymentMethod(req.getPaymentMethod());
         order.setNote(req.getNote());
+        order.setDeliveryMethod(req.getDeliveryMethod());
+        order.setPhone(req.getPhone());
+        order.setDeliveryTime(parseDeliveryTime(req.getDeliveryTime()));
+        if (req.isVat()) {
+            order.setVatInfo("Công ty: " + req.getVatCompany() + " | MST: " + req.getVatTaxCode()
+                    + " | Email: " + req.getVatEmail());
+        }
+        if (Order.METHOD_PICKUP.equals(req.getDeliveryMethod()) && req.getShippingAddress().isEmpty()) {
+            order.setShippingAddress("Nhận tại cửa hàng: " + branch.getName() + " - " + branch.getAddress());
+        }
         order.setStatus(Order.STATUS_PENDING);
         order.setTotalAmount(BigDecimal.ZERO);
 
@@ -113,7 +202,19 @@ public class OrderService {
             total = total.add(od.getSubtotal());
         }
         orderDetailRepo.saveAll(details);
-        saved.setTotalAmount(total);
+
+        // Mã giảm giá + phí giao hàng: tính lại hoàn toàn ở server, không tin số tiền từ trình duyệt
+        BigDecimal discount = BigDecimal.ZERO;
+        if (req.getVoucherCode() != null && !req.getVoucherCode().isBlank()) {
+            Voucher v = voucherService.validate(req.getVoucherCode(), total);
+            discount = voucherService.discountOf(v, total);
+            voucherService.consume(v);
+            saved.setVoucherCode(v.getCode());
+        }
+        BigDecimal fee = shippingFeeFor(req.getDeliveryMethod(), total);
+        saved.setShippingFee(fee);
+        saved.setDiscountAmount(discount);
+        saved.setTotalAmount(total.subtract(discount).add(fee));
         orderRepo.save(saved);
 
         Map<String, Object> noti = new HashMap<>();
@@ -180,6 +281,7 @@ public class OrderService {
         Order o = orderRepo.findById(id).orElseThrow();
         o.setStatus(status);
         o.setUpdatedAt(LocalDateTime.now());
+        awardPointsIfCompleted(o);
         orderRepo.save(o);
 
         pushStatusToCustomer(o);
@@ -226,5 +328,21 @@ public class OrderService {
         n.setContent(content);
         n.setType("ORDER");
         notiRepo.save(n);
+    }
+
+    /** Cộng điểm hội viên 1 lần duy nhất khi đơn hoàn thành: mỗi 10.000đ tiền hàng (sau giảm giá) = 1 điểm, làm tròn xuống. */
+    private void awardPointsIfCompleted(Order o) {
+        if (!Order.STATUS_COMPLETED.equals(o.getStatus())) return;
+        if (o.getPointsEarned() != null || o.getUser() == null) return;
+        BigDecimal paidGoods = o.getTotalAmount() == null ? BigDecimal.ZERO : o.getTotalAmount();
+        if (o.getShippingFee() != null) paidGoods = paidGoods.subtract(o.getShippingFee());
+        int pts = (int) Math.max(0, paidGoods.longValue() / POINT_UNIT);
+        o.setPointsEarned(pts);
+        if (pts > 0) {
+            User u = o.getUser();
+            u.setLoyaltyPoints(u.getPoints() + pts);
+            userRepo.save(u);
+            saveNotification(o, "Bạn được cộng " + pts + " điểm hội viên cho đơn này.");
+        }
     }
 }

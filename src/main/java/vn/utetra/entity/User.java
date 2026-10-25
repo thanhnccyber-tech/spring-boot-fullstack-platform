@@ -40,6 +40,10 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /** Điểm hội viên (10.000đ = 1 điểm), cộng khi đơn hoàn thành */
+    @Column(name = "loyalty_points")
+    private Integer loyaltyPoints = 0;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -51,6 +55,8 @@ public class User {
     private Branch branch;
 
     /* Derived helpers cho JSP */
+    public int getPoints() { return loyaltyPoints == null ? 0 : loyaltyPoints; }
+
     public boolean hasRole(String roleName) {
         return roles.stream().anyMatch(r -> roleName.equals(r.getName()));
     }

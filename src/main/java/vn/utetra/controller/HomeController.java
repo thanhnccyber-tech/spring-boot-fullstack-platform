@@ -31,6 +31,7 @@ public class HomeController {
     @Autowired private IceService iceService;
     @Autowired private ReviewService reviewService;
     @Autowired private UserService userService;
+    @Autowired private PromotionService promotionService;
 
     @GetMapping({"/", "/home"})
     public String home(Model model) {
@@ -43,6 +44,8 @@ public class HomeController {
         newArrivals.forEach(p -> ids.add(p.getId()));
         model.addAttribute("ratings", reviewService.summaries(ids));
         model.addAttribute("categories", categoryService.active());
+        List<vn.utetra.entity.Promotion> promos = promotionService.active();
+        model.addAttribute("promotions", promos.size() > 4 ? promos.subList(0, 4) : promos);
         return "user/home";
     }
 

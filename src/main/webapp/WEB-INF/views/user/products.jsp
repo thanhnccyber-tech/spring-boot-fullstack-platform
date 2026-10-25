@@ -4,6 +4,14 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Danh sách sản phẩm</title>
 
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="${pageContext.request.contextPath}/products" class="btn btn-sm ${fn:escapeXml(empty categoryId ? 'btn-dark' : 'btn-outline-dark')}">Tất cả</a>
+    <c:forEach items="${categories}" var="cc">
+        <a href="${pageContext.request.contextPath}/products?categoryId=${fn:escapeXml(cc.id)}"
+           class="btn btn-sm ${fn:escapeXml(categoryId == cc.id ? 'btn-dark' : 'btn-outline-dark')}">${fn:escapeXml(cc.name)}</a>
+    </c:forEach>
+</div>
+
 <form class="row g-2 mb-4">
     <div class="col-md-2">
         <input type="text" name="kw" value="${fn:escapeXml(kw)}" class="form-control" placeholder="Tìm theo tên...">
@@ -61,7 +69,7 @@
                         </span>
                     </div>
                     <p class="text-danger fw-bold"><fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫</p>
-                    <a href="${pageContext.request.contextPath}/product/${fn:escapeXml(p.id)}" class="btn btn-warning btn-sm w-100">Chi tiết</a>
+                    <a href="${pageContext.request.contextPath}/product/${fn:escapeXml(p.id)}" class="btn btn-warning btn-sm w-100"><i class="fas fa-cart-plus"></i> Đặt mua</a>
                 </div>
             </div>
         </div>

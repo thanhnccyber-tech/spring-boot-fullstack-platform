@@ -10,6 +10,31 @@
     <a href="${pageContext.request.contextPath}/products" class="btn btn-dark btn-lg">Xem menu</a>
 </div>
 
+<c:if test="${not empty promotions}">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">🎁 Tin tức &amp; Khuyến mãi</h3>
+    <a href="${pageContext.request.contextPath}/khuyen-mai">Xem tất cả →</a>
+</div>
+<div class="row g-3 mb-5">
+    <c:forEach items="${promotions}" var="pr">
+        <div class="col-sm-6 col-lg-3">
+            <a href="${pageContext.request.contextPath}/khuyen-mai/${fn:escapeXml(pr.id)}" class="text-decoration-none text-dark">
+                <div class="card promo-card h-100 shadow-sm">
+                    <c:choose>
+                        <c:when test="${not empty pr.imageUrl}"><img src="${fn:escapeXml(pr.imageUrl)}" alt="${fn:escapeXml(pr.title)}"></c:when>
+                        <c:otherwise><div class="promo-ph"><i class="fas fa-gift"></i></div></c:otherwise>
+                    </c:choose>
+                    <div class="card-body">
+                        <div class="small text-muted"><i class="far fa-eye"></i> ${fn:escapeXml(pr.views)}</div>
+                        <h6 class="mb-0">${fn:escapeXml(pr.title)}</h6>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </c:forEach>
+</div>
+</c:if>
+
 <h3 class="mb-3">⭐ Sản phẩm nổi bật</h3>
 <div class="row g-3">
     <c:forEach items="${featured}" var="p">

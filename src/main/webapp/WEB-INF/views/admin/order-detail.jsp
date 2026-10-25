@@ -47,7 +47,15 @@
             <div class="col-md-6">
                 <p><b>Khách:</b> ${fn:escapeXml(order.user.fullName)} (${fn:escapeXml(order.user.email)})</p>
                 <p><b>Điện thoại:</b> ${fn:escapeXml(order.user.phone != null ? order.user.phone : '—')}</p>
+                <p><b>Nhận hàng:</b> ${fn:escapeXml(order.pickup ? 'Đến lấy tại cửa hàng' : 'Giao tận nơi')}
+   · <b>SĐT:</b> ${fn:escapeXml(order.phone)}
+   · <b>Thời gian:</b> ${fn:escapeXml(order.deliveryTime == 'ASAP' ? 'Càng sớm càng tốt' : order.deliveryTime)}</p>
                 <p><b>Địa chỉ:</b> ${fn:escapeXml(order.shippingAddress)}</p>
+                <c:if test="${not empty order.vatInfo}"><p><b>Hoá đơn VAT:</b> ${fn:escapeXml(order.vatInfo)}</p></c:if>
+                <p class="small text-muted mb-1">Tiền hàng <fmt:formatNumber value="${order.subtotalAmount}" pattern="#,##0"/> ₫
+                   · Ship <fmt:formatNumber value="${order.shippingFee != null ? order.shippingFee : 0}" pattern="#,##0"/> ₫
+                   · Giảm <fmt:formatNumber value="${order.discountAmount != null ? order.discountAmount : 0}" pattern="#,##0"/> ₫
+                   <c:if test="${not empty order.voucherCode}">(mã ${fn:escapeXml(order.voucherCode)})</c:if></p>
                 <p><b>Chi nhánh:</b> ${fn:escapeXml(order.branch.name)}</p>
             </div>
             <div class="col-md-6">
