@@ -41,6 +41,12 @@ body { background: #f6f3ec; }
 					<li class="nav-item"><a class="nav-link"
 						href="${ctx}/shipper/dashboard"><i class="fas fa-box"></i> Đơn
 							cần giao</a></li>
+					<li class="nav-item"><a class="nav-link"
+						href="${ctx}/shipper/history"><i class="fas fa-clock-rotate-left"></i>
+							Lịch sử</a></li>
+					<li class="nav-item"><a class="nav-link"
+						href="${ctx}/shipper/stats"><i class="fas fa-chart-column"></i>
+							Thống kê</a></li>
 				</ul>
 				<ul class="navbar-nav align-items-md-center">
 					<li class="nav-item"><span class="nav-link"> <i

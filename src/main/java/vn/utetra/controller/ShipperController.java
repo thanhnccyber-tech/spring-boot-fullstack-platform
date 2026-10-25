@@ -10,8 +10,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import vn.utetra.entity.Order;
 import vn.utetra.security.ErrorMessages;
 import vn.utetra.service.ShipperService;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Màn hình dành cho Shipper (layout riêng: shipper-layout.jsp).
@@ -21,6 +29,10 @@ import vn.utetra.service.ShipperService;
 @Controller
 @RequestMapping("/shipper")
 public class ShipperController {
+
+    /** Lịch sử chỉ hiển thị số đơn gần nhất này để trang không quá nặng. */
+    private static final int HISTORY_LIMIT = 100;
+    private static final int CHART_DAYS = 7;
 
     @Autowired private ShipperService shipperService;
 
@@ -38,6 +50,39 @@ public class ShipperController {
         model.addAttribute("delivering", shipperService.delivering(email));
         model.addAttribute("today", shipperService.statsToday(email));
         return "shipper/dashboard";
+    }
+
+    /** Lịch sử giao hàng: đơn đã giao xong và đơn giao thất bại, mới nhất trước. */
+    @GetMapping("/history")
+    public String history(Authentication auth, Model model) {
+        List<Order> all = shipperService.history(auth.getName());
+        model.addAttribute("orders", all.size() > HISTORY_LIMIT ? all.subList(0, HISTORY_LIMIT) : all);
+        model.addAttribute("total", all.size());
+        model.addAttribute("limit", HISTORY_LIMIT);
+        return "shipper/history";
+    }
+
+    /** Thống kê đơn đã giao: hôm nay / tuần này / tháng này và biểu đồ 7 ngày gần nhất. */
+    @GetMapping("/stats")
+    public String stats(Authentication auth, Model model) {
+        String email = auth.getName();
+
+        Map<String, ShipperService.Stats> periods = new LinkedHashMap<>();
+        periods.put("Hôm nay", shipperService.statsToday(email));
+        periods.put("Tuần này", shipperService.statsThisWeek(email));
+        periods.put("Tháng này", shipperService.statsThisMonth(email));
+        model.addAttribute("periods", periods);
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM");
+        List<String> labels = new ArrayList<>();
+        List<Long> values = new ArrayList<>();
+        for (Map.Entry<LocalDate, Long> e : shipperService.deliveredPerDay(email, CHART_DAYS).entrySet()) {
+            labels.add(e.getKey().format(fmt));
+            values.add(e.getValue());
+        }
+        model.addAttribute("chartLabels", labels);
+        model.addAttribute("chartValues", values);
+        return "shipper/stats";
     }
 
     /** Chi tiết đơn: danh sách món, thông tin khách, các nút nhận / giao xong / giao thất bại. */
