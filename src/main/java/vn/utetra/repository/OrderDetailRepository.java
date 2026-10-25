@@ -13,6 +13,12 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Long> 
            "AND d.order.status = 'COMPLETED'")
     long countCompletedPurchases(@Param("userId") Long userId, @Param("productId") Long productId);
 
+    /** Sản phẩm khách đã đặt (không tính đơn huỷ): [productId, tổng số lượng, lần đặt gần nhất]. */
+    @Query("SELECT d.product.id, SUM(d.quantity), MAX(d.order.createdAt) FROM OrderDetail d " +
+           "WHERE d.order.user.id = :userId AND d.order.status <> 'CANCELLED' " +
+           "GROUP BY d.product.id ORDER BY MAX(d.order.createdAt) DESC")
+    java.util.List<Object[]> orderedProducts(@Param("userId") Long userId);
+
     default boolean hasPurchased(Long userId, Long productId) {
         return countCompletedPurchases(userId, productId) > 0;
     }

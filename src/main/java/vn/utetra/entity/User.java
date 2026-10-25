@@ -40,6 +40,10 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /** Đã hiện lời chào "hội viên mới" ở lần đăng nhập đầu tiên chưa */
+    @Column(name = "welcomed")
+    private Boolean welcomed = false;
+
     /** Điểm hội viên (10.000đ = 1 điểm), cộng khi đơn hoàn thành */
     @Column(name = "loyalty_points")
     private Integer loyaltyPoints = 0;

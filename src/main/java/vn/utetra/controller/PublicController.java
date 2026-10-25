@@ -45,17 +45,10 @@ public class PublicController {
         return "user/stores";
     }
 
+    /** Trang Hội viên công khai: câu hỏi thường gặp + điều khoản (ai cũng xem được).
+     *  Thẻ hội viên, điểm và hạng nằm ở Tài khoản > Khách hàng thành viên (/account/member). */
     @GetMapping("/hoi-vien")
-    public String membership(Authentication auth, Model model) {
-        boolean loggedIn = auth != null && auth.isAuthenticated()
-                && !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken);
-        if (loggedIn) {
-            userService.findByEmail(auth.getName()).ifPresent(u -> {
-                model.addAttribute("me", u);
-                // Mã thành viên dùng để tạo mã vạch cho nhân viên quét tại quầy
-                model.addAttribute("memberCode", String.format("UTE%06d", u.getId()));
-            });
-        }
+    public String membership(Model model) {
         model.addAttribute("pointUnit", OrderService.POINT_UNIT);
         return "user/membership";
     }

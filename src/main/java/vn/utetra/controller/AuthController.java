@@ -1,6 +1,7 @@
 package vn.utetra.controller;
 
 import vn.utetra.security.ErrorMessages;
+import vn.utetra.security.SafeRedirect;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -72,7 +73,8 @@ public class AuthController {
     /* ==================== LOGIN ==================== */
 
     @GetMapping("/login")
-    public String loginPage(Model model) {
+    public String loginPage(@RequestParam(required = false) String next, Model model) {
+        model.addAttribute("next", SafeRedirect.localPath(next, ""));
         if (!model.containsAttribute("loginRequest"))
             model.addAttribute("loginRequest", new LoginRequest());
         return "user/login";
@@ -80,6 +82,8 @@ public class AuthController {
 
     @PostMapping("/auth/login")
     public String doLogin(@ModelAttribute LoginRequest req,
+                          @RequestParam(required = false) String next,
+                          RedirectAttributes ra,
                           Model model,
                           HttpServletRequest request,
                           HttpServletResponse response,
@@ -93,6 +97,7 @@ public class AuthController {
         long locked = Math.max(attemptLimiter.lockedSeconds(ipKey), attemptLimiter.lockedSeconds(emailKey));
         if (locked > 0) {
             model.addAttribute("loginRequest", req);
+            model.addAttribute("next", SafeRedirect.localPath(next, ""));
             model.addAttribute("error", "Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau "
                     + ((locked + 59) / 60) + " phút.");
             return "user/login";
@@ -108,6 +113,7 @@ public class AuthController {
             attemptLimiter.recordFailure(ipKey);
             attemptLimiter.recordFailure(emailKey);
             model.addAttribute("loginRequest", req);
+            model.addAttribute("next", SafeRedirect.localPath(next, ""));
             model.addAttribute("error", "Email hoặc mật khẩu không đúng");
             return "user/login";
         }
@@ -136,7 +142,17 @@ public class AuthController {
         if (roles.contains(RoleName.MANAGER)) return "redirect:/admin/orders";
         if (roles.contains(RoleName.STAFF))   return "redirect:/admin/orders";
         if (roles.contains(RoleName.SHIPPER)) return "redirect:/shipper/dashboard";
-        return "redirect:/";
+
+        userService.ensureMemberNotification(u);
+        boolean newMember = userService.markWelcomedFirstTime(u);
+        if (newMember) {
+            ra.addFlashAttribute("welcomeNew", u.getFullName() == null || u.getFullName().isBlank() ? "bạn" : u.getFullName());
+        }
+        // Khách hàng: thông báo hội viên + quay lại trang đang làm dở (giỏ hàng, thanh toán...)
+        ra.addFlashAttribute("success", "Đăng nhập thành công! Bạn là hội viên UTeTra"
+                + (u.getFullName() == null || u.getFullName().isBlank() ? "" : " (" + u.getFullName() + ")")
+                + ", hiện có " + u.getPoints() + " điểm. Mỗi 10.000đ mua hàng = 1 điểm.");
+        return "redirect:" + SafeRedirect.localPath(next, "/");
     }
 
     /* ==================== REGISTER ==================== */
@@ -324,10 +340,24 @@ public class AuthController {
 
     /* ==================== LOGOUT ==================== */
 
-    @GetMapping("/logout")
-    public String logout(HttpServletResponse response, HttpSession session) {
+    @Autowired private vn.utetra.security.TokenBlacklist tokenBlacklist;
+
+    @RequestMapping(value = "/logout", method = {RequestMethod.GET, RequestMethod.POST})
+    public String logout(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+        // Thu hồi token đang dùng (kể cả bản sao) rồi xoá cookie + phiên
+        if (request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                if (JwtAuthenticationFilter.JWT_COOKIE.equals(c.getName())) {
+                    tokenBlacklist.revoke(c.getValue(), 25L * 3600 * 1000);
+                }
+            }
+        }
         writeJwtCookie(response, "", 0);
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
         session.invalidate();
+        // Không cho trình duyệt giữ lại trang cũ (nút Back không hiện lại dữ liệu sau khi đăng xuất)
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response.setHeader("Clear-Site-Data", "\"cache\"");
         return "redirect:/";
     }
 }

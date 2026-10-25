@@ -21,6 +21,7 @@ public class UserService {
     @Autowired private UserRepository userRepo;
     @Autowired private RoleRepository roleRepo;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private vn.utetra.repository.NotificationRepository notiRepo;
 
     @Transactional
     public User registerPending(RegisterRequest req) {
@@ -59,9 +60,37 @@ public class UserService {
         User u = userRepo.findByEmail(email).orElseThrow();
         u.setEnabled(true);
         userRepo.save(u);
+
+        vn.utetra.entity.Notification n = new vn.utetra.entity.Notification();
+        n.setUserId(u.getId());
+        n.setTitle("Kích hoạt Thành viên thành công");
+        n.setContent("Bạn đã trở thành Thành viên UTeTra. Mua hàng để tích điểm (10.000đ = 1 điểm) và nhận ưu đãi dành riêng cho hội viên.");
+        n.setType("MEMBER");
+        notiRepo.save(n);
     }
 
     public Optional<User> findByEmail(String email) { return userRepo.findByEmail(email); }
+
+    /** true nếu đây là lần đăng nhập đầu tiên của hội viên mới (và đánh dấu đã chào). */
+    @Transactional
+    public boolean markWelcomedFirstTime(User u) {
+        if (Boolean.TRUE.equals(u.getWelcomed())) return false;
+        u.setWelcomed(true);
+        userRepo.save(u);
+        return true;
+    }
+
+    /** Tài khoản chưa có thông báo "trở thành hội viên" (ví dụ tài khoản tạo sẵn) thì tạo ở lần đăng nhập đầu. */
+    @Transactional
+    public void ensureMemberNotification(User u) {
+        if (notiRepo.existsByUserIdAndType(u.getId(), "MEMBER")) return;
+        vn.utetra.entity.Notification n = new vn.utetra.entity.Notification();
+        n.setUserId(u.getId());
+        n.setTitle("Kích hoạt Thành viên thành công");
+        n.setContent("Bạn đã trở thành Thành viên UTeTra. Mua hàng để tích điểm (10.000đ = 1 điểm) và nhận ưu đãi dành riêng cho hội viên.");
+        n.setType("MEMBER");
+        notiRepo.save(n);
+    }
 
     @Transactional
     public void updateProfile(String email, String fullName, String phone,

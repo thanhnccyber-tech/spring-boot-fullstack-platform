@@ -41,12 +41,16 @@ public class DataInitializer implements CommandLineRunner {
             b1.setName("UTeTra Quận 1");
             b1.setAddress("123 Nguyễn Huệ, Q.1, TP.HCM");
             b1.setPhone("0901234567");
+            b1.setLatitude(10.7743);
+            b1.setLongitude(106.7040);
             branchRepo.save(b1);
 
             Branch b2 = new Branch();
             b2.setName("UTeTra Thủ Đức");
             b2.setAddress("45 Võ Văn Ngân, TP.Thủ Đức, TP.HCM");
             b2.setPhone("0909876543");
+            b2.setLatitude(10.8505);
+            b2.setLongitude(106.7717);
             branchRepo.save(b2);
         }
         Branch firstBranch = branchRepo.findAll().stream().findFirst().orElse(null);

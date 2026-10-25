@@ -4,13 +4,16 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>${fn:escapeXml(product.name)}</title>
 
+<c:if test="${not empty success}">
+    <div class="alert alert-success alert-dismissible fade show auto-hide">${fn:escapeXml(success)}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+</c:if>
 <c:if test="${not empty error}">
     <div class="alert alert-danger">${fn:escapeXml(error)}</div>
 </c:if>
 
 <div class="row">
     <div class="col-md-5">
-        <img src="${fn:escapeXml(product.imageUrl)}" class="img-fluid rounded shadow">
+        <img src="${fn:escapeXml(product.largeUrl)}" class="img-fluid rounded shadow" alt="${fn:escapeXml(product.name)}">
     </div>
     <div class="col-md-7">
         <h2>${fn:escapeXml(product.name)}
@@ -18,6 +21,13 @@
                 <span class="badge bg-danger fs-6 align-middle">Hết hàng</span>
             </c:if>
         </h2>
+        <c:if test="${not empty sessionScope.userId}">
+            <form action="${pageContext.request.contextPath}/account/favorites/toggle" method="post" class="d-inline float-end">
+                <input type="hidden" name="productId" value="${fn:escapeXml(product.id)}">
+                <input type="hidden" name="back" value="/product/${fn:escapeXml(product.id)}">
+                <button class="btn btn-sm ${fn:escapeXml(isFavorite ? 'btn-danger' : 'btn-outline-danger')}" title="Yêu thích"><i class="fas fa-heart"></i></button>
+            </form>
+        </c:if>
         <a href="#reviews" class="text-decoration-none d-inline-block mb-2">
             <span class="text-warning">
                 <c:forEach begin="1" end="5" var="i"><i class="${fn:escapeXml(i <= ratingSummary.rounded ? 'fas' : 'far')} fa-star"></i></c:forEach>

@@ -15,7 +15,7 @@
         <a href="${ctx}/khuyen-mai/${fn:escapeXml(p.id)}" class="text-decoration-none text-dark">
             <div class="card promo-card h-100 shadow-sm">
                 <c:choose>
-                    <c:when test="${not empty p.imageUrl}"><img src="${fn:escapeXml(p.imageUrl)}" alt="${fn:escapeXml(p.title)}"></c:when>
+                    <c:when test="${not empty p.imageUrl}"><img src="${fn:escapeXml(p.imageUrl)}" loading="lazy" alt="${fn:escapeXml(p.title)}"></c:when>
                     <c:otherwise><div class="promo-ph"><i class="fas fa-gift"></i></div></c:otherwise>
                 </c:choose>
                 <div class="card-body">

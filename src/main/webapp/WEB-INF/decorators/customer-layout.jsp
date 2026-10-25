@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css">
     <sitemesh:write property="head"/>
 </head>
-<body>
+<body data-ctx="${pageContext.request.contextPath}">
 
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <c:set var="cartCount" value="0"/>
@@ -24,12 +24,14 @@
     <div class="container py-2 d-flex align-items-center gap-2 gap-md-3">
         <a class="brand text-decoration-none" href="${ctx}/"><i class="fas fa-mug-hot"></i> UTeTra</a>
 
-        <form class="header-search flex-grow-1" action="${ctx}/products" method="get" role="search">
+        <form class="header-search" action="${ctx}/products" method="get" role="search">
             <i class="fas fa-search"></i>
             <input type="text" name="kw" maxlength="100" value="${fn:escapeXml(param.kw)}"
                    placeholder="Bạn muốn uống gì..." aria-label="Tìm sản phẩm" autocomplete="off">
+            <div class="search-suggest" id="searchSuggest" hidden role="listbox"></div>
         </form>
 
+        <span class="ms-auto"></span>
         <button type="button" class="btn receive-btn d-none d-md-inline-flex" data-bs-toggle="modal" data-bs-target="#receiveModal">
             <i class="fas fa-motorcycle"></i>
             <span class="text-start">
@@ -50,9 +52,12 @@
                     <a class="icon-btn" href="#" data-bs-toggle="dropdown" title="Tài khoản"><i class="fas fa-user-circle"></i></a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li class="dropdown-header">${fn:escapeXml(sessionScope.fullName)}</li>
-                        <li><a class="dropdown-item" href="${ctx}/profile"><i class="fas fa-user"></i> Thông tin cá nhân</a></li>
-                        <li><a class="dropdown-item" href="${ctx}/order/history"><i class="fas fa-receipt"></i> Đơn hàng của tôi</a></li>
-                        <li><a class="dropdown-item" href="${ctx}/hoi-vien"><i class="fas fa-id-card"></i> Thẻ hội viên &amp; điểm</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/profile"><i class="fas fa-id-badge"></i> Thông tin cá nhân</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/account/member"><i class="fas fa-id-card"></i> Khách hàng thành viên</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/account/vouchers"><i class="fas fa-ticket"></i> Ưu đãi của tôi</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/account/addresses"><i class="fas fa-location-dot"></i> Số địa chỉ</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/order/history"><i class="fas fa-cart-shopping"></i> Đơn hàng</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/notifications"><i class="fas fa-bell"></i> Thông báo</a></li>
                         <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')
                                     || sessionScope.roles.contains('ROLE_MANAGER')
                                     || sessionScope.roles.contains('ROLE_STAFF')}">
@@ -84,7 +89,7 @@
             <ul class="nav justify-content-center collapse d-md-flex" id="mainNav">
                 <li class="nav-item"><a class="nav-link" href="${ctx}/">Trang chủ</a></li>
                 <li class="nav-item mega">
-                    <a class="nav-link" href="${ctx}/products">Menu <i class="fas fa-chevron-down small"></i></a>
+                    <a class="nav-link" href="${ctx}/products">Menu</a>
                     <div class="mega-panel">
                         <div class="mega-col">
                             <h6>Thức uống &amp; bánh</h6>
@@ -115,6 +120,8 @@
     <div class="modal-content">
       <form action="${ctx}/receive/set" method="post" id="receiveForm">
         <input type="hidden" name="returnUrl" id="receiveReturn" value="/products">
+        <input type="hidden" name="lat" id="receiveLat" value="${fn:escapeXml(sessionScope.RECV_LAT)}">
+        <input type="hidden" name="lng" id="receiveLng" value="${fn:escapeXml(sessionScope.RECV_LNG)}">
         <input type="hidden" name="method" id="receiveMethod" value="${fn:escapeXml(sessionScope.RECV_METHOD == 'PICKUP' ? 'PICKUP' : 'DELIVERY')}">
         <div class="modal-header border-0 pb-0">
           <ul class="nav nav-pills w-100 recv-tabs" role="tablist">
@@ -154,15 +161,35 @@
   </div>
 </div>
 
+<c:if test="${not empty welcomeNew}">
+<div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content text-center p-4">
+    <div style="font-size:3rem">🎉</div>
+    <h4 class="mb-2">Chào mừng hội viên mới!</h4>
+    <p class="mb-3">Chúc mừng <b>${fn:escapeXml(welcomeNew)}</b>, bạn đã trở thành hội viên UTeTra.<br>
+       Mỗi 10.000đ mua hàng = 1 điểm. Dùng mã <b>WELCOME10</b> để giảm 10% cho đơn đầu tiên.</p>
+    <div class="d-flex gap-2 justify-content-center">
+      <a class="btn btn-warning" href="${ctx}/products">Đặt mua ngay</a>
+      <a class="btn btn-outline-dark" href="${ctx}/account/member">Xem thẻ hội viên</a>
+    </div>
+  </div></div>
+</div>
+<script>
+  window.addEventListener('load', function () {
+    if (window.bootstrap) new bootstrap.Modal(document.getElementById('welcomeModal')).show();
+  });
+</script>
+</c:if>
+
 <main class="container my-4">
     <%-- Thông báo sau thao tác (flash). Các trang tự hiển thị lỗi riêng thì bỏ qua để không lặp --%>
-    <c:if test="${not (fn:contains(uri, '/login') or fn:contains(uri, '/register') or fn:contains(uri, '/otp')
-                        or fn:contains(uri, '/forgot-password') or fn:contains(uri, '/reset-password')
-                        or fn:contains(uri, '/profile') or fn:contains(uri, '/product/'))}">
+    <c:set var="ownMsgPage" value="${fn:contains(uri, '/login') or fn:contains(uri, '/register') or fn:contains(uri, '/otp')
+                        or fn:contains(uri, '/forgot-password') or fn:contains(uri, '/reset-password') or fn:contains(uri, '/profile')}"/>
+    <c:if test="${not ownMsgPage}">
         <c:if test="${not empty success}">
             <div class="alert alert-success alert-dismissible fade show auto-hide" role="alert">${fn:escapeXml(success)}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
         </c:if>
-        <c:if test="${not empty error}">
+        <c:if test="${not empty error and not fn:contains(uri, '/product/')}">
             <div class="alert alert-danger alert-dismissible fade show" role="alert">${fn:escapeXml(error)}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
         </c:if>
     </c:if>

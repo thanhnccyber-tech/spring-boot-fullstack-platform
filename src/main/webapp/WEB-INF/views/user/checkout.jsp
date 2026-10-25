@@ -11,7 +11,12 @@
 <h3 class="mb-3">🧾 Thanh toán</h3>
 
 <%-- Form đặt hàng rỗng: các ô nhập ở cả 2 cột gắn vào đây bằng thuộc tính form="placeForm" --%>
-<form id="placeForm" action="${ctx}/order/place" method="post"></form>
+<form id="placeForm" action="${ctx}/order/place" method="post">
+    <c:if test="${not empty recvLat and not empty recvLng}">
+        <input type="hidden" name="lat" value="${fn:escapeXml(recvLat)}">
+        <input type="hidden" name="lng" value="${fn:escapeXml(recvLng)}">
+    </c:if>
+</form>
 
 <div class="row g-4">
     <!-- ================= CỘT TRÁI: thông tin nhận hàng ================= -->
@@ -30,7 +35,7 @@
 
             <div class="mb-3">
                 <label class="form-label" id="branchLabel">Cửa hàng phục vụ</label>
-                <select name="branchId" class="form-select" required form="placeForm">
+                <select name="branchId" id="branchSel" class="form-select" required form="placeForm">
                     <c:forEach items="${branches}" var="b" varStatus="st">
                         <option value="${fn:escapeXml(b.id)}"
                                 <c:if test="${(not empty recvBranchId and recvBranchId == b.id)}">selected</c:if>>${fn:escapeXml(b.name)} - ${fn:escapeXml(b.address)}</option>
@@ -40,6 +45,14 @@
 
             <div class="mb-3" id="addrBox">
                 <label class="form-label">Địa chỉ nhận hàng</label>
+                <c:if test="${not empty savedAddresses}">
+                    <div class="mb-2 d-flex flex-wrap gap-1">
+                        <c:forEach items="${savedAddresses}" var="sa">
+                            <button type="button" class="btn btn-sm btn-outline-secondary pick-addr" data-addr="${fn:escapeXml(sa.address)}"><i class="fas fa-bookmark"></i> ${fn:escapeXml(sa.label)}</button>
+                        </c:forEach>
+                        <a class="btn btn-sm btn-link" href="${ctx}/account/addresses" target="_blank">Quản lý địa chỉ</a>
+                    </div>
+                </c:if>
                 <textarea name="shippingAddress" id="addr" rows="2" maxlength="500" class="form-control" form="placeForm"
                           placeholder="Số nhà, đường, phường/xã, quận/huyện">${fn:escapeXml(recvAddress)}</textarea>
             </div>
@@ -94,7 +107,7 @@
             <h5 class="mb-2"><i class="fas fa-mug-hot"></i> Món đã chọn</h5>
             <c:forEach items="${cart}" var="item" varStatus="st">
                 <div class="cart-line">
-                    <c:if test="${not empty item.imageUrl}"><img src="${fn:escapeXml(item.imageUrl)}" alt=""></c:if>
+                    <c:if test="${not empty item.imageUrl}"><img src="${fn:escapeXml(item.thumbUrl)}" loading="lazy" alt=""></c:if>
                     <div class="flex-grow-1">
                         <div class="fw-bold">${fn:escapeXml(item.productName)}</div>
                         <div class="small text-muted">
@@ -143,6 +156,20 @@
             <div class="sum-row"><span>Tổng tiền tạm tính</span><span id="sSub"><fmt:formatNumber value="${subtotal}" pattern="#,##0"/> ₫</span></div>
             <div class="sum-row"><span>Phí vận chuyển</span><span id="sFee"></span></div>
             <div class="sum-row"><span>Mã giảm giá</span><span id="sDis">0 ₫</span></div>
+
+            <c:if test="${userPoints > 0 && pointValue > 0}">
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="usePtsChk">
+                    <label class="form-check-label" for="usePtsChk">Dùng điểm hội viên
+                        <span class="small text-muted">(bạn có <b>${fn:escapeXml(userPoints)}</b> điểm · 1 điểm = <fmt:formatNumber value="${pointValue}" pattern="#,##0"/> ₫)</span></label>
+                </div>
+                <div class="input-group input-group-sm my-1" id="ptsBox" style="display:none;max-width:260px">
+                    <input type="number" min="1" id="usePtsNum" class="form-control" placeholder="Số điểm">
+                    <button type="button" class="btn btn-outline-dark" id="usePtsMax">Dùng tối đa</button>
+                </div>
+                <input type="hidden" name="usePoints" id="usePoints" value="0" form="placeForm">
+            </c:if>
+            <div class="sum-row" id="sPtsRow" style="display:none"><span>Điểm hội viên</span><span id="sPts">0 ₫</span></div>
             <div class="sum-row border-0"><b>Tổng tiền</b><span class="sum-total" id="sTotal"></span></div>
             <c:if test="${freeShipFrom > 0}">
                 <div class="small text-muted">Miễn phí giao hàng cho đơn từ <fmt:formatNumber value="${freeShipFrom}" pattern="#,##0"/> ₫.</div>
@@ -155,6 +182,12 @@
                 <input class="form-check-input" type="radio" name="paymentMethod" id="pCod" value="COD" form="placeForm" checked>
                 <label class="form-check-label" for="pCod">Thanh toán khi nhận hàng (COD)</label>
             </div>
+            <c:if test="${vnpayEnabled}">
+                <div class="form-check mb-1" id="payVnpRow">
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="pVnp" value="VNPAY" form="placeForm">
+                    <label class="form-check-label" for="pVnp">Thanh toán online qua VNPay <span class="small text-muted">(thẻ ATM, QR, Visa)</span></label>
+                </div>
+            </c:if>
             <div class="form-check mb-1" id="payBankRow">
                 <input class="form-check-input" type="radio" name="paymentMethod" id="pBank" value="BANK" form="placeForm">
                 <label class="form-check-label" for="pBank">Chuyển khoản ngân hàng <span class="small text-muted">(cửa hàng sẽ liên hệ xác nhận)</span></label>
@@ -178,17 +211,36 @@
 (function () {
     var SUB = ${subRaw};
     var FEE_DELIVERY = ${feeRaw};
-    var discount = 0;
+    var BRANCH_FEE = {<c:forEach items="${branchFee}" var="bf" varStatus="bs">'${bf.key}': ${bf.value}<c:if test="${!bs.last}">, </c:if></c:forEach>};
+    var POINTS = ${userPoints != null ? userPoints : 0};
+    var POINT_VALUE = ${pointValue != null ? pointValue : 0};
+    var discount = 0, pts = 0;
     function money(n) { return Math.round(n).toLocaleString('vi-VN') + ' ₫'; }
     function $(id) { return document.getElementById(id); }
     function method() { return $('mPick').checked ? 'PICKUP' : 'DELIVERY'; }
 
     function refresh() {
         var pickup = method() === 'PICKUP';
-        var fee = pickup ? 0 : FEE_DELIVERY;
+        var sel = $('branchSel');
+        var feeNow = (sel && BRANCH_FEE[sel.value] !== undefined) ? BRANCH_FEE[sel.value] : FEE_DELIVERY;
+        var fee = pickup ? 0 : feeNow;
         $('sFee').textContent = pickup ? 'Miễn phí (đến lấy)' : money(fee);
         $('sDis').textContent = discount > 0 ? '− ' + money(discount) : '0 ₫';
-        $('sTotal').textContent = money(Math.max(0, SUB - discount) + fee);
+
+        // Điểm hội viên: chỉ trừ vào tiền hàng, không vượt số điểm đang có
+        var maxPts = POINT_VALUE > 0 ? Math.min(POINTS, Math.floor(Math.max(0, SUB - discount) / POINT_VALUE)) : 0;
+        var chk = $('usePtsChk');
+        if (chk) {
+            var on = chk.checked;
+            $('ptsBox').style.display = on ? '' : 'none';
+            var num = $('usePtsNum');
+            num.max = maxPts;
+            pts = on ? Math.max(0, Math.min(parseInt(num.value, 10) || 0, maxPts)) : 0;
+        } else { pts = 0; }
+        if ($('usePoints')) $('usePoints').value = pts;
+        $('sPtsRow').style.display = pts > 0 ? '' : 'none';
+        $('sPts').textContent = '− ' + money(pts * POINT_VALUE);
+        $('sTotal').textContent = money(Math.max(0, SUB - discount - pts * POINT_VALUE) + fee);
 
         // Giao hàng cần địa chỉ; đến lấy thì không
         $('addrBox').style.display = pickup ? 'none' : '';
@@ -202,6 +254,15 @@
         if (!cur || cur.disabled) { (pickup ? $('pCash') : $('pCod')).checked = true; }
     }
     document.querySelectorAll('input[name=deliveryMethod]').forEach(function (r) { r.addEventListener('change', refresh); });
+    if ($('branchSel')) $('branchSel').addEventListener('change', refresh);
+    if ($('usePtsChk')) {
+        $('usePtsChk').addEventListener('change', function () {
+            if (this.checked && !$('usePtsNum').value) $('usePtsNum').value = $('usePtsNum').max || '';
+            refresh();
+        });
+        $('usePtsNum').addEventListener('input', refresh);
+        $('usePtsMax').addEventListener('click', function () { $('usePtsNum').value = $('usePtsNum').max; refresh(); });
+    }
 
     // Hoá đơn VAT
     $('vat').addEventListener('change', function () {
@@ -243,6 +304,10 @@
 
     // Chỉ cho bấm đặt hàng khi đã đồng ý điều khoản
     $('agree').addEventListener('change', function () { $('payBtn').disabled = !this.checked; });
+
+    document.querySelectorAll('.pick-addr').forEach(function (b) {
+        b.addEventListener('click', function () { $('addr').value = b.getAttribute('data-addr'); });
+    });
 
     refresh();
 })();

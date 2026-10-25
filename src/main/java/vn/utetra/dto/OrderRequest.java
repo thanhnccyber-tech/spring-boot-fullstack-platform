@@ -21,5 +21,10 @@ public class OrderRequest {
     private String vatTaxCode;
     private String vatEmail;
     private boolean agreeTerms;
+    /** Số điểm hội viên muốn dùng để trừ tiền (server tự giới hạn theo điểm đang có và giá trị đơn) */
+    private Integer usePoints;
+    /** Toạ độ khách (nếu đã cho phép định vị) để tính phí ship theo khoảng cách */
+    private Double lat;
+    private Double lng;
     private List<CartItem> items;
 }

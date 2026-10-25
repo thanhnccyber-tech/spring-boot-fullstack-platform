@@ -32,6 +32,7 @@ public class HomeController {
     @Autowired private ReviewService reviewService;
     @Autowired private UserService userService;
     @Autowired private PromotionService promotionService;
+    @Autowired private vn.utetra.repository.FavoriteRepository favoriteRepo;
 
     @GetMapping({"/", "/home"})
     public String home(Model model) {
@@ -69,6 +70,25 @@ public class HomeController {
         model.addAttribute("ratings", reviewService.summaries(
                 p.getContent().stream().map(Product::getId).toList()));
         return "user/products";
+    }
+
+    /** Gợi ý khi gõ ô tìm kiếm trên header: tối đa 6 món đang bán khớp tên. Trả JSON, không cần đăng nhập. */
+    @GetMapping("/products/suggest")
+    @ResponseBody
+    public List<Map<String, Object>> suggest(@RequestParam(name = "q", required = false) String q) {
+        String kw = q == null ? "" : q.trim();
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (kw.length() < 2 || kw.length() > 50) return out;
+        for (Product p : productService.search(kw, null, null, null, 0, 6, "newest").getContent()) {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", p.getId());
+            m.put("name", p.getName());
+            m.put("price", p.getBasePrice());
+            m.put("image", p.getThumbUrl());
+            m.put("outOfStock", Boolean.TRUE.equals(p.getOutOfStock()));
+            out.add(m);
+        }
+        return out;
     }
 
     @GetMapping("/product/{id}")
@@ -134,6 +154,7 @@ public class HomeController {
                 model.addAttribute("myReview", reviewService.findMine(uid, id).orElse(null));
                 model.addAttribute("canReview", reviewService.canReview(uid, id));
                 model.addAttribute("isAdminUser", me.get().isAdmin());
+                model.addAttribute("isFavorite", favoriteRepo.existsByUserIdAndProductId(uid, id));
             }
         }
         return "user/product-detail";

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,6 +22,20 @@ public class MailService {
         msg.setText(content);
         if (from != null && !from.isBlank()) msg.setFrom(from);
         mailSender.send(msg);
+    }
+
+    /**
+     * Gửi mail thông báo đơn hàng ở luồng nền: lỗi mail (chưa cấu hình, mạng...) KHÔNG làm hỏng đơn hàng.
+     */
+    @Async
+    public void sendQuietly(String to, String subject, String content) {
+        if (to == null || to.isBlank() || from == null || from.isBlank()) return; // chưa cấu hình mail
+        try {
+            send(to, subject, content);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(MailService.class)
+                    .warn("Không gửi được email tới {}: {}", to, e.getClass().getSimpleName());
+        }
     }
 
     public void sendOtp(String to, String code) {

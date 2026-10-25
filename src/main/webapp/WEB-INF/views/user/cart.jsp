@@ -8,9 +8,10 @@
 <h3 class="mb-3">🛒 Giỏ hàng của bạn</h3>
 
 <c:if test="${empty cart}">
-    <div class="checkout-box text-center py-5">
-        <i class="fas fa-cart-shopping fa-3x text-muted mb-3"></i>
-        <p class="mb-3">Giỏ hàng đang trống.</p>
+    <div class="empty-state">
+        <i class="fas fa-cart-shopping"></i>
+        <h5>Giỏ hàng đang trống</h5>
+        <p class="text-muted mb-3">Chọn vài món trà sữa yêu thích rồi quay lại đây nhé.</p>
         <a href="${ctx}/products" class="btn btn-warning">Xem menu và đặt mua</a>
     </div>
 </c:if>
@@ -21,7 +22,7 @@
         <div class="checkout-box">
             <c:forEach items="${cart}" var="item" varStatus="st">
                 <div class="cart-line">
-                    <c:if test="${not empty item.imageUrl}"><img src="${fn:escapeXml(item.imageUrl)}" alt=""></c:if>
+                    <c:if test="${not empty item.imageUrl}"><img src="${fn:escapeXml(item.thumbUrl)}" loading="lazy" alt=""></c:if>
                     <div class="flex-grow-1">
                         <a class="fw-bold text-decoration-none text-dark" href="${ctx}/product/${fn:escapeXml(item.productId)}">${fn:escapeXml(item.productName)}</a>
                         <div class="small text-muted">
@@ -45,6 +46,7 @@
                                     <input type="hidden" name="quantity" value="${fn:escapeXml(item.quantity + 1)}">
                                     <button class="qty-btn" aria-label="Tăng">+</button>
                                 </form>
+                                <a href="${ctx}/cart/edit?index=${fn:escapeXml(st.index)}" class="btn btn-link p-0 ms-2" title="Sửa size, đường, đá, topping" aria-label="Sửa món"><i class="fas fa-pen"></i></a>
                                 <form action="${ctx}/cart/remove" method="post" class="d-inline ms-2" onsubmit="return confirm('Bỏ món này khỏi giỏ?')">
                                     <input type="hidden" name="index" value="${fn:escapeXml(st.index)}">
                                     <button class="btn btn-link text-danger p-0" aria-label="Xoá món"><i class="fas fa-trash"></i></button>
@@ -62,7 +64,12 @@
             <h5 class="mb-3">Tạm tính</h5>
             <div class="sum-row border-0"><b>Tổng cộng</b><span class="sum-total"><fmt:formatNumber value="${total}" pattern="#,##0"/> ₫</span></div>
             <div class="small text-muted mb-3">Phí giao hàng và mã giảm giá được tính ở bước thanh toán.</div>
-            <a href="${ctx}/order/checkout" class="btn btn-warning btn-lg w-100 fw-bold">Tiến hành thanh toán</a>
+            <a href="${ctx}/order/checkout" class="btn btn-warning btn-lg w-100 fw-bold">
+                <c:choose><c:when test="${empty sessionScope.userId}">Đăng nhập để thanh toán</c:when><c:otherwise>Tiến hành thanh toán</c:otherwise></c:choose>
+            </a>
+            <c:if test="${empty sessionScope.userId}">
+                <div class="small text-muted mt-2">Giỏ hàng được giữ nguyên sau khi bạn đăng nhập hoặc đăng ký hội viên.</div>
+            </c:if>
         </div>
     </div>
 </div>

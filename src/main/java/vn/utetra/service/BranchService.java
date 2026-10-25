@@ -49,6 +49,13 @@ public class BranchService {
         if (!PHONE_PATTERN.matcher(phone).matches())
             throw new IllegalArgumentException("Số điện thoại không hợp lệ (phải bắt đầu bằng 0, từ 10 đến 11 chữ số).");
 
+        // Toạ độ: nhập cả hai hoặc bỏ trống cả hai
+        if ((b.getLatitude() == null) != (b.getLongitude() == null))
+            throw new IllegalArgumentException("Hãy nhập đủ cả vĩ độ và kinh độ (hoặc để trống cả hai).");
+        if (b.getLatitude() != null && (!vn.utetra.util.Geo.validLat(b.getLatitude())
+                || !vn.utetra.util.Geo.validLon(b.getLongitude())))
+            throw new IllegalArgumentException("Toạ độ không hợp lệ (vĩ độ -90..90, kinh độ -180..180).");
+
         repo.findByNameIgnoreCase(name).ifPresent(existing -> {
             if (b.getId() == null || !existing.getId().equals(b.getId()))
                 throw new IllegalArgumentException("Tên chi nhánh đã tồn tại.");

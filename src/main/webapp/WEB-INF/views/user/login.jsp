@@ -14,6 +14,11 @@
                         Kích hoạt tài khoản thành công! Hãy đăng nhập.
                     </div>
                 </c:if>
+                <c:if test="${param.need == '1'}">
+                    <div class="alert alert-warning">
+                        Vui lòng đăng nhập (hoặc <a href="${pageContext.request.contextPath}/register">đăng ký</a>) để đặt hàng và tích điểm hội viên.
+                    </div>
+                </c:if>
                 <c:if test="${param.reset == 'true'}">
                     <div class="alert alert-success">
                         Đặt lại mật khẩu thành công! Hãy đăng nhập bằng mật khẩu mới.
@@ -24,6 +29,7 @@
                 </c:if>
 
                 <form action="${pageContext.request.contextPath}/auth/login" method="post">
+                    <input type="hidden" name="next" value="${fn:escapeXml(next)}">
                     <div class="mb-3">
                         <label class="form-label">Email</label>
                         <input type="email" name="email" class="form-control"

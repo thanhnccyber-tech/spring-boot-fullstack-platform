@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.dto.CartItem;
 import vn.utetra.dto.OrderRequest;
+import vn.utetra.entity.Branch;
 import vn.utetra.entity.Order;
 import vn.utetra.service.BranchService;
 import vn.utetra.service.OrderService;
@@ -33,6 +34,7 @@ public class OrderController {
     @Autowired private BranchService branchService;
     @Autowired private UserService userService;
     @Autowired private VoucherService voucherService;
+    @Autowired private vn.utetra.repository.UserAddressRepository addressRepo;
 
     @SuppressWarnings("unchecked")
     private static List<CartItem> cartOf(HttpSession session) {
@@ -61,16 +63,37 @@ public class OrderController {
         String addr = (String) session.getAttribute("RECV_ADDR");
         if (addr == null || addr.isBlank()) addr = me.getAddress();
 
+        Double lat = (Double) session.getAttribute("RECV_LAT");
+        Double lng = (Double) session.getAttribute("RECV_LNG");
+        List<Branch> branches = branchService.active();
+        // Phí ship giao tận nơi theo từng cửa hàng (tính theo khoảng cách nếu biết vị trí khách)
+        Map<Long, Long> branchFee = new LinkedHashMap<>();
+        for (Branch b : branches) {
+            branchFee.put(b.getId(), orderService.shippingFeeFor(Order.METHOD_DELIVERY, subtotal,
+                    orderService.distanceKm(b, lat, lng)).longValue());
+        }
+        Branch sel = branches.stream().filter(b -> b.getId().equals(branchId)).findFirst()
+                .orElse(branches.isEmpty() ? null : branches.get(0));
+        BigDecimal feeDelivery = sel == null ? orderService.shippingFeeFor(Order.METHOD_DELIVERY, subtotal)
+                : BigDecimal.valueOf(branchFee.get(sel.getId()));
+
         model.addAttribute("cart", cart);
         model.addAttribute("subtotal", subtotal);
-        model.addAttribute("shipFeeDelivery", orderService.shippingFeeFor(Order.METHOD_DELIVERY, subtotal));
+        model.addAttribute("shipFeeDelivery", feeDelivery);
+        model.addAttribute("branchFee", branchFee);
+        model.addAttribute("recvLat", lat);
+        model.addAttribute("recvLng", lng);
+        model.addAttribute("userPoints", me.getPoints());
+        model.addAttribute("pointValue", orderService.getPointValue());
+        model.addAttribute("vnpayEnabled", orderService.isOnlinePaymentEnabled());
         model.addAttribute("shipFee", orderService.shippingFeeFor(method, subtotal));
         model.addAttribute("freeShipFrom", orderService.getFreeShipFrom());
-        model.addAttribute("branches", branchService.active());
+        model.addAttribute("branches", branches);
         model.addAttribute("recvMethod", method);
         model.addAttribute("recvBranchId", branchId);
         model.addAttribute("recvAddress", addr);
         model.addAttribute("userPhone", me.getPhone());
+        model.addAttribute("savedAddresses", addressRepo.findByUserIdOrderByDefaultAddressDescIdAsc(me.getId()));
         return "user/checkout";
     }
 
@@ -112,6 +135,8 @@ public class OrderController {
             return "redirect:/cart";
         }
         req.setItems(cart);
+        if (req.getLat() == null) req.setLat((Double) session.getAttribute("RECV_LAT"));
+        if (req.getLng() == null) req.setLng((Double) session.getAttribute("RECV_LNG"));
         Order o;
         try {
             o = orderService.placeOrder(auth.getName(), req);
@@ -120,8 +145,47 @@ public class OrderController {
             return "redirect:/order/checkout";
         }
         session.removeAttribute("CART");
-        ra.addFlashAttribute("success", "Đặt hàng thành công! Mã: " + o.getOrderCode());
-        return "redirect:/order/history";
+        if ("VNPAY".equals(o.getPaymentMethod())) {
+            // Chuyển sang cổng VNPay để trả tiền; chưa trả vẫn vào lại được từ trang chi tiết đơn
+            return "redirect:/payment/vnpay/" + o.getId();
+        }
+        ra.addFlashAttribute("success", "Đặt hàng thành công! Mã: " + o.getOrderCode()
+                + ". Bạn có thể theo dõi tiến trình ngay tại đây.");
+        return "redirect:/order/detail/" + o.getId();
+    }
+
+    /** Khách tự hủy đơn khi cửa hàng chưa xác nhận. */
+    @PostMapping("/cancel/{id}")
+    public String cancel(@PathVariable Long id, Authentication auth, RedirectAttributes ra) {
+        try {
+            orderService.cancelByCustomer(id, auth.getName());
+            ra.addFlashAttribute("success", "Đã hủy đơn hàng. Mã giảm giá và điểm (nếu có) đã được hoàn lại.");
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/order/detail/" + id;
+    }
+
+    /** "Đặt lại": đưa các món của đơn cũ vào giỏ (giá hiện tại), rồi sang giỏ hàng để kiểm tra. */
+    @PostMapping("/reorder/{id}")
+    @SuppressWarnings("unchecked")
+    public String reorder(@PathVariable Long id, HttpSession session, Authentication auth, RedirectAttributes ra) {
+        OrderService.ReorderResult r = orderService.reorderItems(id, auth.getName());
+        List<CartItem> cart = (List<CartItem>) session.getAttribute("CART");
+        if (cart == null) { cart = new java.util.ArrayList<>(); session.setAttribute("CART", cart); }
+        int added = 0;
+        for (CartItem ci : r.items()) {
+            if (cart.size() >= vn.utetra.service.CartService.MAX_CART_ITEMS) break;
+            cart.add(ci);
+            added++;
+        }
+        if (added == 0) {
+            ra.addFlashAttribute("error", "Các món trong đơn này hiện không còn bán.");
+            return "redirect:/order/history";
+        }
+        ra.addFlashAttribute("success", "Đã thêm " + added + " món vào giỏ"
+                + (r.skipped() > 0 ? " (" + r.skipped() + " món không còn bán đã được bỏ qua)" : "") + ".");
+        return "redirect:/cart";
     }
 
     @GetMapping("/history")

@@ -20,4 +20,10 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     @Query("UPDATE Voucher v SET v.usedCount = v.usedCount + 1 " +
            "WHERE v.id = :id AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit)")
     int increaseUsage(@Param("id") Long id);
+
+    /** Trả lại 1 lượt dùng khi đơn bị hủy. */
+    @Modifying
+    @Query("UPDATE Voucher v SET v.usedCount = v.usedCount - 1 " +
+           "WHERE UPPER(v.code) = UPPER(:code) AND v.usedCount > 0")
+    int decreaseUsage(@Param("code") String code);
 }

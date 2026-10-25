@@ -9,65 +9,58 @@
 <nav class="small mb-3"><a href="${ctx}/">Trang chủ</a> / Hội viên</nav>
 
 <div class="row g-4">
-    <div class="col-lg-5">
-        <c:choose>
-            <c:when test="${not empty me}">
-                <div class="member-card mb-3">
-                    <div class="text-white-50 small">Thẻ hội viên UTeTra</div>
-                    <h4 class="mb-3">${fn:escapeXml(me.fullName)}</h4>
-                    <div class="small text-white-50">Điểm tích luỹ</div>
-                    <div class="points">${fn:escapeXml(me.points)}</div>
-                    <div class="mt-3">
-                        <div class="barcode-box"><svg id="barcode"></svg></div>
-                        <div class="small text-white-50 mt-1">Mã hội viên: <b>${fn:escapeXml(memberCode)}</b> — đưa mã này cho nhân viên khi thanh toán tại quầy</div>
-                    </div>
-                </div>
-                <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-                <script>
-                    if (window.JsBarcode) {
-                        JsBarcode('#barcode', '${fn:escapeXml(memberCode)}', { format: 'CODE128', height: 55, displayValue: false, margin: 4 });
-                    }
-                </script>
-            </c:when>
-            <c:otherwise>
-                <div class="member-card mb-3">
-                    <h4>Trở thành hội viên UTeTra</h4>
-                    <p class="text-white-50">Đăng ký tài khoản miễn phí, đặt hàng và nhận điểm cho mỗi đơn hoàn thành.</p>
-                    <a href="${ctx}/register" class="btn btn-warning me-2">Đăng ký</a>
-                    <a href="${ctx}/login" class="btn btn-outline-light">Đăng nhập</a>
-                </div>
-            </c:otherwise>
-        </c:choose>
+    <div class="col-lg-3">
+        <div class="checkout-box p-3">
+            <h6 class="text-uppercase" style="color:#8a6d00">Hội viên</h6>
+            <div class="list-group list-group-flush account-menu">
+                <a class="list-group-item list-group-item-action" href="#faq"><i class="fas fa-circle-question"></i> Câu hỏi thường gặp (FAQ)</a>
+                <a class="list-group-item list-group-item-action" href="#dieu-khoan"><i class="fas fa-file-contract"></i> Điều khoản và điều kiện chương trình hội viên</a>
+            </div>
+        </div>
     </div>
 
-    <div class="col-lg-7">
-        <div class="checkout-box">
-            <h4 class="mb-3">Câu hỏi thường gặp (FAQ)</h4>
-            <div class="accordion" id="faq">
+    <div class="col-lg-9">
+        <div class="checkout-box" id="faq">
+            <h2 class="text-center mb-4" style="color:#8a6d00;font-weight:700">CÂU HỎI THƯỜNG GẶP (FAQ)</h2>
+            <div class="accordion" id="faqList">
                 <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#f1">Làm sao để trở thành hội viên?</button></h2>
-                    <div id="f1" class="accordion-collapse collapse show" data-bs-parent="#faq"><div class="accordion-body">Chỉ cần <a href="${ctx}/register">đăng ký tài khoản</a> và xác thực email. Mọi đơn đặt trên website sau đó sẽ được tích điểm tự động.</div></div>
+                    <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#f1">Làm sao để tôi có thể đăng ký thành viên UTeTra?</button></h2>
+                    <div id="f1" class="accordion-collapse collapse show" data-bs-parent="#faqList"><div class="accordion-body">
+                        Bạn <a href="${ctx}/register">đăng ký tài khoản</a> miễn phí và xác thực email là đã trở thành hội viên. Mọi đơn đặt sau khi đăng nhập sẽ được tích điểm tự động.
+                    </div></div>
                 </div>
                 <div class="accordion-item">
                     <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f2">Điểm được tính như thế nào?</button></h2>
-                    <div id="f2" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body">
-                        Mỗi <b>${fn:escapeXml(unitText)}đ</b> tiền hàng (sau khi trừ mã giảm giá, không tính phí giao hàng) = <b>1 điểm</b>.
-                        Điểm làm tròn xuống, phần dư không được bảo lưu. Ví dụ: hoá đơn 50.000đ = 5 điểm; hoá đơn 52.000đ cũng = 5 điểm.
+                    <div id="f2" class="accordion-collapse collapse" data-bs-parent="#faqList"><div class="accordion-body">
+                        Với mỗi <b>${fn:escapeXml(unitText)} đồng</b> chi trả cho thức uống, bánh và sản phẩm (sau khi trừ mã giảm giá, không tính phí giao hàng), bạn tích luỹ được <b>1 điểm</b>.<br>
+                        Ví dụ: hoá đơn 50.000 đồng = 5 điểm.<br>
+                        Điểm được làm tròn xuống và phần dư không được bảo lưu cho giao dịch sau. Ví dụ: hoá đơn 52.000 đồng = 5 điểm.
                     </div></div>
                 </div>
                 <div class="accordion-item">
                     <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f3">Khi nào điểm được cộng?</button></h2>
-                    <div id="f3" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body">Điểm được cộng một lần khi đơn chuyển sang trạng thái <b>Hoàn thành</b>. Đơn bị huỷ hoặc giao thất bại không được cộng điểm. Bạn sẽ nhận thông báo khi được cộng.</div></div>
+                    <div id="f3" class="accordion-collapse collapse" data-bs-parent="#faqList"><div class="accordion-body">
+                        Điểm được cộng một lần khi đơn chuyển sang trạng thái <b>Hoàn thành</b>. Đơn bị huỷ hoặc giao thất bại không được cộng điểm. Bạn nhận thông báo mỗi khi được cộng điểm.
+                    </div></div>
                 </div>
                 <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f4">Dùng mã giảm giá thế nào?</button></h2>
-                    <div id="f4" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body">Nhập mã ở bước thanh toán rồi bấm “Áp dụng”. Xem các mã đang có tại <a href="${ctx}/khuyen-mai">trang Khuyến mãi</a>.</div></div>
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f4">Xem điểm, hạng và thẻ hội viên ở đâu?</button></h2>
+                    <div id="f4" class="accordion-collapse collapse" data-bs-parent="#faqList"><div class="accordion-body">
+                        Đăng nhập, mở menu tài khoản và chọn <b>Khách hàng thành viên</b> để xem hạng, điểm tích luỹ, mã vạch hội viên và lịch sử cộng điểm.
+                        <c:if test="${empty sessionScope.userId}"><div class="mt-2"><a class="btn btn-sm btn-warning" href="${ctx}/login">Đăng nhập</a> <a class="btn btn-sm btn-outline-dark" href="${ctx}/register">Đăng ký</a></div></c:if>
+                    </div></div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f5">Dùng mã giảm giá thế nào?</button></h2>
+                    <div id="f5" class="accordion-collapse collapse" data-bs-parent="#faqList"><div class="accordion-body">
+                        Nhập mã ở bước thanh toán rồi bấm "Áp dụng". Các chương trình đang có xem tại <a href="${ctx}/khuyen-mai">Khuyến mãi</a>.
+                    </div></div>
                 </div>
             </div>
         </div>
 
         <div class="checkout-box mt-3" id="dieu-khoan">
-            <h5>Điều khoản &amp; chính sách</h5>
+            <h5>Điều khoản và điều kiện chương trình hội viên</h5>
             <ul class="small text-muted mb-0">
                 <li>Đơn hàng được xác nhận sau khi cửa hàng tiếp nhận; thời gian giao có thể thay đổi tuỳ khoảng cách và giờ cao điểm.</li>
                 <li>Mã giảm giá có điều kiện (đơn tối thiểu, hạn dùng, số lượt) và không quy đổi thành tiền mặt.</li>

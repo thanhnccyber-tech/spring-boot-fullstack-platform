@@ -91,6 +91,19 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "GROUP BY t.id ORDER BY total DESC LIMIT 10", nativeQuery = true)
     List<Object[]> topSellingToppings();
 
+    // Tim don hang theo ma don hang, dong thoi tai cac thong tin lien quan
+    @Query("SELECT DISTINCT o FROM Order o " +
+           "LEFT JOIN FETCH o.user " +
+           "LEFT JOIN FETCH o.branch " +
+           "LEFT JOIN FETCH o.shipper " +
+           "LEFT JOIN FETCH o.details d " +
+           "LEFT JOIN FETCH d.product " +
+           "LEFT JOIN FETCH d.toppings " +
+           "WHERE o.orderCode = :orderCode")
+    Optional<Order> findByOrderCode(
+            @Param("orderCode") String orderCode);
+
+    // Tim don hang theo ID va tai cac thong tin chi tiet
     @Query("SELECT DISTINCT o FROM Order o " +
            "LEFT JOIN FETCH o.user " +
            "LEFT JOIN FETCH o.branch " +
@@ -99,7 +112,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
            "LEFT JOIN FETCH d.product " +
            "LEFT JOIN FETCH d.toppings " +
            "WHERE o.id = :id")
-    Optional<Order> findByIdWithDetails(@Param("id") Long id);
+    Optional<Order> findByIdWithDetails(
+            @Param("id") Long id);
 
     @Query("SELECT FUNCTION('DATE', o.createdAt), SUM(o.totalAmount), COUNT(o) " +
            "FROM Order o " +

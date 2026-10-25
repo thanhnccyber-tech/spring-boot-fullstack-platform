@@ -3,6 +3,7 @@ package vn.utetra.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import vn.utetra.entity.User;
@@ -63,4 +64,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
            "AND (:branchId IS NULL OR u.branch.id = :branchId) " +
            "ORDER BY u.fullName")
     List<User> findActiveShippers(@Param("branchId") Long branchId);
+
+    /** Trừ điểm nguyên tử; trả 0 nếu không đủ điểm (chống 2 đơn cùng lúc dùng chung điểm). */
+    @Modifying
+    @Query("UPDATE User u SET u.loyaltyPoints = u.loyaltyPoints - :p WHERE u.id = :id AND u.loyaltyPoints >= :p")
+    int spendPoints(@Param("id") Long id, @Param("p") int p);
+
+    @Modifying
+    @Query("UPDATE User u SET u.loyaltyPoints = COALESCE(u.loyaltyPoints, 0) + :p WHERE u.id = :id")
+    int addPoints(@Param("id") Long id, @Param("p") int p);
 }

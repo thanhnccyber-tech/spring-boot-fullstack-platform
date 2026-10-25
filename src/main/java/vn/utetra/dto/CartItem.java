@@ -29,6 +29,8 @@ public class CartItem implements Serializable {
 
     private BigDecimal unitPrice;
 
+    public String getThumbUrl() { return vn.utetra.util.ImageUrls.optimize(imageUrl, 160); }
+
     public BigDecimal getSubtotal() {
         if (unitPrice == null || quantity == null) return BigDecimal.ZERO;
         return unitPrice.multiply(BigDecimal.valueOf(quantity));

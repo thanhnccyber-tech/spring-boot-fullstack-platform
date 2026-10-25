@@ -41,37 +41,19 @@
 </form>
 
 <c:if test="${empty pageData.content}">
-    <div class="alert alert-light text-center border">Không tìm thấy sản phẩm phù hợp.</div>
+    <div class="empty-state">
+        <i class="fas fa-magnifying-glass"></i>
+        <h5>Không tìm thấy món phù hợp</h5>
+        <p class="text-muted mb-3">Thử bớt bộ lọc, đổi từ khoá hoặc xem toàn bộ thực đơn nhé.</p>
+        <a href="${pageContext.request.contextPath}/products" class="btn btn-warning">Xem tất cả món</a>
+    </div>
 </c:if>
 
 <div class="row g-3">
     <c:forEach items="${pageData.content}" var="p">
-        <div class="col-md-3">
-            <div class="card h-100 shadow-sm position-relative">
-                <img src="${fn:escapeXml(p.imageUrl)}" style="height:180px;object-fit:cover;" class="card-img-top">
-                <c:if test="${p.outOfStock}">
-                    <span class="badge bg-danger position-absolute top-0 end-0 m-2">
-                        <i class="fas fa-times-circle"></i> Hết hàng
-                    </span>
-                </c:if>
-                <div class="card-body">
-                    <h6>${fn:escapeXml(p.name)}</h6>
-                    <c:set var="rs" value="${ratings[p.id]}"/>
-                    <div class="small mb-1">
-                        <span class="text-warning">
-                            <c:forEach begin="1" end="5" var="i"><i class="${fn:escapeXml((not empty rs and i <= rs.rounded) ? 'fas' : 'far')} fa-star"></i></c:forEach>
-                        </span>
-                        <span class="text-muted">
-                            <c:choose>
-                                <c:when test="${not empty rs}">(<fmt:formatNumber value="${rs.average}" maxFractionDigits="1"/> · ${fn:escapeXml(rs.count)})</c:when>
-                                <c:otherwise>Chưa có đánh giá</c:otherwise>
-                            </c:choose>
-                        </span>
-                    </div>
-                    <p class="text-danger fw-bold"><fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫</p>
-                    <a href="${pageContext.request.contextPath}/product/${fn:escapeXml(p.id)}" class="btn btn-warning btn-sm w-100"><i class="fas fa-cart-plus"></i> Đặt mua</a>
-                </div>
-            </div>
+        <div class="col-6 col-md-3">
+            <c:set var="cardProduct" value="${p}" scope="request"/>
+            <jsp:include page="/WEB-INF/views/user/_product-card.jsp"/>
         </div>
     </c:forEach>
 </div>

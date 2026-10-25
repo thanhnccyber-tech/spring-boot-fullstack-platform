@@ -27,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired private JwtUtil jwtUtil;
     @Autowired private UserRepository userRepo;
+    @Autowired private vn.utetra.security.TokenBlacklist blacklist;
 
     /** Tài nguyên tĩnh không cần xác thực nên bỏ qua (đỡ truy vấn DB). */
     @Override
@@ -55,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        if (token != null && jwtUtil.isValid(token)
+        if (token != null && !blacklist.isRevoked(token) && jwtUtil.isValid(token)
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             String email = jwtUtil.getEmail(token);

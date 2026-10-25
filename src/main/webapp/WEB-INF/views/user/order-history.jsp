@@ -4,9 +4,27 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Lịch sử đơn hàng</title>
 
-<h3>📋 Lịch sử đơn hàng</h3>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<nav class="small mb-3"><a href="${ctx}/">Trang chủ</a> / <a href="${ctx}/profile">Tài khoản</a> / Đơn hàng</nav>
+<div class="row g-4">
+<div class="col-lg-4 col-xl-3">
+    <jsp:include page="/WEB-INF/views/user/_account-menu.jsp"><jsp:param name="active" value="orders"/></jsp:include>
+</div>
+<div class="col-lg-8 col-xl-9"><div class="checkout-box">
+<h4 class="mb-3" style="color:#8a6d00;font-weight:700">Đơn hàng của tôi</h4>
 
-<table class="table table-hover">
+<c:if test="${empty orders}">
+    <div class="empty-state">
+        <i class="fas fa-receipt"></i>
+        <h5>Bạn chưa có đơn hàng nào</h5>
+        <p class="text-muted mb-3">Đặt ly trà sữa đầu tiên và theo dõi tiến trình ngay tại đây.</p>
+        <a href="${ctx}/products" class="btn btn-warning">Xem menu</a>
+    </div>
+</c:if>
+
+<c:if test="${not empty orders}">
+<div class="table-responsive">
+<table class="table table-hover align-middle">
     <thead class="table-dark">
         <tr>
             <th>Mã</th><th>Chi nhánh</th><th>Ngày</th>
@@ -22,15 +40,21 @@
                 <td class="text-danger">
                     <fmt:formatNumber value="${o.totalAmount}" pattern="#,##0"/> ₫
                 </td>
-                <td><span class="badge bg-info">${fn:escapeXml(o.status)}</span></td>
-                <td>
-                    <a href="${pageContext.request.contextPath}/order/detail/${fn:escapeXml(o.id)}"
-                       class="btn btn-sm btn-outline-primary">Xem</a>
+                <td><span class="badge status-${fn:escapeXml(fn:toLowerCase(o.status))}">${fn:escapeXml(o.statusLabel)}</span></td>
+                <td class="text-nowrap">
+                    <a href="${ctx}/order/detail/${fn:escapeXml(o.id)}" class="btn btn-sm btn-outline-primary">Xem</a>
+                    <form action="${ctx}/order/reorder/${fn:escapeXml(o.id)}" method="post" class="d-inline">
+                        <button class="btn btn-sm btn-outline-warning" title="Thêm lại các món này vào giỏ"><i class="fas fa-rotate-right"></i> Đặt lại</button>
+                    </form>
                 </td>
             </tr>
         </c:forEach>
     </tbody>
 </table>
+</div>
+</c:if>
+</div></div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>

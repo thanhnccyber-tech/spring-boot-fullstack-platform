@@ -97,6 +97,24 @@ public class Order {
     @Column(name = "points_earned")
     private Integer pointsEarned;
 
+    /** Điểm hội viên khách đã dùng để trừ tiền cho đơn này, và số tiền được trừ */
+    @Column(name = "points_used")
+    private Integer pointsUsed;
+
+    @Column(name = "points_discount", precision = 14, scale = 2)
+    private BigDecimal pointsDiscount;
+
+    /** Khoảng cách (km) từ cửa hàng tới khách lúc đặt, dùng tính phí ship (có thể null) */
+    @Column(name = "distance_km")
+    private Double distanceKm;
+
+    /** Thanh toán online: thời điểm nhận tiền + mã giao dịch của cổng thanh toán */
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Column(name = "payment_ref", length = 60)
+    private String paymentRef;
+
     /** Lý do giao thất bại (nếu có) */
     @Column(name = "failed_reason", length = 500)
     private String failedReason;
@@ -117,7 +135,45 @@ public class Order {
         BigDecimal t = totalAmount == null ? BigDecimal.ZERO : totalAmount;
         BigDecimal fee = shippingFee == null ? BigDecimal.ZERO : shippingFee;
         BigDecimal dis = discountAmount == null ? BigDecimal.ZERO : discountAmount;
-        return t.subtract(fee).add(dis);
+        BigDecimal pts = pointsDiscount == null ? BigDecimal.ZERO : pointsDiscount;
+        return t.subtract(fee).add(dis).add(pts);
+    }
+
+    /** Nhãn tiếng Việt của trạng thái, hiển thị cho khách. */
+    public String getStatusLabel() {
+        if (status == null) return "";
+        return switch (status) {
+            case STATUS_PENDING    -> "Chờ xác nhận";
+            case STATUS_PREPARING  -> "Đang pha chế";
+            case STATUS_DELIVERING -> isPickup() ? "Sẵn sàng tại cửa hàng" : "Đang giao hàng";
+            case STATUS_COMPLETED  -> "Hoàn thành";
+            case STATUS_CANCELLED  -> "Đã hủy";
+            case STATUS_FAILED     -> "Giao thất bại";
+            default -> status;
+        };
+    }
+
+    /** Bước hiện tại trên thanh tiến trình: 1..4; 0 nếu đơn đã hủy / thất bại. */
+    public int getProgressStep() {
+        if (status == null) return 0;
+        return switch (status) {
+            case STATUS_PENDING    -> 1;
+            case STATUS_PREPARING  -> 2;
+            case STATUS_DELIVERING -> 3;
+            case STATUS_COMPLETED  -> 4;
+            default -> 0;
+        };
+    }
+
+    /** Khách chỉ tự hủy được khi cửa hàng chưa xác nhận và chưa thanh toán online. */
+    public boolean isCancellable() {
+        return STATUS_PENDING.equals(status) && !"PAID".equals(paymentStatus);
+    }
+
+    /** Đơn chọn VNPay mà chưa thanh toán xong → cho phép thanh toán lại. */
+    public boolean isAwaitingOnlinePayment() {
+        return "VNPAY".equals(paymentMethod) && !"PAID".equals(paymentStatus)
+                && STATUS_PENDING.equals(status);
     }
 
     public String getCreatedAtFormatted() {

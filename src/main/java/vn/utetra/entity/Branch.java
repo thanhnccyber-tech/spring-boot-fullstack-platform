@@ -19,4 +19,10 @@ public class Branch {
 
     @Column(nullable = false)
     private Boolean active = true;
+
+    /** Toạ độ cửa hàng (để gợi ý cửa hàng gần nhất và tính phí ship theo khoảng cách). */
+    private Double latitude;
+    private Double longitude;
+
+    public boolean hasCoords() { return latitude != null && longitude != null; }
 }

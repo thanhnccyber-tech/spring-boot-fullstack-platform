@@ -96,4 +96,10 @@ public class Product {
             joinColumns = @JoinColumn(name = "product_id"),
             inverseJoinColumns = @JoinColumn(name = "ice_id"))
     private Set<IceLevel> ices = new LinkedHashSet<>();
+
+    /** Ảnh đã nén cho thẻ sản phẩm (Cloudinary f_auto,q_auto,w_480). */
+    /** Ảnh lớn cho trang chi tiết (rộng tối đa 900px). */
+    public String getLargeUrl() { return vn.utetra.util.ImageUrls.optimize(imageUrl, 900); }
+
+    public String getThumbUrl() { return vn.utetra.util.ImageUrls.optimize(imageUrl, 480); }
 }

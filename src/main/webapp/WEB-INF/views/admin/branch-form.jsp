@@ -33,6 +33,21 @@
         </small>
     </div>
 
+    <div class="row g-2 mb-3">
+        <div class="col-md-6">
+            <label>Vĩ độ (latitude)</label>
+            <input type="number" step="any" min="-90" max="90" name="latitude" value="${fn:escapeXml(branch.latitude)}"
+                   class="form-control" placeholder="VD: 10.7743">
+        </div>
+        <div class="col-md-6">
+            <label>Kinh độ (longitude)</label>
+            <input type="number" step="any" min="-180" max="180" name="longitude" value="${fn:escapeXml(branch.longitude)}"
+                   class="form-control" placeholder="VD: 106.7040">
+        </div>
+        <small class="text-muted">Dùng để gợi ý "cửa hàng gần nhất" và tính phí ship theo khoảng cách.
+            Lấy toạ độ: mở Google Maps, chuột phải vào vị trí cửa hàng, bấm vào dòng số toạ độ để sao chép.</small>
+    </div>
+
     <div class="form-check mb-3">
         <input type="checkbox" name="active" value="true"
                id="activeCheckbox" class="form-check-input"

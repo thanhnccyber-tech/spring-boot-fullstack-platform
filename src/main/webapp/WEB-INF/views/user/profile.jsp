@@ -3,67 +3,71 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Thông tin cá nhân</title>
 
-<c:if test="${success != null}"><div class="alert alert-success">${fn:escapeXml(success)}</div></c:if>
-<c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<nav class="small mb-3"><a href="${ctx}/">Trang chủ</a> / Tài khoản</nav>
 
-<div class="row">
-    <div class="col-md-4 text-center">
-        <img src="${fn:escapeXml(user.avatarUrl != null ? user.avatarUrl : 'https://via.placeholder.com/200')}"
-             class="rounded-circle mb-3" style="width:200px;height:200px;object-fit:cover;">
-        <h5>${fn:escapeXml(user.fullName)}</h5>
-        <p class="text-muted">${fn:escapeXml(user.email)}</p>
+<div class="row g-4">
+    <div class="col-lg-4 col-xl-3">
+        <jsp:include page="/WEB-INF/views/user/_account-menu.jsp"><jsp:param name="active" value="profile"/></jsp:include>
     </div>
-    <div class="col-md-8">
-        <div class="card mb-3">
-            <div class="card-header">Cập nhật thông tin</div>
-            <div class="card-body">
-                <form action="${pageContext.request.contextPath}/profile/update"
-                      method="post" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label>Họ tên</label>
-                        <input type="text" name="fullName" class="form-control"
-                               value="${fn:escapeXml(not empty formFullName ? formFullName : user.fullName)}">
-                    </div>
-                    <div class="mb-3">
-                        <label>Điện thoại</label>
-                        <input type="text" name="phone" class="form-control"
-                               value="${fn:escapeXml(not empty formPhone ? formPhone : user.phone)}">
-                    </div>
-                    <div class="mb-3">
-                        <label>Địa chỉ</label>
-                        <input type="text" name="address" class="form-control"
-                               value="${fn:escapeXml(not empty formAddress ? formAddress : user.address)}">
-                    </div>
-                    <div class="mb-3">
-                        <label>Avatar (upload lên Cloudinary)</label>
-                        <input type="file" name="avatar" id="avatarInput"
-                               accept="image/jpeg,image/png,image/gif,image/webp"
-                               class="form-control">
-                        <small class="text-muted d-block mt-1">
-                            Chỉ chấp nhận JPG, PNG, GIF, WEBP. Tối đa 5 MB.
-                        </small>
-                        <small id="avatarError" class="text-danger d-none"></small>
-                    </div>
-                    <button class="btn btn-warning">Cập nhật</button>
-                </form>
-            </div>
+
+    <!-- ===== Nội dung (bên phải) ===== -->
+    <div class="col-lg-8 col-xl-9">
+        <c:if test="${success != null}"><div class="alert alert-success">${fn:escapeXml(success)}</div></c:if>
+        <c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
+
+        <div class="checkout-box mb-3">
+            <h3 class="mb-4" style="color:#8a6d00;font-weight:700">Thông tin cá nhân</h3>
+            <form action="${ctx}/profile/update" method="post" enctype="multipart/form-data" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small mb-1">Họ &amp; tên</label>
+                    <input type="text" name="fullName" class="form-control" required maxlength="100"
+                           value="${fn:escapeXml(not empty formFullName ? formFullName : user.fullName)}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small mb-1">Số điện thoại</label>
+                    <input type="text" name="phone" class="form-control" maxlength="15"
+                           value="${fn:escapeXml(not empty formPhone ? formPhone : user.phone)}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small mb-1">Email</label>
+                    <input type="email" class="form-control" value="${fn:escapeXml(user.email)}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small mb-1">Điểm tích luỹ</label>
+                    <input type="text" class="form-control" value="${fn:escapeXml(user.points)} điểm" disabled>
+                </div>
+                <div class="col-12" id="dia-chi">
+                    <label class="form-label small mb-1">Địa chỉ giao hàng mặc định</label>
+                    <input type="text" name="address" class="form-control" maxlength="255"
+                           placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
+                           value="${fn:escapeXml(not empty formAddress ? formAddress : user.address)}">
+                    <div class="form-text">Địa chỉ này được tự điền khi bạn thanh toán.</div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label small mb-1">Ảnh đại diện</label>
+                    <input type="file" name="avatar" id="avatarInput"
+                           accept="image/jpeg,image/png,image/gif,image/webp" class="form-control">
+                    <small class="text-muted d-block mt-1">Chỉ chấp nhận JPG, PNG, GIF, WEBP. Tối đa 5 MB.</small>
+                    <small id="avatarError" class="text-danger d-none"></small>
+                </div>
+                <div class="col-12"><button class="btn btn-warning px-4 fw-bold">Cập nhật</button></div>
+            </form>
         </div>
 
-        <div class="card">
-            <div class="card-header">Đổi mật khẩu</div>
-            <div class="card-body">
-                <form action="${pageContext.request.contextPath}/profile/change-password" method="post">
-                    <div class="mb-3">
-                        <label>Mật khẩu cũ</label>
-                        <input type="password" name="oldPassword" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Mật khẩu mới</label>
-                        <input type="password" name="newPassword" class="form-control" required minlength="6">
-                    </div>
-                    <button class="btn btn-danger">Đổi mật khẩu</button>
-                </form>
-            </div>
+        <div class="checkout-box">
+            <h5 class="mb-3">Đổi mật khẩu</h5>
+            <form action="${ctx}/profile/change-password" method="post" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small mb-1">Mật khẩu cũ</label>
+                    <input type="password" name="oldPassword" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small mb-1">Mật khẩu mới</label>
+                    <input type="password" name="newPassword" class="form-control" required minlength="6">
+                </div>
+                <div class="col-12"><button class="btn btn-danger">Đổi mật khẩu</button></div>
+            </form>
         </div>
     </div>
 </div>

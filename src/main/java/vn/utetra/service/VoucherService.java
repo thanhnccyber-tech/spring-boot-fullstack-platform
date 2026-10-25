@@ -59,6 +59,12 @@ public class VoucherService {
             throw new IllegalArgumentException("Mã giảm giá đã hết lượt sử dụng.");
     }
 
+    /** Trả lại 1 lượt dùng khi đơn dùng mã này bị hủy. */
+    @Transactional
+    public void release(String code) {
+        if (code != null && !code.isBlank()) repo.decreaseUsage(code.trim());
+    }
+
     @Transactional
     public void save(Voucher v, String code, String type, BigDecimal value, BigDecimal min,
                      BigDecimal max, LocalDateTime expires, Integer limit, boolean active, String desc) {
