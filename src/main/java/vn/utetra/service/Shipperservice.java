@@ -1,5 +1,7 @@
 package vn.utetra.service;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -35,8 +37,18 @@ public class ShipperService {
     @Autowired private UserRepository userRepo;
     @Autowired private OrderService orderService;
 
-    /** Số liệu thống kê của shipper trong một khoảng thời gian. */
-    public record Stats(long delivered, BigDecimal revenue, BigDecimal codCollected, long failed) { }
+    /**
+     * Số liệu thống kê của shipper trong một khoảng thời gian.
+     * Dùng class (có getter) thay vì record để JSP đọc được bằng ${stats.delivered}.
+     */
+    @Getter
+    @AllArgsConstructor
+    public static class Stats {
+        private final long delivered;
+        private final BigDecimal revenue;
+        private final BigDecimal codCollected;
+        private final long failed;
+    }
 
     /* ==================== XÁC ĐỊNH SHIPPER ==================== */
 

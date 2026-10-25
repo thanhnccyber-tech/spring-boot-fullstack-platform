@@ -70,7 +70,7 @@ public class SecurityConfig {
                     .hasAnyRole("ADMIN", "MANAGER")
 
                 .requestMatchers("/shipper/**")
-                    .hasAnyRole("SHIPPER", "ADMIN")
+                	.hasRole("SHIPPER")
 
                 .requestMatchers(
                         "/order/**", "/payment/**", "/profile/**",
