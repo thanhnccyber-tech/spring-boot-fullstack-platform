@@ -76,14 +76,19 @@
                 </c:choose>
             </div>
 
-            <c:if test="${requestScope.cardMode == 'available'}">
-                <form action="${ctx}/shipper/orders/${fn:escapeXml(o.id)}/accept" method="post" class="m-0"
-                      onsubmit="return confirm('Nhận giao đơn này?')">
-                    <button class="btn btn-warning fw-semibold">
-                        <i class="fas fa-hand-pointer"></i> Nhận đơn
-                    </button>
-                </form>
-            </c:if>
+            <div class="d-flex gap-2">
+                <a href="${ctx}/shipper/orders/${fn:escapeXml(o.id)}" class="btn btn-outline-dark">
+                    <i class="fas fa-eye"></i> Chi tiết
+                </a>
+                <c:if test="${requestScope.cardMode == 'available'}">
+                    <form action="${ctx}/shipper/orders/${fn:escapeXml(o.id)}/accept" method="post" class="m-0"
+                          onsubmit="return confirm('Nhận giao đơn này?')">
+                        <button class="btn btn-warning fw-semibold">
+                            <i class="fas fa-hand-pointer"></i> Nhận đơn
+                        </button>
+                    </form>
+                </c:if>
+            </div>
         </div>
     </div>
 </div>

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.security.ErrorMessages;
 import vn.utetra.service.ShipperService;
@@ -39,6 +40,13 @@ public class ShipperController {
         return "shipper/dashboard";
     }
 
+    /** Chi tiết đơn: danh sách món, thông tin khách, các nút nhận / giao xong / giao thất bại. */
+    @GetMapping("/orders/{id}")
+    public String detail(@PathVariable Long id, Authentication auth, Model model) {
+        model.addAttribute("order", shipperService.detail(id, auth.getName()));
+        return "shipper/order-detail";
+    }
+
     /** Nhận đơn: đơn chuyển sang "Đang giao" và khách được báo realtime. */
     @PostMapping("/orders/{id}/accept")
     public String accept(@PathVariable Long id, Authentication auth, RedirectAttributes ra) {
@@ -49,5 +57,32 @@ public class ShipperController {
             ra.addFlashAttribute("error", ErrorMessages.safe(e));
         }
         return "redirect:/shipper/dashboard";
+    }
+
+    /** Giao thành công: đơn hoàn thành, khách được báo realtime, COD được ghi nhận đã thu tiền. */
+    @PostMapping("/orders/{id}/complete")
+    public String complete(@PathVariable Long id, Authentication auth, RedirectAttributes ra) {
+        try {
+            shipperService.complete(id, auth.getName());
+            ra.addFlashAttribute("success", "Đã ghi nhận giao thành công. Cảm ơn bạn!");
+            return "redirect:/shipper/dashboard";
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", ErrorMessages.safe(e));
+            return "redirect:/shipper/orders/" + id;
+        }
+    }
+
+    /** Giao thất bại: bắt buộc nhập lý do (khách không nghe máy, sai địa chỉ...). */
+    @PostMapping("/orders/{id}/fail")
+    public String fail(@PathVariable Long id, @RequestParam(required = false) String reason,
+                       Authentication auth, RedirectAttributes ra) {
+        try {
+            shipperService.fail(id, auth.getName(), reason);
+            ra.addFlashAttribute("success", "Đã ghi nhận giao thất bại. Cửa hàng sẽ được thông báo.");
+            return "redirect:/shipper/dashboard";
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", ErrorMessages.safe(e));
+            return "redirect:/shipper/orders/" + id;
+        }
     }
 }
