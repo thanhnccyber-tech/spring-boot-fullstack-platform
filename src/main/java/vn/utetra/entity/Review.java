@@ -39,6 +39,12 @@ public class Review {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
+    @Column(name = "media_url", length = 500)
+    private String mediaUrl;
+
+    @Column(name = "media_type", length = 100)
+    private String mediaType;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 

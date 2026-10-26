@@ -5,6 +5,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.RoleName;
 import vn.utetra.entity.User;
@@ -23,11 +24,12 @@ public class ReviewController {
     public String submit(@PathVariable Long productId,
                          @RequestParam(required = false) Integer rating,
                          @RequestParam(required = false) String comment,
+                         @RequestParam(required = false) MultipartFile media,
                          Authentication auth,
                          RedirectAttributes ra) {
         try {
             User u = userService.findByEmail(auth.getName()).orElseThrow();
-            reviewService.submit(u, productId, rating, comment);
+            reviewService.submit(u, productId, rating, comment, media);
             ra.addFlashAttribute("reviewSuccess", "Cảm ơn bạn đã đánh giá sản phẩm!");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("reviewError", e.getMessage());
