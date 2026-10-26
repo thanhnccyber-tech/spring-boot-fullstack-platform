@@ -71,6 +71,17 @@
     </div>
 </div>
 
+<div class="row g-3 mt-1">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-chart-column"></i> Doanh thu 12 tuần gần nhất</div>
+            <div class="card-body">
+                <canvas id="revenue12WeeksChart" style="max-height: 320px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ============ TOP SẢN PHẨM & TOPPING ============ -->
 <div class="row g-3 mt-1">
     <div class="col-md-6">
@@ -169,6 +180,42 @@ document.addEventListener('DOMContentLoaded', function () {
                 tension: 0.3,
                 pointRadius: 5,
                 pointBackgroundColor: 'rgba(25, 135, 84, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => Number(ctx.raw).toLocaleString('vi-VN') + ' ₫'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => Number(v).toLocaleString('vi-VN') + ' ₫' }
+                }
+            }
+        }
+    });
+
+    // ---------- Chart doanh thu 12 tuần ----------
+    const labels12Weeks = [<c:forEach items="${labels12Weeks}" var="l" varStatus="s">'${fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(fn:replace(l, '\\', ''), "'", ''), '"', ''), '<', ''), '>', ''), '&', '')}'<c:if test="${!s.last}">,</c:if></c:forEach>];
+    const data12Weeks   = [<c:forEach items="${data12Weeks}" var="d" varStatus="s">${d}<c:if test="${!s.last}">,</c:if></c:forEach>];
+
+    new Chart(document.getElementById('revenue12WeeksChart'), {
+        type: 'bar',
+        data: {
+            labels: labels12Weeks,
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: data12Weeks,
+                backgroundColor: 'rgba(13, 110, 253, 0.65)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 2,
+                borderRadius: 6
             }]
         },
         options: {

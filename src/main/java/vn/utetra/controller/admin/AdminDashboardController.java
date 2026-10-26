@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -84,6 +85,13 @@ public class AdminDashboardController {
                     ym.getYear() + "-" + ym.getMonthValue(), BigDecimal.ZERO));
         }
 
+        // ===== Chart doanh thu 12 tuần gần nhất (tuần bắt đầu từ thứ Hai) =====
+        WeeklyRevenue weeklyRevenue = weeklyRevenue(LocalDate.now());
+        List<Object[]> revenueForWeeks = orderRepo.revenueByDay(
+                weeklyRevenue.from().atStartOfDay(),
+                weeklyRevenue.to().atTime(LocalTime.MAX));
+        List<BigDecimal> data12Weeks = aggregateWeeklyRevenue(weeklyRevenue.from(), revenueForWeeks);
+
         // ===== Đưa vào model =====
         model.addAttribute("todayOrderCount", todayOrders.size());
         model.addAttribute("todayRevenue", todayRevenue);
@@ -95,7 +103,44 @@ public class AdminDashboardController {
         model.addAttribute("data7", data7);
         model.addAttribute("labels12", labels12);
         model.addAttribute("data12", data12);
+        model.addAttribute("labels12Weeks", weeklyRevenue.labels());
+        model.addAttribute("data12Weeks", data12Weeks);
 
         return "admin/dashboard";
     }
+
+    private static WeeklyRevenue weeklyRevenue(LocalDate today) {
+        LocalDate thisWeek = today.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate from = thisWeek.minusWeeks(11);
+        LocalDate to = thisWeek.plusDays(6);
+        List<String> labels = new ArrayList<>(12);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
+        for (int i = 0; i < 12; i++) {
+            LocalDate weekStart = from.plusWeeks(i);
+            LocalDate weekEnd = weekStart.plusDays(6);
+            labels.add(weekStart.format(formatter) + "–" + weekEnd.format(formatter));
+        }
+        return new WeeklyRevenue(from, to, labels);
+    }
+
+    private static List<BigDecimal> aggregateWeeklyRevenue(LocalDate firstWeek, List<Object[]> dailyRevenue) {
+        Map<LocalDate, BigDecimal> revenueByDate = new HashMap<>();
+        for (Object[] row : dailyRevenue) {
+            LocalDate date = LocalDate.parse(row[0].toString());
+            revenueByDate.put(date, row[1] == null ? BigDecimal.ZERO : (BigDecimal) row[1]);
+        }
+
+        List<BigDecimal> weeklyTotals = new ArrayList<>(12);
+        for (int week = 0; week < 12; week++) {
+            BigDecimal total = BigDecimal.ZERO;
+            LocalDate weekStart = firstWeek.plusWeeks(week);
+            for (int day = 0; day < 7; day++) {
+                total = total.add(revenueByDate.getOrDefault(weekStart.plusDays(day), BigDecimal.ZERO));
+            }
+            weeklyTotals.add(total);
+        }
+        return weeklyTotals;
+    }
+
+    private record WeeklyRevenue(LocalDate from, LocalDate to, List<String> labels) { }
 }
