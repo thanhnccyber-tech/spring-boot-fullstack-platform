@@ -26,4 +26,14 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     @Query("UPDATE Voucher v SET v.usedCount = v.usedCount - 1 " +
            "WHERE UPPER(v.code) = UPPER(:code) AND v.usedCount > 0")
     int decreaseUsage(@Param("code") String code);
+
+    /** Mã còn hiệu lực nhưng sắp hết lượt (còn <= :left lượt) hoặc sắp hết hạn trước :soon. */
+    @Query("SELECT v FROM Voucher v WHERE v.active = true " +
+           "AND (v.expiresAt IS NULL OR v.expiresAt > :now) " +
+           "AND ((v.usageLimit IS NOT NULL AND v.usageLimit - v.usedCount <= :left) " +
+           "     OR (v.expiresAt IS NOT NULL AND v.expiresAt < :soon)) " +
+           "ORDER BY v.id DESC")
+    List<Voucher> findExpiringOrNearlyUsedUp(@Param("now") java.time.LocalDateTime now,
+                                             @Param("soon") java.time.LocalDateTime soon,
+                                             @Param("left") int left);
 }

@@ -57,12 +57,11 @@ public class CartController {
 			HttpSession session, RedirectAttributes ra) {
 
 		Product p = productService.get(productId);
-		if (getCart(session).size() >= CartService.MAX_CART_ITEMS) {
-			ra.addFlashAttribute("error", "Giỏ hàng tối đa " + CartService.MAX_CART_ITEMS + " món.");
-			return "redirect:/cart";
-		}
 		try {
-			getCart(session).add(cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds));
+			if (!CartService.addOrMerge(getCart(session), cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds))) {
+				ra.addFlashAttribute("error", "Giỏ hàng tối đa " + CartService.MAX_CART_ITEMS + " món.");
+				return "redirect:/cart";
+			}
 		} catch (IllegalArgumentException e) {
 			ra.addFlashAttribute("error", e.getMessage());
 			return "redirect:/product/" + p.getId();
@@ -104,7 +103,16 @@ public class CartController {
 		if (index < 0 || index >= cart.size()) return "redirect:/cart";
 		try {
 			Product p = productService.get(cart.get(index).getProductId());
-			cart.set(index, cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds));
+			CartItem edited = cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds);
+			cart.set(index, edited);
+			// Sửa xong mà trùng với một dòng khác thì gộp lại thành một dòng
+			for (int j = 0; j < cart.size(); j++) {
+				if (j != index && CartService.sameLine(cart.get(j), edited)) {
+					cart.get(j).setQuantity(CartService.clampQty(cart.get(j).getQuantity() + edited.getQuantity()));
+					cart.remove(index);
+					break;
+				}
+			}
 			ra.addFlashAttribute("success", "Đã cập nhật món trong giỏ.");
 		} catch (IllegalArgumentException e) {
 			ra.addFlashAttribute("error", e.getMessage());

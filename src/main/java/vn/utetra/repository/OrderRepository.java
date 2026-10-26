@@ -96,4 +96,93 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 			+ "AND o.status <> 'CANCELLED' " + "GROUP BY FUNCTION('YEAR', o.createdAt), FUNCTION('MONTH', o.createdAt) "
 			+ "ORDER BY FUNCTION('YEAR', o.createdAt), FUNCTION('MONTH', o.createdAt)")
 	List<Object[]> revenueByMonth(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+	/* ==================== THỐNG KÊ DASHBOARD ====================
+	 * "Hợp lệ" = chưa hủy, chưa giao thất bại. "Đã thu" = đã thanh toán online hoặc đơn đã hoàn thành (COD).
+	 * Tất cả đều lọc theo khoảng thời gian và (tuỳ chọn) chi nhánh, tính ngay ở database. */
+	String LIVE = "o.status NOT IN ('CANCELLED','FAILED')";
+	String COLLECTED = "(o.paymentStatus = 'PAID' OR o.status = 'COMPLETED')";
+	String IN_RANGE = "o.createdAt BETWEEN :from AND :to AND (:branchId IS NULL OR o.branch.id = :branchId)";
+
+	@Query("SELECT o.status, COUNT(o) FROM Order o WHERE " + IN_RANGE + " GROUP BY o.status")
+	List<Object[]> statusCountBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	/** [tổng tiền dự kiến (có thể null), số đơn hợp lệ] */
+	@Query("SELECT SUM(o.totalAmount), COUNT(o) FROM Order o WHERE " + IN_RANGE + " AND " + LIVE)
+	List<Object[]> liveTotals(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	/** [tổng tiền đã thu (có thể null), số đơn đã thu] */
+	@Query("SELECT SUM(o.totalAmount), COUNT(o) FROM Order o WHERE " + IN_RANGE + " AND " + LIVE + " AND " + COLLECTED)
+	List<Object[]> collectedTotals(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	@Query("SELECT FUNCTION('DATE', o.createdAt), SUM(o.totalAmount) FROM Order o WHERE " + IN_RANGE + " AND " + LIVE
+			+ " GROUP BY FUNCTION('DATE', o.createdAt)")
+	List<Object[]> liveByDay(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	@Query("SELECT FUNCTION('DATE', o.createdAt), SUM(o.totalAmount) FROM Order o WHERE " + IN_RANGE + " AND " + LIVE
+			+ " AND " + COLLECTED + " GROUP BY FUNCTION('DATE', o.createdAt)")
+	List<Object[]> collectedByDay(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	@Query("SELECT FUNCTION('YEAR', o.createdAt), FUNCTION('MONTH', o.createdAt), SUM(o.totalAmount) FROM Order o WHERE "
+			+ IN_RANGE + " AND " + LIVE + " AND " + COLLECTED
+			+ " GROUP BY FUNCTION('YEAR', o.createdAt), FUNCTION('MONTH', o.createdAt)")
+	List<Object[]> collectedByMonth(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	@Query("SELECT FUNCTION('YEAR', o.createdAt), FUNCTION('MONTH', o.createdAt), SUM(o.totalAmount) FROM Order o WHERE "
+			+ IN_RANGE + " AND " + LIVE
+			+ " GROUP BY FUNCTION('YEAR', o.createdAt), FUNCTION('MONTH', o.createdAt)")
+	List<Object[]> liveByMonth(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	/** [giờ trong ngày, số đơn, tổng tiền] */
+	@Query("SELECT FUNCTION('HOUR', o.createdAt), COUNT(o), SUM(o.totalAmount) FROM Order o WHERE " + IN_RANGE
+			+ " AND " + LIVE + " GROUP BY FUNCTION('HOUR', o.createdAt)")
+	List<Object[]> liveByHour(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	/** [phương thức thanh toán, số đơn, tổng tiền] */
+	@Query("SELECT o.paymentMethod, COUNT(o), SUM(o.totalAmount) FROM Order o WHERE " + IN_RANGE + " AND " + LIVE
+			+ " GROUP BY o.paymentMethod")
+	List<Object[]> liveByPaymentMethod(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	@Query(value = "SELECT p.name, SUM(od.quantity) AS total FROM order_details od "
+			+ "JOIN orders o ON od.order_id = o.id JOIN products p ON od.product_id = p.id "
+			+ "WHERE o.created_at BETWEEN :from AND :to AND (:branchId IS NULL OR o.branch_id = :branchId) "
+			+ "AND o.status NOT IN ('CANCELLED','FAILED') "
+			+ "GROUP BY p.id, p.name ORDER BY total DESC LIMIT 10", nativeQuery = true)
+	List<Object[]> topProductsBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	@Query(value = "SELECT t.name, COUNT(odt.topping_id) AS total FROM order_detail_toppings odt "
+			+ "JOIN order_details od ON odt.order_detail_id = od.id JOIN orders o ON od.order_id = o.id "
+			+ "JOIN toppings t ON odt.topping_id = t.id "
+			+ "WHERE o.created_at BETWEEN :from AND :to AND (:branchId IS NULL OR o.branch_id = :branchId) "
+			+ "AND o.status NOT IN ('CANCELLED','FAILED') "
+			+ "GROUP BY t.id, t.name ORDER BY total DESC LIMIT 10", nativeQuery = true)
+	List<Object[]> topToppingsBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("branchId") Long branchId);
+
+	/* ----- Cảnh báo (không phụ thuộc khoảng thời gian đang xem) ----- */
+
+	@Query("SELECT COUNT(o) FROM Order o WHERE o.status = 'PENDING' AND (:branchId IS NULL OR o.branch.id = :branchId)")
+	long countPending(@Param("branchId") Long branchId);
+
+	/** Đơn VNPay chưa thanh toán sau một khoảng thời gian. */
+	@Query("SELECT COUNT(o) FROM Order o WHERE o.status = 'PENDING' AND o.paymentMethod = 'VNPAY' "
+			+ "AND o.paymentStatus <> 'PAID' AND o.createdAt < :before "
+			+ "AND (:branchId IS NULL OR o.branch.id = :branchId)")
+	long countStaleOnlinePayments(@Param("before") LocalDateTime before, @Param("branchId") Long branchId);
+
+	/** Đơn chờ xác nhận lâu (không tính đơn VNPay đang chờ khách trả tiền). */
+	@Query("SELECT COUNT(o) FROM Order o WHERE o.status = 'PENDING' AND o.createdAt < :before "
+			+ "AND (o.paymentMethod IS NULL OR o.paymentMethod <> 'VNPAY' OR o.paymentStatus = 'PAID') "
+			+ "AND (:branchId IS NULL OR o.branch.id = :branchId)")
+	long countStaleUnconfirmed(@Param("before") LocalDateTime before, @Param("branchId") Long branchId);
 }

@@ -58,6 +58,30 @@ public class AdminOrderController {
         return "admin/orders";
     }
 
+    /** Đơn mới nhất cho khung chuông thông báo (Admin: mọi chi nhánh; Manager/Staff: chỉ chi nhánh của mình). */
+    @GetMapping("/recent")
+    @ResponseBody
+    public java.util.List<Map<String, Object>> recent(Authentication auth) {
+        User me = userRepo.findByEmail(auth.getName()).orElseThrow();
+        Long branchIdFilter = me.isAdmin() ? null
+                : (me.getBranch() == null ? -1L : me.getBranch().getId());
+        java.util.List<Map<String, Object>> out = new java.util.ArrayList<>();
+        for (Order o : orderService.searchForAdmin(null, null, branchIdFilter, null, null, 0, 10).getContent()) {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", o.getId());
+            m.put("code", o.getOrderCode());
+            m.put("customer", o.getUser() == null || o.getUser().getFullName() == null ? "Khách" : o.getUser().getFullName());
+            m.put("total", o.getTotalAmount());
+            m.put("status", o.getStatus());
+            m.put("statusLabel", o.getStatusLabel());
+            m.put("payment", o.getPaymentMethod());
+            m.put("paid", "PAID".equals(o.getPaymentStatus()));
+            m.put("createdAt", o.getCreatedAt() == null ? null : o.getCreatedAt().toString());
+            out.add(m);
+        }
+        return out;
+    }
+
     /** Admin xem mọi chi nhánh; Manager/Staff chỉ đơn thuộc chi nhánh của mình (chống truy cập chéo chi nhánh). */
     private Order requireAccess(Long orderId, Authentication auth) {
         User me = userRepo.findByEmail(auth.getName()).orElseThrow();

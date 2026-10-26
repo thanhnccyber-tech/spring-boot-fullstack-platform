@@ -208,8 +208,7 @@ public class OrderController {
         if (cart == null) { cart = new java.util.ArrayList<>(); session.setAttribute("CART", cart); }
         int added = 0;
         for (CartItem ci : r.items()) {
-            if (cart.size() >= vn.utetra.service.CartService.MAX_CART_ITEMS) break;
-            cart.add(ci);
+            if (!vn.utetra.service.CartService.addOrMerge(cart, ci)) break;
             added++;
         }
         if (added == 0) {

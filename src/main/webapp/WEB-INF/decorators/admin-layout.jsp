@@ -85,6 +85,10 @@
 							class="fas fa-users"></i> Người dùng
 					</a></li>
 				</c:if>
+				<li><a class="nav-link text-white" target="_blank" rel="noopener"
+					href="${pageContext.request.contextPath}/"> <i
+						class="fas fa-store"></i> Xem trang web
+				</a></li>
 				<li><a class="nav-link text-white"
 					href="${pageContext.request.contextPath}/logout"> <i
 						class="fas fa-sign-out-alt"></i> Đăng xuất
@@ -99,10 +103,23 @@
 					<sitemesh:write property="title" />
 				</h5>
 				<div class="d-flex align-items-center">
-					<span id="noti-bell" class="position-relative me-3"> <i
-						class="fas fa-bell fa-lg"></i> <span id="noti-count"
-						class="badge bg-danger position-absolute top-0 start-100 translate-middle d-none">0</span>
-					</span> <span class="text-muted small"> Xin chào, <b>${fn:escapeXml(sessionScope.fullName)}</b>
+					<div class="dropdown me-3">
+						<button type="button" id="noti-bell" class="btn btn-link text-dark p-0 position-relative"
+							data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Đơn hàng mới">
+							<i class="fas fa-bell fa-lg"></i> <span id="noti-count"
+								class="badge bg-danger position-absolute top-0 start-100 translate-middle d-none">0</span>
+						</button>
+						<div class="dropdown-menu dropdown-menu-end p-0 shadow" style="width: 360px; max-width: 92vw;">
+							<div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+								<b>Đơn hàng mới</b>
+								<a class="small" href="${pageContext.request.contextPath}/admin/orders">Xem tất cả</a>
+							</div>
+							<div id="noti-list" style="max-height: 380px; overflow-y: auto;">
+								<div class="text-center text-muted small py-4">Đang tải...</div>
+							</div>
+						</div>
+					</div>
+					<span class="text-muted small"> Xin chào, <b>${fn:escapeXml(sessionScope.fullName)}</b>
 					</span>
 				</div>
 			</header>
@@ -112,6 +129,7 @@
 		</div>
 	</div>
 
+	<div class="toast-container position-fixed top-0 end-0 p-3" id="noti-toasts" style="z-index: 2000;"></div>
 	<audio id="noti-sound" preload="auto"></audio>
 	<script
 		src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
@@ -123,46 +141,120 @@
 		src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 	<script>
 		(function() {
-			const socket = new SockJS('${pageContext.request.contextPath}/ws');
-			const stomp = Stomp.over(socket);
+			var ctx = '${pageContext.request.contextPath}';
+			var KEY = 'adminLastSeenOrderId';
+			var items = [];
+
+			function getSeen() { try { return parseInt(localStorage.getItem(KEY)) || 0; } catch (e) { return 0; } }
+			function setSeen(v) { try { localStorage.setItem(KEY, String(v)); } catch (e) { } }
+			function money(v) { return Number(v || 0).toLocaleString('vi-VN') + ' ₫'; }
+			function ago(iso) {
+				if (!iso) return '';
+				var s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+				if (s < 60) return 'vừa xong';
+				if (s < 3600) return Math.floor(s / 60) + ' phút trước';
+				if (s < 86400) return Math.floor(s / 3600) + ' giờ trước';
+				return Math.floor(s / 86400) + ' ngày trước';
+			}
+			function unreadCount() {
+				var seen = getSeen();
+				return items.filter(function (o) { return o.id > seen; }).length;
+			}
+			function renderBadge() {
+				var n = unreadCount();
+				var b = document.getElementById('noti-count');
+				b.innerText = n > 9 ? '9+' : String(n);
+				b.classList.toggle('d-none', n === 0);
+			}
+			function renderList() {
+				var box = document.getElementById('noti-list');
+				var seen = getSeen();
+				box.textContent = '';
+				if (!items.length) {
+					var empty = document.createElement('div');
+					empty.className = 'text-center text-muted small py-4';
+					empty.textContent = 'Chưa có đơn hàng nào';
+					box.appendChild(empty);
+					return;
+				}
+				items.forEach(function (o) {
+					var a = document.createElement('a');
+					a.href = ctx + '/admin/orders/detail/' + encodeURIComponent(o.id);
+					a.className = 'd-block px-3 py-2 border-bottom text-decoration-none text-dark' + (o.id > seen ? ' bg-warning-subtle' : '');
+					var l1 = document.createElement('div');
+					l1.className = 'd-flex justify-content-between';
+					var who = document.createElement('span');
+					var strong = document.createElement('b');
+					strong.textContent = o.customer;
+					who.appendChild(strong);
+					who.appendChild(document.createTextNode(' đã đặt hàng'));
+					var amt = document.createElement('span');
+					amt.className = 'text-success fw-bold';
+					amt.textContent = money(o.total);
+					l1.appendChild(who); l1.appendChild(amt);
+					var l2 = document.createElement('div');
+					l2.className = 'small text-muted';
+					var pay = o.payment ? ' · ' + o.payment + (o.paid ? ' (đã trả)' : '') : '';
+					l2.textContent = o.code + pay + ' · ' + o.statusLabel + ' · ' + ago(o.createdAt);
+					a.appendChild(l1); a.appendChild(l2);
+					box.appendChild(a);
+				});
+			}
+			function load() {
+				return fetch(ctx + '/admin/orders/recent', { credentials: 'same-origin' })
+					.then(function (r) { return r.ok ? r.json() : []; })
+					.then(function (list) { items = list || []; renderBadge(); renderList(); })
+					.catch(function () { });
+			}
+			function toast(data) {
+				try {
+					var wrap = document.getElementById('noti-toasts');
+					var el = document.createElement('div');
+					el.className = 'toast';
+					el.setAttribute('role', 'alert');
+					var head = document.createElement('div');
+					head.className = 'toast-header';
+					var t = document.createElement('strong');
+					t.className = 'me-auto';
+					t.textContent = '🔔 Đơn hàng mới';
+					var x = document.createElement('button');
+					x.type = 'button'; x.className = 'btn-close'; x.setAttribute('data-bs-dismiss', 'toast');
+					head.appendChild(t); head.appendChild(x);
+					var body = document.createElement('div');
+					body.className = 'toast-body';
+					body.textContent = (data.customer || 'Khách') + ' đã đặt ' + data.orderCode + ' · ' + money(data.total);
+					el.appendChild(head); el.appendChild(body);
+					wrap.appendChild(el);
+					el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+					new bootstrap.Toast(el, { delay: 6000 }).show();
+				} catch (e) { }
+			}
+
+			// Mở chuông: hiện danh sách (đơn chưa xem được tô nền), rồi đánh dấu đã xem
+			var bell = document.getElementById('noti-bell');
+			bell.addEventListener('show.bs.dropdown', function () {
+				load().then(function () {
+					var max = items.reduce(function (m, o) { return Math.max(m, o.id); }, 0);
+					setTimeout(function () { setSeen(max); renderBadge(); }, 1500);
+				});
+			});
+			load();
+
+			var socket = new SockJS(ctx + '/ws');
+			var stomp = Stomp.over(socket);
 			stomp.debug = null;
-			stomp
-					.connect(
-							{},
-							function() {
-								stomp
-										.subscribe(
-												'/topic/orders',
-												function(message) {
-													const data = JSON
-															.parse(message.body);
-													const count = document
-															.getElementById('noti-count');
-													count.classList
-															.remove('d-none');
-													count.innerText = (parseInt(count.innerText) || 0) + 1;
-													try {
-														document
-																.getElementById(
-																		'noti-sound')
-																.play();
-													} catch (e) {
-													}
-													alert('🔔 ĐƠN MỚI: '
-															+ data.orderCode
-															+ '\nKhách: '
-															+ data.customer
-															+ '\nTổng: '
-															+ Number(data.total)
-																	.toLocaleString(
-																			'vi-VN')
-															+ '₫');
-													if (window.location.pathname
-															.includes('/admin/orders'))
-														window.location
-																.reload();
-												});
-							});
+			stomp.connect({}, function() {
+				stomp.subscribe('/topic/orders', function(message) {
+					var data = JSON.parse(message.body);
+					try { document.getElementById('noti-sound').play(); } catch (e) { }
+					toast(data);
+					load();
+					var p = window.location.pathname;
+					if (p.indexOf('/admin/orders') !== -1 || /\/admin(\/dashboard)?\/?$/.test(p)) {
+						setTimeout(function () { window.location.reload(); }, 2500);
+					}
+				});
+			});
 		})();
 	</script>
 	<sitemesh:write property="bodyScript" />
