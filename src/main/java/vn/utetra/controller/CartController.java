@@ -29,9 +29,10 @@ public class CartController {
 
 	@Autowired private ProductService productService;
 	@Autowired private CartService cartService;
+	@Autowired private vn.utetra.service.PersistentCartService persistentCartService;
 
 	@SuppressWarnings("unchecked")
-	private List<CartItem> getCart(HttpSession session) {
+	private List<CartItem> sessionCart(HttpSession session) {
 		Object o = session.getAttribute(CART);
 		if (o == null) {
 			List<CartItem> cart = new ArrayList<>();
@@ -41,9 +42,27 @@ public class CartController {
 		return (List<CartItem>) o;
 	}
 
+	private static Long userId(HttpSession session) {
+		Object id = session.getAttribute("userId");
+		return id instanceof Long value ? value : null;
+	}
+
+	private List<CartItem> currentCart(HttpSession session) {
+		Long userId = userId(session);
+		if (userId == null) return sessionCart(session);
+		List<CartItem> cart = persistentCartService.load(userId);
+		session.setAttribute(CART, cart);
+		return cart;
+	}
+
+	private void saveIfLoggedIn(HttpSession session, List<CartItem> cart) {
+		Long userId = userId(session);
+		if (userId != null) persistentCartService.save(userId, cart);
+	}
+
 	@GetMapping
 	public String viewCart(HttpSession session, Model model) {
-		List<CartItem> cart = getCart(session);
+		List<CartItem> cart = currentCart(session);
 		BigDecimal total = cart.stream().map(CartItem::getSubtotal).reduce(BigDecimal.ZERO, BigDecimal::add);
 		model.addAttribute("cart", cart);
 		model.addAttribute("total", total);
@@ -57,12 +76,14 @@ public class CartController {
 			HttpSession session, RedirectAttributes ra) {
 
 		Product p = productService.get(productId);
-		if (getCart(session).size() >= CartService.MAX_CART_ITEMS) {
+		List<CartItem> cart = currentCart(session);
+		if (cart.size() >= CartService.MAX_CART_ITEMS) {
 			ra.addFlashAttribute("error", "Giỏ hàng tối đa " + CartService.MAX_CART_ITEMS + " món.");
 			return "redirect:/cart";
 		}
 		try {
-			getCart(session).add(cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds));
+			cart.add(cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds));
+			saveIfLoggedIn(session, cart);
 		} catch (IllegalArgumentException e) {
 			ra.addFlashAttribute("error", e.getMessage());
 			return "redirect:/product/" + p.getId();
@@ -74,7 +95,7 @@ public class CartController {
 	/** Trang sửa lựa chọn (size / đường / đá / topping / số lượng) của một món đã có trong giỏ. */
 	@GetMapping("/edit")
 	public String editPage(@RequestParam int index, HttpSession session, Model model, RedirectAttributes ra) {
-		List<CartItem> cart = getCart(session);
+		List<CartItem> cart = currentCart(session);
 		if (index < 0 || index >= cart.size()) return "redirect:/cart";
 		CartItem item = cart.get(index);
 		Product p;
@@ -100,11 +121,12 @@ public class CartController {
 			@RequestParam(required = false) Long iceId, @RequestParam(required = false) List<Long> toppingIds,
 			@RequestParam(required = false) String back,
 			HttpSession session, RedirectAttributes ra) {
-		List<CartItem> cart = getCart(session);
+		List<CartItem> cart = currentCart(session);
 		if (index < 0 || index >= cart.size()) return "redirect:/cart";
 		try {
 			Product p = productService.get(cart.get(index).getProductId());
 			cart.set(index, cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds));
+			saveIfLoggedIn(session, cart);
 			ra.addFlashAttribute("success", "Đã cập nhật món trong giỏ.");
 		} catch (IllegalArgumentException e) {
 			ra.addFlashAttribute("error", e.getMessage());
@@ -119,16 +141,17 @@ public class CartController {
 	@PostMapping("/remove")
 	public String remove(@RequestParam int index,
 			@RequestParam(required = false) String back, HttpSession session) {
-		List<CartItem> cart = getCart(session);
+		List<CartItem> cart = currentCart(session);
 		if (index >= 0 && index < cart.size())
 			cart.remove(index);
+		saveIfLoggedIn(session, cart);
 		return "redirect:" + SafeRedirect.localPath(back, "/cart");
 	}
 
 	@PostMapping("/update")
 	public String update(@RequestParam int index, @RequestParam int quantity,
 			@RequestParam(required = false) String back, HttpSession session) {
-		List<CartItem> cart = getCart(session);
+		List<CartItem> cart = currentCart(session);
 		if (index >= 0 && index < cart.size()) {
 			if (quantity < 1) {
 				cart.remove(index); // bấm "−" khi còn 1 ly = bỏ món
@@ -136,6 +159,7 @@ public class CartController {
 				cart.get(index).setQuantity(CartService.clampQty(quantity));
 			}
 		}
+		saveIfLoggedIn(session, cart);
 		return "redirect:" + SafeRedirect.localPath(back, "/cart");
 	}
 }

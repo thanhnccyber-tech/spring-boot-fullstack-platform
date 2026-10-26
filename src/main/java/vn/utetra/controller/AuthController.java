@@ -27,6 +27,7 @@ import vn.utetra.entity.RoleName;
 import vn.utetra.entity.User;
 import vn.utetra.service.MailService;
 import vn.utetra.service.OtpService;
+import vn.utetra.service.PersistentCartService;
 import vn.utetra.security.AttemptLimiter;
 import vn.utetra.security.PasswordPolicy;
 import vn.utetra.security.ResetTokenService;
@@ -47,6 +48,7 @@ public class AuthController {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private AttemptLimiter attemptLimiter;
     @Autowired private ResetTokenService resetTokenService;
+    @Autowired private PersistentCartService persistentCartService;
 
     /** true khi chạy HTTPS (production): cookie JWT chỉ gửi qua kết nối mã hoá */
     @Value("${app.cookie-secure:false}")
@@ -121,6 +123,21 @@ public class AuthController {
 
         if (!Boolean.TRUE.equals(u.getEnabled())) {
             return "redirect:/otp/register?email=" + enc(u.getEmail());
+        }
+
+        Object guestCartValue = session.getAttribute("CART");
+        if (guestCartValue instanceof List<?> guestCart) {
+            @SuppressWarnings("unchecked")
+            List<vn.utetra.dto.CartItem> guestItems = (List<vn.utetra.dto.CartItem>) guestCart;
+            try {
+                persistentCartService.mergeGuestCart(u.getId(), guestItems);
+            } catch (IllegalArgumentException e) {
+                model.addAttribute("loginRequest", req);
+                model.addAttribute("next", SafeRedirect.localPath(next, ""));
+                model.addAttribute("error", e.getMessage());
+                return "user/login";
+            }
+            session.removeAttribute("CART");
         }
 
         attemptLimiter.reset(ipKey);

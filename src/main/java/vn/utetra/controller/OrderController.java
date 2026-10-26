@@ -14,6 +14,7 @@ import vn.utetra.entity.Branch;
 import vn.utetra.entity.Order;
 import vn.utetra.service.BranchService;
 import vn.utetra.service.OrderService;
+import vn.utetra.service.PersistentCartService;
 
 import org.springframework.http.ResponseEntity;
 import vn.utetra.entity.User;
@@ -31,6 +32,7 @@ import java.util.Map;
 public class OrderController {
 
     @Autowired private OrderService orderService;
+    @Autowired private PersistentCartService persistentCartService;
     @Autowired private BranchService branchService;
     @Autowired private UserService userService;
     @Autowired private VoucherService voucherService;
@@ -48,13 +50,14 @@ public class OrderController {
 
     @GetMapping("/checkout")
     public String checkout(HttpSession session, Authentication auth, Model model, RedirectAttributes ra) {
-        List<CartItem> cart = cartOf(session);
+        User me = userService.findByEmail(auth.getName()).orElseThrow();
+        List<CartItem> cart = persistentCartService.load(me.getId());
+        session.setAttribute("CART", cart);
         if (cart.isEmpty()) {
             ra.addFlashAttribute("error", "Giỏ hàng trống, hãy chọn món trước nhé.");
             return "redirect:/products";
         }
         BigDecimal subtotal = subtotalOf(cart);
-        User me = userService.findByEmail(auth.getName()).orElseThrow();
 
         // Ưu tiên lựa chọn khách đã chọn ở popup "Chọn phương thức nhận hàng" trên header
         String method = (String) session.getAttribute("RECV_METHOD");
@@ -129,7 +132,9 @@ public class OrderController {
                         Authentication auth,
                         RedirectAttributes ra) {
         @SuppressWarnings("unchecked")
-        List<CartItem> cart = (List<CartItem>) session.getAttribute("CART");
+        List<CartItem> cart = persistentCartService.load(
+                userService.findByEmail(auth.getName()).orElseThrow().getId());
+        session.setAttribute("CART", cart);
         if (cart == null || cart.isEmpty()) {
             ra.addFlashAttribute("error", "Giỏ hàng trống");
             return "redirect:/cart";
@@ -145,6 +150,7 @@ public class OrderController {
             return "redirect:/order/checkout";
         }
         session.removeAttribute("CART");
+        persistentCartService.clear(o.getUser().getId());
         if ("VNPAY".equals(o.getPaymentMethod())) {
             // Chuyển sang cổng VNPay để trả tiền; chưa trả vẫn vào lại được từ trang chi tiết đơn
             return "redirect:/payment/vnpay/" + o.getId();
@@ -171,8 +177,8 @@ public class OrderController {
     @SuppressWarnings("unchecked")
     public String reorder(@PathVariable Long id, HttpSession session, Authentication auth, RedirectAttributes ra) {
         OrderService.ReorderResult r = orderService.reorderItems(id, auth.getName());
-        List<CartItem> cart = (List<CartItem>) session.getAttribute("CART");
-        if (cart == null) { cart = new java.util.ArrayList<>(); session.setAttribute("CART", cart); }
+        User user = userService.findByEmail(auth.getName()).orElseThrow();
+        List<CartItem> cart = persistentCartService.load(user.getId());
         int added = 0;
         for (CartItem ci : r.items()) {
             if (cart.size() >= vn.utetra.service.CartService.MAX_CART_ITEMS) break;
@@ -183,6 +189,8 @@ public class OrderController {
             ra.addFlashAttribute("error", "Các món trong đơn này hiện không còn bán.");
             return "redirect:/order/history";
         }
+        persistentCartService.save(user.getId(), cart);
+        session.setAttribute("CART", cart);
         ra.addFlashAttribute("success", "Đã thêm " + added + " món vào giỏ"
                 + (r.skipped() > 0 ? " (" + r.skipped() + " món không còn bán đã được bỏ qua)" : "") + ".");
         return "redirect:/cart";
