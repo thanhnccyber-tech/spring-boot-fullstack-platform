@@ -58,6 +58,10 @@ public class ShipperController {
         List<Order> all = shipperService.history(auth.getName());
         model.addAttribute("orders", all.size() > HISTORY_LIMIT ? all.subList(0, HISTORY_LIMIT) : all);
         model.addAttribute("total", all.size());
+        List<vn.utetra.entity.DeliveryFailure> failures = shipperService.failureHistory(auth.getName());
+        model.addAttribute("failures",
+                failures.size() > HISTORY_LIMIT ? failures.subList(0, HISTORY_LIMIT) : failures);
+        model.addAttribute("failureTotal", failures.size());
         model.addAttribute("limit", HISTORY_LIMIT);
         return "shipper/history";
     }
@@ -89,6 +93,7 @@ public class ShipperController {
     @GetMapping("/orders/{id}")
     public String detail(@PathVariable Long id, Authentication auth, Model model) {
         model.addAttribute("order", shipperService.detail(id, auth.getName()));
+        model.addAttribute("deliveryFailures", shipperService.failureHistoryForOrder(id, auth.getName()));
         return "shipper/order-detail";
     }
 
@@ -123,7 +128,7 @@ public class ShipperController {
                        Authentication auth, RedirectAttributes ra) {
         try {
             shipperService.fail(id, auth.getName(), reason);
-            ra.addFlashAttribute("success", "Đã ghi nhận giao thất bại. Cửa hàng sẽ được thông báo.");
+            ra.addFlashAttribute("success", "Đã ghi nhận lần giao thất bại. Đơn đang chờ được phân công giao lại.");
             return "redirect:/shipper/dashboard";
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", ErrorMessages.safe(e));

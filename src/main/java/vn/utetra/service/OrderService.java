@@ -105,7 +105,7 @@ public class OrderService {
 
     private static final Set<String> PAYMENT_METHODS = Set.of("CASH", "BANK", "COD", "VNPAY", "MOMO");
     private static final Set<String> STATUSES = Set.of(
-            Order.STATUS_PENDING, Order.STATUS_PREPARING, Order.STATUS_DELIVERING,
+            Order.STATUS_PENDING, Order.STATUS_PREPARING, Order.STATUS_READY, Order.STATUS_DELIVERING,
             Order.STATUS_COMPLETED, Order.STATUS_CANCELLED, Order.STATUS_FAILED);
     private static final int MAX_ITEMS = 30;
     private static final int MAX_QTY = 50;
@@ -343,6 +343,7 @@ public class OrderService {
         if (o.getUser() == null) return;
         String intro = switch (o.getStatus()) {
             case Order.STATUS_PREPARING  -> "Cửa hàng đã xác nhận và đang pha chế đơn của bạn.";
+            case Order.STATUS_READY      -> "Đơn hàng đang chờ được phân công giao lại.";
             case Order.STATUS_DELIVERING -> o.isPickup() ? "Đơn của bạn đã sẵn sàng, mời bạn đến cửa hàng nhận." : "Đơn của bạn đang trên đường giao tới bạn.";
             case Order.STATUS_COMPLETED  -> "Đơn hàng đã hoàn thành. Chúc bạn ngon miệng!";
             case Order.STATUS_CANCELLED  -> "Đơn hàng đã được hủy.";
@@ -500,6 +501,7 @@ public class OrderService {
             throw new IllegalArgumentException("Đơn đã hủy không thể mở lại, hãy để khách đặt đơn mới.");
         o.setStatus(status);
         o.setUpdatedAt(LocalDateTime.now());
+        if (Order.STATUS_READY.equals(status)) o.setShipper(null);
         if (Order.STATUS_CANCELLED.equals(status) && !Order.STATUS_CANCELLED.equals(old)
                 && !Order.STATUS_COMPLETED.equals(old)) {
             releaseResources(o);

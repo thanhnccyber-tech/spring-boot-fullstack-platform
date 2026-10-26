@@ -28,6 +28,9 @@
             <c:when test="${order.status == 'PREPARING'}">
                 <span class="badge bg-info text-dark fs-6">Đang pha chế</span>
             </c:when>
+            <c:when test="${order.status == 'READY'}">
+                <span class="badge bg-warning text-dark fs-6">Chờ giao lại</span>
+            </c:when>
             <c:when test="${order.status == 'DELIVERING'}">
                 <span class="badge bg-primary fs-6">Đang giao</span>
             </c:when>
@@ -71,7 +74,7 @@
                     <p><b>Ghi chú:</b> ${fn:escapeXml(order.note)}</p>
                 </c:if>
                 <c:if test="${order.failedReason != null}">
-                    <p><b>Lý do thất bại:</b>
+                    <p><b>Lý do lần giao thất bại gần nhất:</b>
                         <span class="text-danger">${fn:escapeXml(order.failedReason)}</span>
                     </p>
                 </c:if>
@@ -79,6 +82,21 @@
         </div>
     </div>
 </div>
+
+<c:if test="${not empty deliveryFailures}">
+    <div class="card mb-3">
+        <div class="card-header"><i class="fas fa-clock-rotate-left"></i> Lịch sử giao thất bại</div>
+        <div class="card-body">
+            <c:forEach var="failure" items="${deliveryFailures}">
+                <div class="border-bottom py-2">
+                    <div class="small text-muted">${fn:escapeXml(failure.failedAtFormatted)}
+                        · Shipper: ${fn:escapeXml(failure.shipper.fullName)}</div>
+                    <div>${fn:escapeXml(failure.reason)}</div>
+                </div>
+            </c:forEach>
+        </div>
+    </div>
+</c:if>
 
 <!-- ============ PHÂN CÔNG SHIPPER ============ -->
 <div class="card mb-3">
@@ -133,6 +151,7 @@
                 <select name="status" class="form-select">
                     <option value="PENDING"    <c:if test="${order.status=='PENDING'}">selected</c:if>>Chờ xác nhận</option>
                     <option value="PREPARING"  <c:if test="${order.status=='PREPARING'}">selected</c:if>>Đang pha chế</option>
+                    <option value="READY"      <c:if test="${order.status=='READY'}">selected</c:if>>Chờ giao lại</option>
                     <option value="DELIVERING" <c:if test="${order.status=='DELIVERING'}">selected</c:if>>Đang giao</option>
                     <option value="COMPLETED"  <c:if test="${order.status=='COMPLETED'}">selected</c:if>>Đã hoàn thành</option>
                     <option value="FAILED"     <c:if test="${order.status=='FAILED'}">selected</c:if>>Giao thất bại</option>

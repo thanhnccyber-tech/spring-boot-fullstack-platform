@@ -20,6 +20,7 @@
             <h5 class="mb-0">#${fn:escapeXml(order.orderCode)}</h5>
             <c:choose>
                 <c:when test="${order.status == 'PREPARING'}"><span class="badge bg-info text-dark">Chờ nhận</span></c:when>
+                <c:when test="${order.status == 'READY'}"><span class="badge bg-warning text-dark">Chờ giao lại</span></c:when>
                 <c:when test="${order.status == 'DELIVERING'}"><span class="badge bg-primary">Đang giao</span></c:when>
                 <c:when test="${order.status == 'COMPLETED'}"><span class="badge bg-success">Đã giao</span></c:when>
                 <c:when test="${order.status == 'FAILED'}"><span class="badge bg-secondary">Giao thất bại</span></c:when>
@@ -56,11 +57,26 @@
         </c:if>
         <c:if test="${not empty order.failedReason}">
             <div class="alert alert-secondary py-2 mt-3 mb-0">
-                <b>Lý do giao thất bại:</b> ${fn:escapeXml(order.failedReason)}
+                <b>Lý do lần giao thất bại gần nhất:</b> ${fn:escapeXml(order.failedReason)}
             </div>
         </c:if>
     </div>
 </div>
+
+<c:if test="${not empty deliveryFailures}">
+    <div class="card order-card shadow-sm mb-3">
+        <div class="card-body">
+            <h6><i class="fas fa-clock-rotate-left text-secondary"></i> Lịch sử giao thất bại</h6>
+            <c:forEach var="failure" items="${deliveryFailures}">
+                <div class="border-top py-2">
+                    <div class="small text-muted">${fn:escapeXml(failure.failedAtFormatted)}
+                        · Shipper: ${fn:escapeXml(failure.shipper.fullName)}</div>
+                    <div>${fn:escapeXml(failure.reason)}</div>
+                </div>
+            </c:forEach>
+        </div>
+    </div>
+</c:if>
 
 <%-- ========== DANH SÁCH MÓN ========== --%>
 <div class="card order-card shadow-sm mb-3">
@@ -130,11 +146,15 @@
 </div>
 
 <%-- ========== THAO TÁC ========== --%>
-<c:if test="${order.status == 'PREPARING'}">
+<c:if test="${order.status == 'PREPARING' or order.status == 'READY'}">
     <form action="${ctx}/shipper/orders/${fn:escapeXml(order.id)}/accept" method="post"
           onsubmit="return confirm('Nhận giao đơn này?')">
         <button class="btn btn-warning btn-lg w-100 fw-semibold">
-            <i class="fas fa-hand-pointer"></i> Nhận đơn
+            <i class="fas fa-hand-pointer"></i>
+            <c:choose>
+                <c:when test="${order.status == 'READY'}">Nhận giao lại</c:when>
+                <c:otherwise>Nhận đơn</c:otherwise>
+            </c:choose>
         </button>
     </form>
 </c:if>

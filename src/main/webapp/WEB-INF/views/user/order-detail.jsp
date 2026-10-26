@@ -12,16 +12,21 @@
     <c:when test="${order.progressStep > 0}">
         <ol class="order-progress" aria-label="Tiến trình đơn hàng">
             <li class="${order.progressStep >= 1 ? 'done' : ''} ${order.progressStep == 1 ? 'now' : ''}"><i class="fas fa-receipt"></i><span>Đã tiếp nhận</span></li>
-            <li class="${order.progressStep >= 2 ? 'done' : ''} ${order.progressStep == 2 ? 'now' : ''}"><i class="fas fa-blender"></i><span>Đang pha chế</span></li>
+            <li class="${order.progressStep >= 2 ? 'done' : ''} ${order.progressStep == 2 ? 'now' : ''}"><i class="fas fa-blender"></i><span>${order.status == 'READY' ? 'Chờ giao lại' : 'Đang pha chế'}</span></li>
             <li class="${order.progressStep >= 3 ? 'done' : ''} ${order.progressStep == 3 ? 'now' : ''}"><i class="${order.pickup ? 'fas fa-store' : 'fas fa-motorcycle'}"></i><span>${order.pickup ? 'Sẵn sàng nhận' : 'Đang giao'}</span></li>
             <li class="${order.progressStep >= 4 ? 'done' : ''} ${order.progressStep == 4 ? 'now' : ''}"><i class="fas fa-circle-check"></i><span>Hoàn thành</span></li>
         </ol>
     </c:when>
     <c:otherwise>
-        <div class="alert alert-secondary">Đơn này: <b>${fn:escapeXml(order.statusLabel)}</b>.
-            <c:if test="${not empty order.failedReason}"> Lý do: ${fn:escapeXml(order.failedReason)}</c:if></div>
+        <div class="alert alert-secondary">Đơn này: <b>${fn:escapeXml(order.statusLabel)}</b>.</div>
     </c:otherwise>
 </c:choose>
+
+<c:if test="${not empty order.failedReason}">
+    <div class="alert alert-secondary">
+        <b>Lý do lần giao thất bại gần nhất:</b> ${fn:escapeXml(order.failedReason)}
+    </div>
+</c:if>
 
 <div class="d-flex flex-wrap gap-2 mb-3">
     <c:if test="${order.cancellable}">

@@ -26,7 +26,7 @@ public interface ShipperOrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByIdForUpdate(@Param("id") Long id);
 
     /**
-     * Đơn chờ shipper nhận: giao tận nơi, đã xác nhận (đang pha chế), cùng chi nhánh,
+     * Đơn chờ shipper nhận: giao tận nơi, đã xác nhận hoặc chờ giao lại, cùng chi nhánh,
      * chưa có shipper hoặc đã được phân công đúng cho shipper này.
      */
     @Query("SELECT o FROM Order o " +
@@ -34,7 +34,7 @@ public interface ShipperOrderRepository extends JpaRepository<Order, Long> {
            "LEFT JOIN FETCH o.branch " +
            "LEFT JOIN FETCH o.shipper " +
            "WHERE o.deliveryMethod = 'DELIVERY' " +
-           "AND o.status = 'PREPARING' " +
+           "AND o.status IN ('PREPARING', 'READY') " +
            "AND o.branch.id = :branchId " +
            "AND (o.shipper IS NULL OR o.shipper.id = :shipperId) " +
            "ORDER BY o.createdAt ASC")
@@ -74,15 +74,6 @@ public interface ShipperOrderRepository extends JpaRepository<Order, Long> {
     BigDecimal codCollected(@Param("shipperId") Long shipperId,
                             @Param("from") LocalDateTime from,
                             @Param("to") LocalDateTime to);
-
-    /** Số đơn giao thất bại trong khoảng thời gian. */
-    @Query("SELECT COUNT(o) FROM Order o " +
-           "WHERE o.shipper.id = :shipperId " +
-           "AND o.status = 'FAILED' " +
-           "AND o.updatedAt BETWEEN :from AND :to")
-    long countFailed(@Param("shipperId") Long shipperId,
-                     @Param("from") LocalDateTime from,
-                     @Param("to") LocalDateTime to);
 
     /** Thời điểm hoàn thành của các đơn giao thành công (để gom theo ngày ở tầng service). */
     @Query("SELECT o.updatedAt FROM Order o " +

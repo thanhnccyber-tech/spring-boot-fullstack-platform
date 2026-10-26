@@ -9,8 +9,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.security.access.AccessDeniedException;
+import vn.utetra.entity.DeliveryFailure;
 import vn.utetra.entity.*;
 import vn.utetra.repository.OrderRepository;
+import vn.utetra.repository.DeliveryFailureRepository;
 import vn.utetra.repository.ShipperOrderRepository;
 import vn.utetra.repository.UserRepository;
 
@@ -28,6 +30,7 @@ class ShipperServiceTest {
 
     @Mock private ShipperOrderRepository shipperRepo;
     @Mock private OrderRepository orderRepo;
+    @Mock private DeliveryFailureRepository failureRepo;
     @Mock private UserRepository userRepo;
     @Mock private OrderService orderService;
     @InjectMocks private ShipperService service;
@@ -111,6 +114,16 @@ class ShipperServiceTest {
 
         service.accept(100L, "ship@utetra.vn");
 
+        verify(orderService).updateStatus(100L, Order.STATUS_DELIVERING);
+    }
+
+    @Test
+    void acceptAllowedForOrderWaitingForRedelivery() {
+        order.setStatus(Order.STATUS_READY);
+
+        service.accept(100L, "ship@utetra.vn");
+
+        assertSame(shipper, order.getShipper());
         verify(orderService).updateStatus(100L, Order.STATUS_DELIVERING);
     }
 
@@ -205,14 +218,19 @@ class ShipperServiceTest {
     }
 
     @Test
-    void failStoresTrimmedReasonAndMarksFailed() {
+    void failStoresAttemptAndReturnsOrderToRedeliveryQueue() {
         deliveringOwnedByShipper();
 
         service.fail(100L, "ship@utetra.vn", "  Khách không nghe máy  ");
 
         assertEquals("Khách không nghe máy", order.getFailedReason());
         assertEquals("PENDING", order.getPaymentStatus());
-        verify(orderService).updateStatus(100L, Order.STATUS_FAILED);
+        assertNull(order.getShipper());
+        verify(failureRepo).save(argThat(failure ->
+                failure.getOrder() == order
+                        && failure.getShipper() == shipper
+                        && "Khách không nghe máy".equals(failure.getReason())));
+        verify(orderService).updateStatus(100L, Order.STATUS_READY);
     }
 
     @Test
@@ -240,6 +258,16 @@ class ShipperServiceTest {
 
         // đơn của mình: xem được
         order.setShipper(shipper);
+        assertSame(order, service.detail(100L, "ship@utetra.vn"));
+    }
+
+    @Test
+    void detailRemainsVisibleToShipperWhoPreviouslyAttemptedDelivery() {
+        when(orderRepo.findByIdWithDetails(100L)).thenReturn(Optional.of(order));
+        order.setStatus(Order.STATUS_COMPLETED);
+        order.setShipper(otherShipper);
+        when(failureRepo.existsByOrder_IdAndShipper_Id(100L, shipper.getId())).thenReturn(true);
+
         assertSame(order, service.detail(100L, "ship@utetra.vn"));
     }
 }

@@ -7,7 +7,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.utetra.entity.Order;
+import vn.utetra.entity.DeliveryFailure;
 import vn.utetra.entity.User;
+import vn.utetra.repository.DeliveryFailureRepository;
 import vn.utetra.repository.OrderRepository;
 import vn.utetra.repository.ShipperOrderRepository;
 import vn.utetra.repository.UserRepository;
@@ -35,6 +37,7 @@ public class ShipperService {
     @Autowired private ShipperOrderRepository shipperRepo;
     @Autowired private OrderRepository orderRepo;
     @Autowired private UserRepository userRepo;
+    @Autowired private DeliveryFailureRepository failureRepo;
     @Autowired private OrderService orderService;
 
     /**
@@ -78,7 +81,8 @@ public class ShipperService {
     /** Đơn nằm trong "hàng chờ nhận" của chi nhánh shipper: giao tận nơi, đã xác nhận, chưa ai nhận. */
     private static boolean isOpenForPickup(Order o, User me) {
         return !o.isPickup()
-                && Order.STATUS_PREPARING.equals(o.getStatus())
+                && (Order.STATUS_PREPARING.equals(o.getStatus())
+                    || Order.STATUS_READY.equals(o.getStatus()))
                 && sameBranch(o, me)
                 && (o.getShipper() == null || isMine(o, me));
     }
@@ -115,13 +119,31 @@ public class ShipperService {
                 List.of(Order.STATUS_COMPLETED, Order.STATUS_FAILED));
     }
 
+    @Transactional(readOnly = true)
+    public List<DeliveryFailure> failureHistory(String email) {
+        User me = shipperOf(email);
+        return failureRepo.findHistoryByShipperId(me.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<DeliveryFailure> failureHistoryForOrder(Long orderId, String email) {
+        User me = shipperOf(email);
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
+        if (!sameBranch(order, me) && !failureRepo.existsByOrder_IdAndShipper_Id(orderId, me.getId())) {
+            throw new AccessDeniedException("Đơn hàng không thuộc chi nhánh của bạn");
+        }
+        return failureRepo.findHistoryByOrderId(orderId);
+    }
+
     /** Chi tiết một đơn. Chỉ xem được đơn của mình hoặc đơn đang chờ nhận ở chi nhánh mình (chống truy cập chéo). */
     @Transactional(readOnly = true)
     public Order detail(Long orderId, String email) {
         User me = shipperOf(email);
         Order o = orderRepo.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng."));
-        if (!isMine(o, me) && !isOpenForPickup(o, me)) {
+        if (!isMine(o, me) && !isOpenForPickup(o, me)
+                && !failureRepo.existsByOrder_IdAndShipper_Id(orderId, me.getId())) {
             throw new AccessDeniedException("Bạn không có quyền xem đơn hàng này");
         }
         return o;
@@ -129,7 +151,7 @@ public class ShipperService {
 
     /* ==================== THAO TÁC ==================== */
 
-    /** Nhận đơn: PREPARING -> DELIVERING, gán shipper, báo realtime cho khách. */
+    /** Nhận đơn: PREPARING/READY -> DELIVERING, gán shipper, báo realtime cho khách. */
     @Transactional
     public void accept(Long orderId, String email) {
         User me = shipperOf(email);
@@ -141,7 +163,6 @@ public class ShipperService {
             throw new IllegalArgumentException("Đơn này không còn chờ nhận hoặc đã có shipper khác nhận.");
         }
         o.setShipper(me);
-        o.setFailedReason(null);
         orderService.updateStatus(orderId, Order.STATUS_DELIVERING);
     }
 
@@ -157,7 +178,7 @@ public class ShipperService {
         orderService.updateStatus(orderId, Order.STATUS_COMPLETED);
     }
 
-    /** Giao thất bại (khách không nghe máy, sai địa chỉ...): DELIVERING -> FAILED kèm lý do bắt buộc. */
+    /** Giao thất bại: ghi nhận lần giao, bỏ shipper và đưa đơn về hàng chờ giao lại. */
     @Transactional
     public void fail(Long orderId, String email, String reason) {
         String r = reason == null ? "" : reason.trim();
@@ -165,8 +186,14 @@ public class ShipperService {
         if (r.length() > MAX_REASON_LENGTH)
             throw new IllegalArgumentException("Lý do tối đa " + MAX_REASON_LENGTH + " ký tự.");
         Order o = lockOwnedDelivering(orderId, shipperOf(email));
+        DeliveryFailure failure = new DeliveryFailure();
+        failure.setOrder(o);
+        failure.setShipper(o.getShipper());
+        failure.setReason(r);
+        failureRepo.save(failure);
         o.setFailedReason(r);
-        orderService.updateStatus(orderId, Order.STATUS_FAILED);
+        o.setShipper(null);
+        orderService.updateStatus(orderId, Order.STATUS_READY);
     }
 
     private Order lock(Long orderId) {
@@ -193,7 +220,7 @@ public class ShipperService {
         User me = shipperOf(email);
         Object[] row = shipperRepo.deliveredStats(me.getId(), from, to).get(0);
         BigDecimal cod = shipperRepo.codCollected(me.getId(), from, to);
-        long failed = shipperRepo.countFailed(me.getId(), from, to);
+        long failed = failureRepo.countByShipperIdAndFailedAtBetween(me.getId(), from, to);
         return new Stats(
                 ((Number) row[0]).longValue(),
                 toMoney(row[1]),

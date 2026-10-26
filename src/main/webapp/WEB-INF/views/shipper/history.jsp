@@ -8,7 +8,7 @@
 
 <h5 class="mb-3"><i class="fas fa-clock-rotate-left text-secondary"></i> Lịch sử giao hàng</h5>
 
-<c:if test="${empty orders}">
+<c:if test="${empty orders and empty failures}">
     <div class="text-center text-muted py-5">
         <i class="fas fa-box-open fa-2x mb-2"></i>
         <div>Bạn chưa có đơn nào đã giao.</div>
@@ -53,6 +53,7 @@
                                         <c:if test="${not empty o.failedReason}">
                                             <div class="small text-muted">${fn:escapeXml(o.failedReason)}</div>
                                         </c:if>
+
                                     </c:otherwise>
                                 </c:choose>
                             </td>
@@ -69,5 +70,48 @@
     </div>
     <c:if test="${total > limit}">
         <p class="small text-muted mt-2">Hiển thị ${limit} đơn gần nhất trong tổng số ${total} đơn.</p>
+    </c:if>
+</c:if>
+
+<c:if test="${not empty failures}">
+    <h6 class="mt-4 mb-3"><i class="fas fa-triangle-exclamation text-secondary"></i> Các lần giao thất bại</h6>
+    <div class="card order-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Thời gian</th>
+                        <th>Khách hàng</th>
+                        <th>Lý do</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="failure" items="${failures}">
+                        <tr>
+                            <td class="fw-semibold">#${fn:escapeXml(failure.order.orderCode)}</td>
+                            <td class="text-nowrap">${fn:escapeXml(failure.failedAtFormatted)}</td>
+                            <td>
+                                <c:if test="${failure.order.user != null}">
+                                    ${fn:escapeXml(failure.order.user.fullName)}
+                                </c:if>
+                                <div class="small text-muted">${fn:escapeXml(failure.order.phone)}</div>
+                            </td>
+                            <td>${fn:escapeXml(failure.reason)}</td>
+                            <td>
+                                <a href="${ctx}/shipper/orders/${fn:escapeXml(failure.order.id)}"
+                                   class="btn btn-sm btn-outline-dark" aria-label="Xem đơn hàng">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <c:if test="${failureTotal > limit}">
+        <p class="small text-muted mt-2">Hiển thị ${limit} lần giao gần nhất trong tổng số ${failureTotal} lần.</p>
     </c:if>
 </c:if>
