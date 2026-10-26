@@ -53,6 +53,15 @@ public class VnPayService {
         return i > 0 ? txnRef.substring(0, i) : txnRef;
     }
 
+    /** VNPay yêu cầu IPv4: lấy từ X-Forwarded-For khi chạy sau ngrok, không hợp lệ (IPv6, chuỗi proxy) thì dùng 127.0.0.1. */
+    public static String clientIp(jakarta.servlet.http.HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        String candidate = (forwarded == null || forwarded.isBlank())
+                ? request.getRemoteAddr() : forwarded.split(",", 2)[0].trim();
+        if (candidate != null && candidate.matches("(?:[0-9]{1,3}\\.){3}[0-9]{1,3}")) return candidate;
+        return "127.0.0.1";
+    }
+
     public String buildPaymentUrl(Order order, String ip) {
         if (!enabled()) throw new IllegalStateException("VNPay chưa được cấu hình.");
         LocalDateTime now = LocalDateTime.now(VN);

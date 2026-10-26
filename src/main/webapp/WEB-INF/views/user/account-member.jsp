@@ -29,15 +29,17 @@
                     <c:when test="${not empty nextRank}">Tích thêm <b class="text-success">${fn:escapeXml(remaining)}</b> điểm nữa để lên hạng <b class="text-success">${fn:escapeXml(nextRank)}</b></c:when>
                     <c:otherwise>Bạn đang ở hạng cao nhất. Cảm ơn bạn đã đồng hành cùng UTeTra!</c:otherwise>
                 </c:choose>
+                <div class="small text-white-50 mt-2">Tổng điểm xét hạng: <b>${fn:escapeXml(tierPoints)}</b>. Điểm đã dùng để giảm giá không làm giảm tiến độ này.</div>
             </div>
         </div>
 
         <div class="row g-3 mt-1">
             <div class="col-md-6">
                 <div class="checkout-box h-100">
-                    <h5>Điểm tích luỹ</h5>
+                    <h5>Điểm khả dụng</h5>
                     <div class="display-6 fw-bold text-success mb-2">${fn:escapeXml(me.points)} điểm</div>
-                    <div class="small text-muted mb-2">Mỗi <fmt:formatNumber value="${pointUnit}" pattern="#,##0"/>đ tiền hàng = 1 điểm. Điểm được cộng khi đơn hoàn thành.</div>
+                    <div class="small text-muted mb-2">Đây là số điểm hiện có để đổi giảm giá. Mỗi <fmt:formatNumber value="${pointUnit}" pattern="#,##0"/>đ tiền hàng = 1 điểm; điểm được cộng khi đơn hoàn thành.</div>
+                    <div class="small text-success mb-2">Tổng điểm đã tích lũy xét hạng: <b>${fn:escapeXml(tierPoints)} điểm</b>. Dùng điểm không làm giảm tổng này.</div>
                     <div class="barcode-box border"><svg id="barcode"></svg></div>
                     <div class="small text-muted">Mã hội viên: <b>${fn:escapeXml(memberCode)}</b></div>
                 </div>

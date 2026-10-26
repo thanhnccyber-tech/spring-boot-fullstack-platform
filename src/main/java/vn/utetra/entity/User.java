@@ -44,9 +44,19 @@ public class User {
     @Column(name = "welcomed")
     private Boolean welcomed = false;
 
-    /** Điểm hội viên (10.000đ = 1 điểm), cộng khi đơn hoàn thành */
+    /**
+     * Điểm khả dụng để đổi giảm giá. Trường này có thể giảm khi khách sử dụng điểm.
+     */
     @Column(name = "loyalty_points")
     private Integer loyaltyPoints = 0;
+
+    /**
+     * Tổng điểm đã tích lũy trong toàn bộ lịch sử, dùng xét hạng MEMBER/VIP/DIAMOND.
+     * Không bị trừ khi khách dùng điểm để giảm giá. Có thể null với dữ liệu cũ;
+     * OrderService sẽ tự khởi tạo từ lịch sử điểm đã cộng.
+     */
+    @Column(name = "lifetime_points")
+    private Integer lifetimePoints = 0;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles",

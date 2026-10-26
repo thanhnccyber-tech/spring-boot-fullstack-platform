@@ -55,12 +55,12 @@ public class AuthController {
     private static final String DUMMY_HASH =
             "$2a$10$7EqJtq98hPqEX7fNZaFWoOa7eNn0n0Yb1pQ0o5R6xO8Yk3vJ9eQ2u";
 
-    private void writeJwtCookie(HttpServletResponse response, String value, int maxAgeSeconds) {
+    private void writeJwtCookie(HttpServletResponse response, String value, int maxAgeSeconds, boolean secureRequest) {
         Cookie cookie = new Cookie(JwtAuthenticationFilter.JWT_COOKIE, value);
         cookie.setHttpOnly(true);               // JS không đọc được cookie (chống đánh cắp qua XSS)
         cookie.setPath("/");
         cookie.setMaxAge(maxAgeSeconds);
-        cookie.setSecure(cookieSecure);
+        cookie.setSecure(cookieSecure || secureRequest);
         cookie.setAttribute("SameSite", "Lax"); // trình duyệt không gửi cookie trong POST từ trang web khác
         response.addCookie(cookie);
     }
@@ -129,7 +129,7 @@ public class AuthController {
         List<String> roles = u.getRoles().stream().map(r -> r.getName()).toList();
         String token = jwtUtil.generateToken(u.getEmail(), roles, u.getId(), u.getFullName());
 
-        writeJwtCookie(response, token, 24 * 3600);
+        writeJwtCookie(response, token, 24 * 3600, request.isSecure());
 
         // Chống session fixation: đổi session id sau khi đăng nhập
         request.changeSessionId();
@@ -352,7 +352,7 @@ public class AuthController {
                 }
             }
         }
-        writeJwtCookie(response, "", 0);
+        writeJwtCookie(response, "", 0, request.isSecure());
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
         session.invalidate();
         // Không cho trình duyệt giữ lại trang cũ (nút Back không hiện lại dữ liệu sau khi đăng xuất)

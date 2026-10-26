@@ -1,7 +1,10 @@
 package vn.utetra.controller;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -20,6 +23,7 @@ import vn.utetra.entity.User;
 import vn.utetra.entity.Voucher;
 import vn.utetra.service.UserService;
 import vn.utetra.service.VoucherService;
+import vn.utetra.service.VnPayService;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
@@ -30,10 +34,13 @@ import java.util.Map;
 @RequestMapping("/order")
 public class OrderController {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
+
     @Autowired private OrderService orderService;
     @Autowired private BranchService branchService;
     @Autowired private UserService userService;
     @Autowired private VoucherService voucherService;
+    @Autowired private VnPayService vnPayService;
     @Autowired private vn.utetra.repository.UserAddressRepository addressRepo;
 
     @SuppressWarnings("unchecked")
@@ -126,6 +133,7 @@ public class OrderController {
     @PostMapping("/place")
     public String place(@ModelAttribute OrderRequest req,
                         HttpSession session,
+                        HttpServletRequest servletRequest,
                         Authentication auth,
                         RedirectAttributes ra) {
         @SuppressWarnings("unchecked")
@@ -134,20 +142,45 @@ public class OrderController {
             ra.addFlashAttribute("error", "Giỏ hàng trống");
             return "redirect:/cart";
         }
+        if (auth == null || auth.getName() == null) {
+            ra.addFlashAttribute("error", "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+            return "redirect:/login?next=%2Forder%2Fcheckout";
+        }
+
         req.setItems(cart);
         if (req.getLat() == null) req.setLat((Double) session.getAttribute("RECV_LAT"));
         if (req.getLng() == null) req.setLng((Double) session.getAttribute("RECV_LNG"));
         Order o;
+        log.info("Bắt đầu tạo đơn hàng: paymentMethod={}, itemCount={}",
+                req.getPaymentMethod(), cart.size());
         try {
             o = orderService.placeOrder(auth.getName(), req);
         } catch (IllegalArgumentException e) {
+            log.warn("Không thể tạo đơn hàng: {}", e.getMessage());
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/order/checkout";
+        } catch (RuntimeException e) {
+            log.error("Lỗi khi tạo đơn hàng (paymentMethod={})", req.getPaymentMethod(), e);
+            ra.addFlashAttribute("error", "Hệ thống chưa xác nhận được đơn hàng. Vui lòng kiểm tra mục Đơn hàng trước khi thử lại.");
+            return "redirect:/order/history";
         }
+
+        log.info("Đã tạo đơn hàng id={}, code={}, paymentMethod={}",
+                o.getId(), o.getOrderCode(), o.getPaymentMethod());
         session.removeAttribute("CART");
         if ("VNPAY".equals(o.getPaymentMethod())) {
-            // Chuyển sang cổng VNPay để trả tiền; chưa trả vẫn vào lại được từ trang chi tiết đơn
-            return "redirect:/payment/vnpay/" + o.getId();
+            // Chuyển thẳng sang cổng VNPay trong response của POST /order/place,
+            // tránh thêm một request nội bộ /payment/vnpay/{id} ngay sau khi đặt hàng.
+            try {
+                String ip = VnPayService.clientIp(servletRequest);
+                String paymentUrl = vnPayService.buildPaymentUrl(o, ip);
+                log.info("Chuyển đơn hàng id={} sang cổng VNPay", o.getId());
+                return "redirect:" + paymentUrl;
+            } catch (RuntimeException e) {
+                log.error("Đơn hàng id={} đã tạo nhưng không tạo được URL VNPay", o.getId(), e);
+                ra.addFlashAttribute("error", "Đơn hàng đã được tạo nhưng chưa mở được VNPay. Bạn có thể thử thanh toán lại trong chi tiết đơn hàng.");
+                return "redirect:/order/detail/" + o.getId();
+            }
         }
         ra.addFlashAttribute("success", "Đặt hàng thành công! Mã: " + o.getOrderCode()
                 + ". Bạn có thể theo dõi tiến trình ngay tại đây.");

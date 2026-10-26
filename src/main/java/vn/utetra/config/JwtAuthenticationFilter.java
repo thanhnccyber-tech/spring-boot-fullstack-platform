@@ -73,6 +73,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(email, null, authorities);
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
+
+                // Header/JSP dựa vào HttpSession (userId, fullName, roles) còn đăng nhập thật dựa vào JWT.
+                // Phiên HTTP mất (hết 30 phút, quay về từ VNPay, restart server...) trong khi JWT còn hạn
+                // sẽ làm giao diện hiện như "bị đăng xuất": dựng lại phiên từ JWT/DB.
+                jakarta.servlet.http.HttpSession session = request.getSession();
+                if (session.getAttribute("userId") == null) {
+                    session.setAttribute("userId",   user.get().getId());
+                    session.setAttribute("fullName", user.get().getFullName());
+                    session.setAttribute("email",    user.get().getEmail());
+                    session.setAttribute("roles",    authorities.stream().map(SimpleGrantedAuthority::getAuthority).toList());
+                }
             }
         }
         chain.doFilter(request, response);

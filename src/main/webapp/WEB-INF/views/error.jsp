@@ -1,4 +1,6 @@
-<%@ page contentType="text/html;charset=UTF-8" isErrorPage="true" %>
+<%@ page contentType="text/html;charset=UTF-8"
+         isErrorPage="true"
+         session="false" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <!DOCTYPE html>
