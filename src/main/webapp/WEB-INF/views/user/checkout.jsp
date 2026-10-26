@@ -188,6 +188,12 @@
                     <label class="form-check-label" for="pVnp">Thanh toán online qua VNPay <span class="small text-muted">(thẻ ATM, QR, Visa)</span></label>
                 </div>
             </c:if>
+            <c:if test="${momoEnabled}">
+                <div class="form-check mb-1" id="payMomoRow">
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="pMomo" value="MOMO" form="placeForm">
+                    <label class="form-check-label" for="pMomo">Thanh toán online qua MoMo</label>
+                </div>
+            </c:if>
             <div class="form-check mb-1" id="payBankRow">
                 <input class="form-check-input" type="radio" name="paymentMethod" id="pBank" value="BANK" form="placeForm">
                 <label class="form-check-label" for="pBank">Chuyển khoản ngân hàng <span class="small text-muted">(cửa hàng sẽ liên hệ xác nhận)</span></label>

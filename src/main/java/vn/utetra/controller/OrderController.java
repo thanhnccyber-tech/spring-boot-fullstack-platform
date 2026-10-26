@@ -89,6 +89,7 @@ public class OrderController {
         model.addAttribute("userPoints", me.getPoints());
         model.addAttribute("pointValue", orderService.getPointValue());
         model.addAttribute("vnpayEnabled", orderService.isOnlinePaymentEnabled());
+        model.addAttribute("momoEnabled", orderService.isMomoPaymentEnabled());
         model.addAttribute("shipFee", orderService.shippingFeeFor(method, subtotal));
         model.addAttribute("freeShipFrom", orderService.getFreeShipFrom());
         model.addAttribute("branches", branches);

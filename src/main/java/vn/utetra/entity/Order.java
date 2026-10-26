@@ -170,9 +170,10 @@ public class Order {
         return STATUS_PENDING.equals(status) && !"PAID".equals(paymentStatus);
     }
 
-    /** Đơn chọn VNPay mà chưa thanh toán xong → cho phép thanh toán lại. */
+    /** Đơn chọn cổng online mà chưa thanh toán xong → cho phép thanh toán lại. */
     public boolean isAwaitingOnlinePayment() {
-        return "VNPAY".equals(paymentMethod) && !"PAID".equals(paymentStatus)
+        return ("VNPAY".equals(paymentMethod) || "MOMO".equals(paymentMethod))
+                && !"PAID".equals(paymentStatus)
                 && STATUS_PENDING.equals(status);
     }
 

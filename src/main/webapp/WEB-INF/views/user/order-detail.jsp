@@ -30,7 +30,14 @@
         </form>
     </c:if>
     <c:if test="${order.awaitingOnlinePayment}">
-        <a href="${ctx}/payment/vnpay/${fn:escapeXml(order.id)}" class="btn btn-warning" data-no-lock="true"><i class="fas fa-credit-card"></i> Thanh toán VNPay</a>
+        <c:choose>
+            <c:when test="${order.paymentMethod == 'MOMO'}">
+                <a href="${ctx}/payment/momo/${fn:escapeXml(order.id)}" class="btn btn-warning" data-no-lock="true"><i class="fas fa-wallet"></i> Thanh toán MoMo</a>
+            </c:when>
+            <c:otherwise>
+                <a href="${ctx}/payment/vnpay/${fn:escapeXml(order.id)}" class="btn btn-warning" data-no-lock="true"><i class="fas fa-credit-card"></i> Thanh toán VNPay</a>
+            </c:otherwise>
+        </c:choose>
     </c:if>
     <form action="${ctx}/order/reorder/${fn:escapeXml(order.id)}" method="post">
         <button class="btn btn-outline-dark"><i class="fas fa-rotate-right"></i> Đặt lại đơn này</button>
@@ -43,7 +50,7 @@
 <c:if test="${not empty order.phone}"><p>Số điện thoại: ${fn:escapeXml(order.phone)}</p></c:if>
 <c:if test="${not empty order.deliveryTime}"><p>Thời gian nhận: ${fn:escapeXml(order.deliveryTime == 'ASAP' ? 'Càng sớm càng tốt' : order.deliveryTime)}</p></c:if>
 <p>Thanh toán: ${fn:escapeXml(order.paymentMethod)}
-    <c:if test="${order.paymentMethod == 'VNPAY'}"> · <b>${fn:escapeXml(order.paymentStatus == 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán')}</b></c:if></p>
+    <c:if test="${order.paymentMethod == 'VNPAY' or order.paymentMethod == 'MOMO'}"> · <b>${fn:escapeXml(order.paymentStatus == 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán')}</b></c:if></p>
 <c:if test="${not empty order.vatInfo}"><p>Hoá đơn VAT: ${fn:escapeXml(order.vatInfo)}</p></c:if>
 <div class="checkout-box mb-3" style="max-width:420px">
     <div class="sum-row"><span>Tiền hàng</span><span><fmt:formatNumber value="${order.subtotalAmount}" pattern="#,##0"/> ₫</span></div>

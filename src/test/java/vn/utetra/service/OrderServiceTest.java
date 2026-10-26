@@ -39,6 +39,7 @@ class OrderServiceTest {
     @Mock private VoucherService voucherService;
     @Mock private MailService mailService;
     @Mock private VnPayService vnPayService;
+    @Mock private MomoService momoService;
     @Mock private CartService cartService;
     @InjectMocks private OrderService service;
 
@@ -300,5 +301,43 @@ class OrderServiceTest {
         OrderService.PaymentResult r = service.recordVnPay("UTE888R1", 5000000L, false, null);
         assertFalse(r.success());
         assertNotEquals("PAID", o.getPaymentStatus());
+    }
+
+    @Test
+    void momoResultChecksAmountAndIsIdempotent() {
+        Order order = new Order();
+        order.setId(13L);
+        order.setOrderCode("UTE777");
+        order.setUser(user);
+        order.setPaymentMethod("MOMO");
+        order.setTotalAmount(new BigDecimal("85000"));
+        when(orderRepo.findByOrderCode("UTE777")).thenReturn(Optional.of(order));
+
+        assertEquals("04", service.recordMomo("UTE777", 1L, true, "TX1").rspCode());
+        assertNotEquals("PAID", order.getPaymentStatus());
+
+        OrderService.PaymentResult success = service.recordMomo("UTE777", 85000L, true, "TX1");
+        assertEquals("00", success.rspCode());
+        assertEquals("PAID", order.getPaymentStatus());
+        assertEquals("TX1", order.getPaymentRef());
+
+        assertEquals("02", service.recordMomo("UTE777", 85000L, true, "TX2").rspCode());
+        assertEquals("01", service.recordMomo("UNKNOWN", 85000L, true, "TX3").rspCode());
+    }
+
+    @Test
+    void failedMomoPaymentLeavesOrderUnpaid() {
+        Order order = new Order();
+        order.setId(14L);
+        order.setOrderCode("UTE666");
+        order.setPaymentMethod("MOMO");
+        order.setTotalAmount(new BigDecimal("50000"));
+        when(orderRepo.findByOrderCode("UTE666")).thenReturn(Optional.of(order));
+
+        OrderService.PaymentResult result = service.recordMomo("UTE666", 50000L, false, null);
+
+        assertFalse(result.success());
+        assertNotEquals("PAID", order.getPaymentStatus());
+        verify(orderRepo, never()).save(order);
     }
 }

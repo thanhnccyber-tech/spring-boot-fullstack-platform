@@ -47,7 +47,8 @@ public class SecurityConfig {
                         // Trang thương hiệu công khai + chọn cách nhận hàng (khách chưa đăng nhập vẫn dùng được)
                         "/khuyen-mai", "/khuyen-mai/**", "/hoi-vien", "/cua-hang", "/receive/**",
                         // Giỏ hàng cho khách vãng lai (thanh toán /order/** vẫn bắt đăng nhập) + callback VNPay (có chữ ký)
-                        "/cart", "/cart/**", "/payment/vnpay-return", "/payment/vnpay-ipn"
+                        "/cart", "/cart/**", "/payment/vnpay-return", "/payment/vnpay-ipn",
+                        "/payment/momo-return", "/payment/momo-ipn"
                 ).permitAll()
 
                 .requestMatchers("/admin/dashboard/**",
