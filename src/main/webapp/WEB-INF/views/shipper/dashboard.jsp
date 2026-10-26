@@ -53,7 +53,7 @@
 <c:forEach var="o" items="${delivering}">
     <c:set var="card" value="${o}" scope="request"/>
     <c:set var="cardMode" value="delivering" scope="request"/>
-    <jsp:include page="/WEB-INF/views/shipper/_order-card.jsp"/>
+    <jsp:include page="/WEB-INF/views/shipper/order-card.jsp"/>
 </c:forEach>
 
 <%-- ========== CHỜ NHẬN ========== --%>
@@ -73,5 +73,5 @@
 <c:forEach var="o" items="${available}">
     <c:set var="card" value="${o}" scope="request"/>
     <c:set var="cardMode" value="available" scope="request"/>
-    <jsp:include page="/WEB-INF/views/shipper/_order-card.jsp"/>
+    <jsp:include page="/WEB-INF/views/shipper/order-card.jsp"/>
 </c:forEach>
