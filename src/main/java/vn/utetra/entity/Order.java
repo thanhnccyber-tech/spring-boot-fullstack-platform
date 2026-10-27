@@ -20,6 +20,7 @@ public class Order {
 
     public static final String STATUS_PENDING    = "PENDING";
     public static final String STATUS_PREPARING  = "PREPARING";
+    public static final String STATUS_READY     = "READY";
     public static final String STATUS_DELIVERING = "DELIVERING";
     public static final String STATUS_COMPLETED  = "COMPLETED";
     public static final String STATUS_CANCELLED  = "CANCELLED";
@@ -145,6 +146,7 @@ public class Order {
         return switch (status) {
             case STATUS_PENDING    -> "Chờ xác nhận";
             case STATUS_PREPARING  -> "Đang pha chế";
+            case STATUS_READY      -> "Chờ giao lại";
             case STATUS_DELIVERING -> isPickup() ? "Sẵn sàng tại cửa hàng" : "Đang giao hàng";
             case STATUS_COMPLETED  -> "Hoàn thành";
             case STATUS_CANCELLED  -> "Đã hủy";
@@ -158,7 +160,7 @@ public class Order {
         if (status == null) return 0;
         return switch (status) {
             case STATUS_PENDING    -> 1;
-            case STATUS_PREPARING  -> 2;
+            case STATUS_PREPARING, STATUS_READY -> 2;
             case STATUS_DELIVERING -> 3;
             case STATUS_COMPLETED  -> 4;
             default -> 0;
@@ -170,9 +172,10 @@ public class Order {
         return STATUS_PENDING.equals(status) && !"PAID".equals(paymentStatus);
     }
 
-    /** Đơn chọn VNPay mà chưa thanh toán xong → cho phép thanh toán lại. */
+    /** Đơn chọn cổng online mà chưa thanh toán xong → cho phép thanh toán lại. */
     public boolean isAwaitingOnlinePayment() {
-        return "VNPAY".equals(paymentMethod) && !"PAID".equals(paymentStatus)
+        return ("VNPAY".equals(paymentMethod) || "MOMO".equals(paymentMethod))
+                && !"PAID".equals(paymentStatus)
                 && STATUS_PENDING.equals(status);
     }
 

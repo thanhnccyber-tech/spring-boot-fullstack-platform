@@ -23,6 +23,10 @@
        class="btn btn-sm ${fn:escapeXml(statusFilter == 'PREPARING' ? 'btn-info' : 'btn-outline-info')}">
         Đang pha chế (${fn:escapeXml(statusCount['PREPARING'] != null ? statusCount['PREPARING'] : 0)})
     </a>
+    <a href="${pageContext.request.contextPath}/admin/orders?status=READY&kw=${fn:escapeXml(kw)}&fromDate=${fn:escapeXml(fromDate)}&toDate=${fn:escapeXml(toDate)}"
+       class="btn btn-sm ${fn:escapeXml(statusFilter == 'READY' ? 'btn-warning' : 'btn-outline-warning')}">
+        Chờ giao lại (${fn:escapeXml(statusCount['READY'] != null ? statusCount['READY'] : 0)})
+    </a>
     <a href="${pageContext.request.contextPath}/admin/orders?status=DELIVERING&kw=${fn:escapeXml(kw)}&fromDate=${fn:escapeXml(fromDate)}&toDate=${fn:escapeXml(toDate)}"
        class="btn btn-sm ${fn:escapeXml(statusFilter == 'DELIVERING' ? 'btn-primary' : 'btn-outline-primary')}">
         Đang giao (${fn:escapeXml(statusCount['DELIVERING'] != null ? statusCount['DELIVERING'] : 0)})
@@ -106,6 +110,9 @@
                         </c:when>
                         <c:when test="${o.status == 'PREPARING'}">
                             <span class="badge bg-info text-dark">Đang pha chế</span>
+                        </c:when>
+                        <c:when test="${o.status == 'READY'}">
+                            <span class="badge bg-warning text-dark">Chờ giao lại</span>
                         </c:when>
                         <c:when test="${o.status == 'DELIVERING'}">
                             <span class="badge bg-primary">Đang giao</span>
@@ -198,11 +205,11 @@
                                 <form action="${pageContext.request.contextPath}/admin/orders/quick-status"
                                       method="post" style="display:inline">
                                     <input type="hidden" name="id" value="${fn:escapeXml(o.id)}">
-                                    <input type="hidden" name="status" value="DELIVERING">
+                                    <input type="hidden" name="status" value="READY">
                                     <input type="hidden" name="returnUrl"
                                            value="/admin/orders?kw=${fn:escapeXml(kw)}&status=${fn:escapeXml(statusFilter)}&fromDate=${fn:escapeXml(fromDate)}&toDate=${fn:escapeXml(toDate)}&page=${fn:escapeXml(pageData.number)}">
                                     <button class="btn btn-sm btn-warning text-dark" title="Giao lại">
-                                        <i class="fas fa-redo"></i> Giao lại
+                                        <i class="fas fa-redo"></i> Chờ giao lại
                                     </button>
                                 </form>
                             </c:when>

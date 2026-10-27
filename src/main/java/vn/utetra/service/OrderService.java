@@ -41,6 +41,7 @@ public class OrderService {
     @Autowired private VoucherService voucherService;
     @Autowired private MailService mailService;
     @Autowired private VnPayService vnPayService;
+    @Autowired private MomoService momoService;
     @Autowired private CartService cartService;
 
     /** Phí giao hàng cố định (đ). Đặt trong application.properties: shop.shipping-fee */
@@ -120,13 +121,14 @@ public class OrderService {
     }
 
     public boolean isOnlinePaymentEnabled() { return vnPayService.enabled(); }
+    public boolean isMomoPaymentEnabled() { return momoService.enabled(); }
 
     public long getShippingFee() { return shippingFee; }
     public long getFreeShipFrom() { return freeShipFrom; }
 
-    private static final Set<String> PAYMENT_METHODS = Set.of("CASH", "BANK", "COD", "VNPAY");
+    private static final Set<String> PAYMENT_METHODS = Set.of("CASH", "BANK", "COD", "VNPAY", "MOMO");
     private static final Set<String> STATUSES = Set.of(
-            Order.STATUS_PENDING, Order.STATUS_PREPARING, Order.STATUS_DELIVERING,
+            Order.STATUS_PENDING, Order.STATUS_PREPARING, Order.STATUS_READY, Order.STATUS_DELIVERING,
             Order.STATUS_COMPLETED, Order.STATUS_CANCELLED, Order.STATUS_FAILED);
     private static final int MAX_ITEMS = 30;
     private static final int MAX_QTY = 50;
@@ -167,6 +169,8 @@ public class OrderService {
 
         if ("VNPAY".equals(req.getPaymentMethod()) && !vnPayService.enabled())
             throw new IllegalArgumentException("Thanh toán VNPay hiện chưa được bật, vui lòng chọn cách thanh toán khác.");
+        if ("MOMO".equals(req.getPaymentMethod()) && !momoService.enabled())
+            throw new IllegalArgumentException("Thanh toán MoMo hiện chưa được bật, vui lòng chọn cách thanh toán khác.");
 
         if (!req.isAgreeTerms())
             throw new IllegalArgumentException("Bạn cần đồng ý với điều khoản và chính sách để đặt hàng.");
@@ -362,6 +366,7 @@ public class OrderService {
         if (o.getUser() == null) return;
         String intro = switch (o.getStatus()) {
             case Order.STATUS_PREPARING  -> "Cửa hàng đã xác nhận và đang pha chế đơn của bạn.";
+            case Order.STATUS_READY      -> "Đơn hàng đang chờ được phân công giao lại.";
             case Order.STATUS_DELIVERING -> o.isPickup() ? "Đơn của bạn đã sẵn sàng, mời bạn đến cửa hàng nhận." : "Đơn của bạn đang trên đường giao tới bạn.";
             case Order.STATUS_COMPLETED  -> "Đơn hàng đã hoàn thành. Chúc bạn ngon miệng!";
             case Order.STATUS_CANCELLED  -> "Đơn hàng đã được hủy.";
@@ -408,7 +413,7 @@ public class OrderService {
 
     /* ==================== THANH TOÁN ONLINE ==================== */
 
-    /** Kết quả xử lý thông báo từ VNPay: rspCode theo chuẩn IPN (00 ok, 01 không thấy đơn, 02 đã xác nhận, 04 sai số tiền). */
+    /** Kết quả xử lý thông báo từ VNPay/MoMo: rspCode theo chuẩn IPN (00 ok, 01 không thấy đơn, 02 đã xác nhận, 04 sai số tiền). */
     public record PaymentResult(String rspCode, Order order, boolean success) { }
 
     @Transactional
@@ -423,6 +428,25 @@ public class OrderService {
             o.setPaymentStatus("PAID");
             o.setPaidAt(LocalDateTime.now());
             o.setPaymentRef(transNo == null ? null : (transNo.length() > 60 ? transNo.substring(0, 60) : transNo));
+            o.setUpdatedAt(LocalDateTime.now());
+            orderRepo.save(o);
+            saveNotification(o, "Đã nhận thanh toán online " + money(o.getTotalAmount()) + ". Cảm ơn bạn!");
+            pushStatusToCustomer(o);
+        }
+        return new PaymentResult("00", o, success);
+    }
+
+    @Transactional
+    public PaymentResult recordMomo(String orderCode, long amountVnd, boolean success, String transId) {
+        Order o = orderCode == null ? null : orderRepo.findByOrderCode(orderCode).orElse(null);
+        if (o == null || !"MOMO".equals(o.getPaymentMethod())) return new PaymentResult("01", null, false);
+        if (o.getTotalAmount() == null || o.getTotalAmount().longValue() != amountVnd)
+            return new PaymentResult("04", o, false);
+        if ("PAID".equals(o.getPaymentStatus())) return new PaymentResult("02", o, true);
+        if (success) {
+            o.setPaymentStatus("PAID");
+            o.setPaidAt(LocalDateTime.now());
+            o.setPaymentRef(transId == null ? null : (transId.length() > 60 ? transId.substring(0, 60) : transId));
             o.setUpdatedAt(LocalDateTime.now());
             orderRepo.save(o);
             saveNotification(o, "Đã nhận thanh toán online " + money(o.getTotalAmount()) + ". Cảm ơn bạn!");
@@ -511,6 +535,7 @@ public class OrderService {
             throw new IllegalArgumentException("Đơn đã hủy không thể mở lại, hãy để khách đặt đơn mới.");
         o.setStatus(status);
         o.setUpdatedAt(LocalDateTime.now());
+        if (Order.STATUS_READY.equals(status)) o.setShipper(null);
         if (Order.STATUS_CANCELLED.equals(status) && !Order.STATUS_CANCELLED.equals(old)
                 && !Order.STATUS_COMPLETED.equals(old)) {
             releaseResources(o);

@@ -171,6 +171,7 @@
         </c:when>
         <c:otherwise>
             <form action="${pageContext.request.contextPath}/review/${fn:escapeXml(product.id)}" method="post"
+                  enctype="multipart/form-data"
                   class="card card-body shadow-sm mb-4">
                 <label class="form-label fw-bold">
                     <c:choose>
@@ -195,8 +196,12 @@
                                <c:if test="${myReview.rating == 1}">checked</c:if>>
                         <label for="star1" title="1 sao"><i class="fas fa-star"></i></label>
                 </div>
-                <textarea name="comment" class="form-control mb-2" rows="3" maxlength="1000"
-                          placeholder="Chia sẻ cảm nhận của bạn về món này..."><c:out value="${myReview.comment}"/></textarea>
+                <textarea name="comment" class="form-control mb-2" rows="3" minlength="50" maxlength="1000"
+                          required placeholder="Chia sẻ cảm nhận (50–1.000 ký tự)..."><c:out value="${myReview.comment}"/></textarea>
+                <label for="reviewMedia" class="form-label">Ảnh hoặc video (không bắt buộc)</label>
+                <input id="reviewMedia" type="file" name="media" class="form-control mb-2"
+                       accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/x-msvideo">
+                <small class="text-muted d-block mb-2">Ảnh tối đa 5 MB; video MP4, WEBM hoặc AVI tối đa 10 MB.</small>
                 <div>
                     <button class="btn btn-warning">
                         <i class="fas fa-paper-plane"></i>
@@ -231,6 +236,20 @@
                 </div>
                 <c:if test="${not empty r.comment}">
                     <div class="review-text mt-1"><c:out value="${r.comment}"/></div>
+                </c:if>
+                <c:if test="${not empty r.mediaUrl}">
+                    <c:choose>
+                        <c:when test="${not empty r.mediaType and fn:startsWith(r.mediaType, 'video/')}">
+                            <video class="mt-2" controls preload="metadata" style="max-width: 100%; max-height: 360px;">
+                                <source src="${fn:escapeXml(r.mediaUrl)}" type="${fn:escapeXml(r.mediaType)}">
+                                Trình duyệt không hỗ trợ phát video.
+                            </video>
+                        </c:when>
+                        <c:otherwise>
+                            <img class="mt-2" src="${fn:escapeXml(r.mediaUrl)}" alt="Ảnh đính kèm đánh giá"
+                                 loading="lazy" style="max-width: 100%; max-height: 360px; object-fit: contain;">
+                        </c:otherwise>
+                    </c:choose>
                 </c:if>
                 <c:if test="${loggedIn and (r.user.id == currentUserId or isAdminUser)}">
                     <form action="${pageContext.request.contextPath}/review/${fn:escapeXml(r.id)}/delete" method="post"

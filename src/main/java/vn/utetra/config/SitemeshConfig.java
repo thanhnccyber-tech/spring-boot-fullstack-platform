@@ -17,6 +17,7 @@ public class SitemeshConfig {
             protected void applyCustomConfiguration(SiteMeshFilterBuilder builder) {
                 builder
                     .addDecoratorPath("/admin/*", "admin-layout.jsp")
+                    .addDecoratorPath("/shipper/*", "shipper-layout.jsp")
                     .addDecoratorPath("/*",       "customer-layout.jsp")
                     .addExcludedPath("/static/*")
                     .addExcludedPath("/api/*")

@@ -11,6 +11,7 @@ import vn.utetra.entity.User;
 import vn.utetra.repository.OrderDetailRepository;
 import vn.utetra.repository.ProductRepository;
 import vn.utetra.repository.ReviewRepository;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -27,9 +28,11 @@ public class ReviewService {
     @Autowired private ReviewRepository reviewRepo;
     @Autowired private ProductRepository productRepo;
     @Autowired private OrderDetailRepository orderDetailRepo;
+    @Autowired private FileValidator fileValidator;
+    @Autowired private CloudinaryService cloudinaryService;
 
-    /** true = chỉ khách đã nhận hàng (đơn COMPLETED) mới được đánh giá. Cấu hình trong application.properties. */
-    @Value("${review.require-purchase:false}")
+    /** true = chỉ khách đã nhận hàng (đơn COMPLETED) mới được đánh giá. */
+    @Value("${review.require-purchase:true}")
     private boolean requirePurchase;
 
     public boolean isRequirePurchase() { return requirePurchase; }
@@ -70,14 +73,17 @@ public class ReviewService {
 
     /** Thêm mới hoặc cập nhật đánh giá của khách cho sản phẩm. */
     @Transactional
-    public Review submit(User user, Long productId, Integer rating, String comment) {
+    public Review submit(User user, Long productId, Integer rating, String comment, MultipartFile media) {
         if (rating == null || rating < 1 || rating > 5)
             throw new IllegalArgumentException("Vui lòng chọn số sao từ 1 đến 5.");
 
         String text = comment == null ? "" : comment.trim();
+        if (text.length() < 50)
+            throw new IllegalArgumentException("Bình luận đánh giá cần ít nhất 50 ký tự.");
         if (text.length() > MAX_COMMENT)
             throw new IllegalArgumentException("Bình luận tối đa " + MAX_COMMENT + " ký tự.");
 
+        fileValidator.validateReviewMedia(media);
         Product product = productRepo.findById(productId)
                 .filter(p -> Boolean.TRUE.equals(p.getActive()))
                 .orElseThrow(() -> new IllegalArgumentException("Sản phẩm không tồn tại hoặc đã ngừng bán."));
@@ -92,7 +98,11 @@ public class ReviewService {
             return nr;
         });
         r.setRating(rating);
-        r.setComment(text.isEmpty() ? null : text);
+        r.setComment(text);
+        if (media != null && !media.isEmpty()) {
+            r.setMediaUrl(cloudinaryService.uploadReviewMedia(media, "reviews"));
+            r.setMediaType(media.getContentType());
+        }
         r.setUpdatedAt(LocalDateTime.now());
         return reviewRepo.save(r);
     }

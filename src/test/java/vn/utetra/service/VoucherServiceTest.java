@@ -52,7 +52,7 @@ class VoucherServiceTest {
 
     @Test
     void validateRejectsBelowMinimum() {
-        when(repo.findByCodeIgnoreCase("WELCOME10")).thenReturn(Optional.of(percent));
+        when(repo.findByCodeIgnoreCase("welcome10")).thenReturn(Optional.of(percent));
         assertThrows(IllegalArgumentException.class, () -> service.validate("welcome10", new BigDecimal("20000")));
         assertSame(percent, service.validate("welcome10", new BigDecimal("60000")));
     }

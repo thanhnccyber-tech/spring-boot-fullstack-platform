@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Order;
 import vn.utetra.entity.User;
 import vn.utetra.repository.UserRepository;
+import vn.utetra.repository.DeliveryFailureRepository;
 import vn.utetra.service.OrderService;
 
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ public class AdminOrderController {
 
     @Autowired private OrderService orderService;
     @Autowired private UserRepository userRepo;
+    @Autowired private DeliveryFailureRepository failureRepo;
 
     @GetMapping
     public String list(@RequestParam(required = false) String kw,
@@ -102,6 +104,7 @@ public class AdminOrderController {
         Order order = requireAccess(id, auth);
 
         model.addAttribute("order", order);
+        model.addAttribute("deliveryFailures", failureRepo.findHistoryByOrderId(id));
         Long branchId = order.getBranch() != null ? order.getBranch().getId() : null;
         model.addAttribute("shippers", userRepo.findActiveShippers(branchId));
         model.addAttribute("isAdmin", me.isAdmin());
