@@ -1,0 +1,33 @@
+HTTP/1.1 302 
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=()
+Content-Security-Policy: default-src 'self' https: data: blob: 'unsafe-inline'; connect-src 'self' ws: wss: https:; object-src 'none'; base-uri 'self'; form-action 'self' https://sandbox.vnpayment.vn https://pay.vnpay.vn; frame-ancestors 'none'
+X-XSS-Protection: 0
+Set-Cookie: JSESSIONID=FD654040F39FF01981829081F84C9898; Path=/; HttpOnly; SameSite=Lax
+Set-Cookie: UTETRA_JWT=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkB1dGV0cmEudm4iLCJyb2xlcyI6WyJST0xFX0FETUlOIl0sInVzZXJJZCI6MSwiZnVsbE5hbWUiOiJBZG1pbiBVVGVUcmEiLCJpYXQiOjE3OTMxNDM0NDUsImV4cCI6MTc5MzIyOTg0NX0.Ehzb5lNmtZNiluiWkRL3NgUlu33KaqcVJTHbFpBrZG1SzgMXJRyYc-vcc2YsCtJN1paY7v80lNQBGVf9wACnOw; Max-Age=86400; Expires=Wed, 28 Oct 2026 23:24:05 GMT; Path=/; HttpOnly; SameSite=Lax
+X-Content-Type-Options: nosniff
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+X-Frame-Options: DENY
+Location: http://localhost:8080/admin/dashboard
+Content-Language: en-US
+Content-Length: 0
+Date: Tue, 27 Oct 2026 23:24:05 GMT
+
+HTTP/1.1 405 
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=()
+Content-Security-Policy: default-src 'self' https: data: blob: 'unsafe-inline'; connect-src 'self' ws: wss: https:; object-src 'none'; base-uri 'self'; form-action 'self' https://sandbox.vnpayment.vn https://pay.vnpay.vn; frame-ancestors 'none'
+X-XSS-Protection: 0
+Set-Cookie: JSESSIONID=8A2D0CAC2851B25818B6F46DD6E69CDC; Path=/; HttpOnly; SameSite=Lax
+Allow: GET
+X-Content-Type-Options: nosniff
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+X-Frame-Options: DENY
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Tue, 27 Oct 2026 23:24:05 GMT
+

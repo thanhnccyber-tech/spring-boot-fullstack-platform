@@ -43,7 +43,7 @@ class AdminDashboardControllerTest {
         when(repository.revenueByDay(any(), any())).thenReturn(dailyRevenue);
 
         ConcurrentModel model = new ConcurrentModel();
-        controller.dashboard(model);
+        controller.dashboard(null, null, null, null, model);
 
         @SuppressWarnings("unchecked")
         List<String> labels = (List<String>) model.getAttribute("labels12Weeks");
