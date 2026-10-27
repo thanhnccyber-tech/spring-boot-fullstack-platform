@@ -3,115 +3,111 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <title>Lịch sử giao hàng</title>
-
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 
-<h5 class="mb-3"><i class="fas fa-clock-rotate-left text-secondary"></i> Lịch sử giao hàng</h5>
+<div class="sh-page-title">
+    <i class="fas fa-clock-rotate-left"></i> Lịch sử giao hàng
+</div>
 
 <c:if test="${empty orders and empty failures}">
-    <div class="text-center text-muted py-5">
-        <i class="fas fa-box-open fa-2x mb-2"></i>
-        <div>Bạn chưa có đơn nào đã giao.</div>
+    <div class="sh-empty">
+        <i class="fas fa-box-open"></i>
+        <h5>Chưa có đơn nào</h5>
+        <p>Các đơn đã giao sẽ xuất hiện tại đây.</p>
+        <a href="${ctx}/shipper/dashboard" class="sh-btn sh-btn-primary sh-btn-sm">
+            <i class="fas fa-box-open"></i> Xem đơn cần giao
+        </a>
     </div>
 </c:if>
 
+<%-- ===== Đơn đã giao / thất bại ===== --%>
 <c:if test="${not empty orders}">
-    <div class="card order-card shadow-sm">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Mã đơn</th>
-                        <th>Thời gian</th>
-                        <th>Khách hàng</th>
-                        <th>Địa chỉ</th>
-                        <th class="text-end">Tổng tiền</th>
-                        <th class="text-center">Kết quả</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <c:forEach var="o" items="${orders}">
-                        <tr>
-                            <td class="fw-semibold">#${fn:escapeXml(o.orderCode)}</td>
-                            <td class="text-nowrap">${fn:escapeXml(o.updatedAtFormatted)}</td>
-                            <td>
-                                <c:if test="${o.user != null}">${fn:escapeXml(o.user.fullName)}</c:if>
-                                <div class="small text-muted">${fn:escapeXml(o.phone)}</div>
-                            </td>
-                            <td>${fn:escapeXml(o.shippingAddress)}</td>
-                            <td class="text-end text-nowrap">
-                                <fmt:formatNumber value="${o.totalAmount}" pattern="#,##0"/> ₫
-                            </td>
-                            <td class="text-center">
-                                <c:choose>
-                                    <c:when test="${o.status == 'COMPLETED'}">
-                                        <span class="badge bg-success">Đã giao</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span class="badge bg-secondary">Thất bại</span>
-                                        <c:if test="${not empty o.failedReason}">
-                                            <div class="small text-muted">${fn:escapeXml(o.failedReason)}</div>
-                                        </c:if>
-
-                                    </c:otherwise>
-                                </c:choose>
-                            </td>
-                            <td>
-                                <a href="${ctx}/shipper/orders/${fn:escapeXml(o.id)}" class="btn btn-sm btn-outline-dark">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    </c:forEach>
-                </tbody>
-            </table>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="sh-section-label mb-0">
+            <i class="fas fa-check-double"></i> Đơn gần đây
         </div>
+        <div class="sh-small sh-muted">${fn:length(orders)} / ${total}</div>
     </div>
+
+    <c:forEach var="o" items="${orders}">
+        <div class="sh-order">
+            <div class="sh-order-head">
+                <div>
+                    <div class="sh-order-code">#${fn:escapeXml(o.orderCode)}</div>
+                    <div class="sh-order-time">${fn:escapeXml(o.updatedAtFormatted)}</div>
+                </div>
+                <c:choose>
+                    <c:when test="${o.status == 'COMPLETED'}">
+                        <span class="sh-status completed"><i class="fas fa-circle-check"></i>Đã giao</span>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="sh-status failed"><i class="fas fa-circle-xmark"></i>Thất bại</span>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+            <div class="sh-order-body">
+                <div class="sh-info-row">
+                    <i class="fas fa-user"></i>
+                    <span>${fn:escapeXml(o.user != null ? o.user.fullName : 'Khách')}</span>
+                </div>
+                <div class="sh-info-row">
+                    <i class="fas fa-phone"></i>
+                    <span>${fn:escapeXml(o.phone)}</span>
+                </div>
+                <div class="sh-info-row">
+                    <i class="fas fa-location-dot"></i>
+                    <span>${fn:escapeXml(o.shippingAddress)}</span>
+                </div>
+                <c:if test="${not empty o.failedReason}">
+                    <div class="mt-2 p-2 rounded sh-small"
+                         style="background:var(--sh-red-bg);color:var(--sh-red-text);border-left:3px solid var(--sh-red)">
+                        <i class="fas fa-circle-exclamation"></i> ${fn:escapeXml(o.failedReason)}
+                    </div>
+                </c:if>
+            </div>
+            <div class="sh-order-foot">
+                <div class="sh-order-total">
+                    <small>Tổng tiền</small>
+                    <fmt:formatNumber value="${o.totalAmount}" pattern="#,##0"/> ₫
+                </div>
+                <a href="${ctx}/shipper/orders/${fn:escapeXml(o.id)}" class="sh-btn sh-btn-outline sh-btn-sm">
+                    <i class="fas fa-eye"></i> Xem chi tiết
+                </a>
+            </div>
+        </div>
+    </c:forEach>
+
     <c:if test="${total > limit}">
-        <p class="small text-muted mt-2">Hiển thị ${limit} đơn gần nhất trong tổng số ${total} đơn.</p>
+        <div class="sh-small sh-muted text-center mt-2">
+            Hiển thị ${limit} đơn gần nhất trong tổng số ${total} đơn.
+        </div>
     </c:if>
 </c:if>
 
+<%-- ===== Các lần giao thất bại ===== --%>
 <c:if test="${not empty failures}">
-    <h6 class="mt-4 mb-3"><i class="fas fa-triangle-exclamation text-secondary"></i> Các lần giao thất bại</h6>
-    <div class="card order-card shadow-sm">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Mã đơn</th>
-                        <th>Thời gian</th>
-                        <th>Khách hàng</th>
-                        <th>Lý do</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <c:forEach var="failure" items="${failures}">
-                        <tr>
-                            <td class="fw-semibold">#${fn:escapeXml(failure.order.orderCode)}</td>
-                            <td class="text-nowrap">${fn:escapeXml(failure.failedAtFormatted)}</td>
-                            <td>
-                                <c:if test="${failure.order.user != null}">
-                                    ${fn:escapeXml(failure.order.user.fullName)}
-                                </c:if>
-                                <div class="small text-muted">${fn:escapeXml(failure.order.phone)}</div>
-                            </td>
-                            <td>${fn:escapeXml(failure.reason)}</td>
-                            <td>
-                                <a href="${ctx}/shipper/orders/${fn:escapeXml(failure.order.id)}"
-                                   class="btn btn-sm btn-outline-dark" aria-label="Xem đơn hàng">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    </c:forEach>
-                </tbody>
-            </table>
-        </div>
+    <div class="sh-section-label mt-4">
+        <i class="fas fa-triangle-exclamation" style="color:var(--sh-red)"></i>
+        Lần giao thất bại (${failureTotal})
     </div>
-    <c:if test="${failureTotal > limit}">
-        <p class="small text-muted mt-2">Hiển thị ${limit} lần giao gần nhất trong tổng số ${failureTotal} lần.</p>
-    </c:if>
+    <c:forEach var="f" items="${failures}">
+        <div class="sh-card sh-card-pad mb-2" style="border-left:3px solid var(--sh-red)">
+            <div class="d-flex justify-content-between mb-1">
+                <div class="sh-order-code">#${fn:escapeXml(f.order.orderCode)}</div>
+                <div class="sh-small sh-muted">${fn:escapeXml(f.failedAtFormatted)}</div>
+            </div>
+            <div class="sh-small mb-1">
+                <i class="fas fa-user sh-muted"></i> ${fn:escapeXml(f.order.user != null ? f.order.user.fullName : 'Khách')}
+                · ${fn:escapeXml(f.order.phone)}
+            </div>
+            <div class="sh-small" style="color:var(--sh-red-text)">
+                <i class="fas fa-circle-exclamation"></i> ${fn:escapeXml(f.reason)}
+            </div>
+            <div class="mt-2 text-end">
+                <a href="${ctx}/shipper/orders/${fn:escapeXml(f.order.id)}" class="sh-btn sh-btn-outline sh-btn-sm">
+                    <i class="fas fa-eye"></i> Xem đơn
+                </a>
+            </div>
+        </div>
+    </c:forEach>
 </c:if>

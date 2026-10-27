@@ -9,10 +9,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Order;
+import vn.utetra.repository.UserRepository;
 import vn.utetra.security.ErrorMessages;
+import vn.utetra.service.CloudinaryService;
+import vn.utetra.service.FileValidator;
 import vn.utetra.service.ShipperService;
+import vn.utetra.service.UserService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +40,10 @@ public class ShipperController {
     private static final int CHART_DAYS = 7;
 
     @Autowired private ShipperService shipperService;
+    @Autowired private UserService userService;
+    @Autowired private UserRepository userRepository;   // dùng findByEmailWithBranch cho trang profile
+    @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private FileValidator fileValidator;
 
     @GetMapping({"", "/"})
     public String home() {
@@ -134,5 +143,53 @@ public class ShipperController {
             ra.addFlashAttribute("error", ErrorMessages.safe(e));
             return "redirect:/shipper/orders/" + id;
         }
+    }
+
+    /* ==================== HỒ SƠ CÁ NHÂN (riêng cho shipper) ==================== */
+
+    @GetMapping("/profile")
+    public String profile(Authentication auth, Model model) {
+        // findByEmailWithBranch dùng LEFT JOIN FETCH u.branch để load sẵn branch ngay trong
+        // transaction của repository — tránh LazyInitializationException khi JSP đọc me.branch.name
+        // do spring.jpa.open-in-view=false.
+        model.addAttribute("me", userRepository.findByEmailWithBranch(auth.getName()).orElseThrow());
+        return "shipper/profile";
+    }
+
+    @PostMapping("/profile/update")
+    public String updateProfile(Authentication auth,
+                                @RequestParam String fullName,
+                                @RequestParam(required = false) String phone,
+                                @RequestParam(required = false) String address,
+                                @RequestParam(required = false) MultipartFile avatar,
+                                RedirectAttributes ra) {
+        try {
+            if (avatar != null && !avatar.isEmpty()) fileValidator.validateImage(avatar);
+            String url = (avatar != null && !avatar.isEmpty())
+                    ? cloudinaryService.upload(avatar, "avatars") : null;
+            userService.updateProfile(auth.getName(), fullName, phone, address, url);
+            ra.addFlashAttribute("success", "Đã cập nhật thông tin cá nhân.");
+        } catch (RuntimeException e) {
+            ra.addFlashAttribute("error", ErrorMessages.safe(e));
+        }
+        return "redirect:/shipper/profile";
+    }
+
+    @PostMapping("/profile/change-password")
+    public String changePassword(Authentication auth,
+                                 @RequestParam String oldPassword,
+                                 @RequestParam String newPassword,
+                                 @RequestParam String confirmPassword,
+                                 RedirectAttributes ra) {
+        try {
+            if (!newPassword.equals(confirmPassword)) {
+                throw new IllegalArgumentException("Xác nhận mật khẩu không khớp.");
+            }
+            userService.changePassword(auth.getName(), oldPassword, newPassword);
+            ra.addFlashAttribute("success", "Đổi mật khẩu thành công.");
+        } catch (RuntimeException e) {
+            ra.addFlashAttribute("error", ErrorMessages.safe(e));
+        }
+        return "redirect:/shipper/profile";
     }
 }

@@ -1,13 +1,14 @@
 package vn.utetra.controller;
 
-import vn.utetra.security.ErrorMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import vn.utetra.entity.RoleName;
 import vn.utetra.entity.User;
+import vn.utetra.security.ErrorMessages;
 import vn.utetra.service.CloudinaryService;
 import vn.utetra.service.FileValidator;
 import vn.utetra.service.UserService;
@@ -23,6 +24,13 @@ public class ProfileController {
     @GetMapping
     public String profile(Authentication auth, Model model) {
         User u = userService.findByEmail(auth.getName()).orElseThrow();
+        // Tài khoản CHỈ có vai trò SHIPPER (không phải khách/nhân viên) → về trang riêng của shipper
+        boolean onlyShipper = u.isShipper()
+                && !u.hasRole(RoleName.USER)
+                && !u.isAdmin() && !u.isManager() && !u.isStaff();
+        if (onlyShipper) {
+            return "redirect:/shipper/profile";
+        }
         model.addAttribute("user", u);
         return "user/profile";
     }
