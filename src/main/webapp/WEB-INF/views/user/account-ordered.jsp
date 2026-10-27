@@ -12,7 +12,7 @@
     <div class="col-lg-8 col-xl-9">
 
         <div class="checkout-box">
-            <h4 class="mb-3" style="color:#8a6d00;font-weight:700">Sản phẩm đã đặt</h4>
+            <h4 class="mb-3" style="color:#956542;font-weight:700">Sản phẩm đã đặt</h4>
             <c:forEach items="${items}" var="it">
                 <div class="cart-line align-items-center">
                     <img src="${fn:escapeXml(it.product.thumbUrl)}" loading="lazy" alt="">

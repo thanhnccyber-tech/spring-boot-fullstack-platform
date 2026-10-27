@@ -11,7 +11,7 @@
     <jsp:include page="/WEB-INF/views/user/_account-menu.jsp"><jsp:param name="active" value="orders"/></jsp:include>
 </div>
 <div class="col-lg-8 col-xl-9"><div class="checkout-box">
-<h4 class="mb-3" style="color:#8a6d00;font-weight:700">Đơn hàng của tôi</h4>
+<h4 class="mb-3" style="color:#956542;font-weight:700">Đơn hàng của tôi</h4>
 
 <c:if test="${empty orders}">
     <div class="empty-state">

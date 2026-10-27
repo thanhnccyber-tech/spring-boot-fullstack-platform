@@ -17,7 +17,7 @@
         <c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
 
         <div class="checkout-box mb-3">
-            <h3 class="mb-4" style="color:#8a6d00;font-weight:700">Thông tin cá nhân</h3>
+            <h3 class="mb-4" style="color:#956542;font-weight:700">Thông tin cá nhân</h3>
             <form action="${ctx}/profile/update" method="post" enctype="multipart/form-data" class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label small mb-1">Họ &amp; tên</label>

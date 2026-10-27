@@ -11,7 +11,7 @@
 <div class="row g-4">
     <div class="col-lg-3">
         <div class="checkout-box p-3">
-            <h6 class="text-uppercase" style="color:#8a6d00">Hội viên</h6>
+            <h6 class="text-uppercase" style="color:#956542">Hội viên</h6>
             <div class="list-group list-group-flush account-menu">
                 <a class="list-group-item list-group-item-action" href="#faq"><i class="fas fa-circle-question"></i> Câu hỏi thường gặp (FAQ)</a>
                 <a class="list-group-item list-group-item-action" href="#dieu-khoan"><i class="fas fa-file-contract"></i> Điều khoản và điều kiện chương trình hội viên</a>
@@ -21,7 +21,7 @@
 
     <div class="col-lg-9">
         <div class="checkout-box" id="faq">
-            <h2 class="text-center mb-4" style="color:#8a6d00;font-weight:700">CÂU HỎI THƯỜNG GẶP (FAQ)</h2>
+            <h2 class="text-center mb-4" style="color:#956542;font-weight:700">CÂU HỎI THƯỜNG GẶP (FAQ)</h2>
             <div class="accordion" id="faqList">
                 <div class="accordion-item">
                     <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#f1">Làm sao để tôi có thể đăng ký thành viên UTeTra?</button></h2>

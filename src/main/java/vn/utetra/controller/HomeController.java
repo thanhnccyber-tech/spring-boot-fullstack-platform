@@ -33,6 +33,7 @@ public class HomeController {
     @Autowired private UserService userService;
     @Autowired private PromotionService promotionService;
     @Autowired private vn.utetra.repository.FavoriteRepository favoriteRepo;
+    @Autowired private BranchService branchService;
 
     @GetMapping({"/", "/home"})
     public String home(Model model) {
@@ -40,6 +41,22 @@ public class HomeController {
         List<Product> newArrivals = productService.newArrivals();
         model.addAttribute("featured", featured);
         model.addAttribute("newArrivals", newArrivals);
+
+        // Three real catalogue items power the interactive tea-book on the homepage.
+        List<Product> bookProducts = new ArrayList<>();
+        if (!featured.isEmpty()) bookProducts.add(featured.get(0));
+        for (Product candidate : newArrivals) {
+            if (bookProducts.size() >= 3) break;
+            boolean exists = bookProducts.stream().anyMatch(x -> x.getId().equals(candidate.getId()));
+            if (!exists) bookProducts.add(candidate);
+        }
+        for (Product candidate : featured) {
+            if (bookProducts.size() >= 3) break;
+            boolean exists = bookProducts.stream().anyMatch(x -> x.getId().equals(candidate.getId()));
+            if (!exists) bookProducts.add(candidate);
+        }
+        model.addAttribute("bookProducts", bookProducts);
+
         List<Long> ids = new ArrayList<>();
         featured.forEach(p -> ids.add(p.getId()));
         newArrivals.forEach(p -> ids.add(p.getId()));
@@ -47,6 +64,7 @@ public class HomeController {
         model.addAttribute("categories", categoryService.active());
         List<vn.utetra.entity.Promotion> promos = promotionService.active();
         model.addAttribute("promotions", promos.size() > 4 ? promos.subList(0, 4) : promos);
+        model.addAttribute("branches", branchService.active());
         return "user/home";
     }
 
@@ -92,12 +110,15 @@ public class HomeController {
     }
 
     @GetMapping("/product/{id}")
-    public String productDetail(@PathVariable Long id, Authentication auth, Model model) {
+    public String productDetail(@PathVariable Long id,
+                                @RequestParam(name = "quantity", defaultValue = "1") int quantity,
+                                Authentication auth, Model model) {
         Product p = productService.get(id);
         if (!Boolean.TRUE.equals(p.getActive())) {
             return "redirect:/products";
         }
         model.addAttribute("product", p);
+        model.addAttribute("productDetailQuantity", Math.max(1, Math.min(quantity, 99)));
         model.addAttribute("toppings", toppingService.activeInStock());
 
         List<SizeOption> allowedSizes = (p.getSizes() == null || p.getSizes().isEmpty())

@@ -12,7 +12,7 @@
     <div class="col-lg-8 col-xl-9">
 
         <div class="checkout-box mb-3">
-            <h4 class="mb-3" style="color:#8a6d00;font-weight:700">Số địa chỉ</h4>
+            <h4 class="mb-3" style="color:#956542;font-weight:700">Số địa chỉ</h4>
             <c:forEach items="${addresses}" var="a">
                 <div class="d-flex justify-content-between align-items-start gap-2 py-3 border-bottom">
                     <div>

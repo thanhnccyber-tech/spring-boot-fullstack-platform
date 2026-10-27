@@ -12,7 +12,7 @@
     <div class="col-lg-8 col-xl-9">
 
         <div class="checkout-box">
-            <h4 class="mb-3" style="color:#8a6d00;font-weight:700">Ưu đãi của tôi</h4>
+            <h4 class="mb-3" style="color:#956542;font-weight:700">Ưu đãi của tôi</h4>
             <div class="row g-3">
             <c:forEach items="${vouchers}" var="v">
                 <div class="col-md-6">

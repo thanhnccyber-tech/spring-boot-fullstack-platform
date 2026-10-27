@@ -116,7 +116,7 @@
             </div>
 
             <label class="form-label">Số lượng:</label>
-            <input type="number" name="quantity" value="1" min="1" class="form-control mb-3"
+            <input type="number" name="quantity" value="${productDetailQuantity}" min="1" max="99" class="form-control mb-3"
                    style="width:120px" <c:if test="${product.outOfStock}">disabled</c:if>>
 
             <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">

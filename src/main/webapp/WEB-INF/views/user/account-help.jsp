@@ -12,7 +12,7 @@
     <div class="col-lg-8 col-xl-9">
 
         <div class="checkout-box mb-3">
-            <h4 class="mb-3" style="color:#8a6d00;font-weight:700">Trung tâm trợ giúp</h4>
+            <h4 class="mb-3" style="color:#956542;font-weight:700">Trung tâm trợ giúp</h4>
             <p class="mb-1"><i class="fas fa-phone text-success"></i> Hotline: <a href="tel:19001234"><b>1900 1234</b></a></p>
             <p class="mb-3"><i class="fas fa-store text-warning"></i> Địa chỉ và số điện thoại từng cửa hàng xem ở mục <a href="${ctx}/cua-hang">Cửa hàng</a>.</p>
             <div class="accordion" id="faq">

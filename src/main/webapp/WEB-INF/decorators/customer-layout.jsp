@@ -13,20 +13,25 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/brand-theme.css">
     <sitemesh:write property="head"/>
 </head>
-<body data-ctx="${pageContext.request.contextPath}">
+<body data-ctx="${pageContext.request.contextPath}" class="${fn:endsWith(pageContext.request.requestURI, '/home') or fn:endsWith(pageContext.request.requestURI, '/') ? 'ute-home-body' : ''}">
 
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <c:set var="cartCount" value="0"/>
 <c:forEach items="${sessionScope.CART}" var="ci"><c:set var="cartCount" value="${cartCount + ci.quantity}"/></c:forEach>
 <c:set var="uri" value="${not empty requestScope['jakarta.servlet.forward.request_uri'] ? requestScope['jakarta.servlet.forward.request_uri'] : pageContext.request.requestURI}"/>
+<c:set var="isHomePage" value="${fn:endsWith(uri, '/home') or fn:endsWith(uri, '/')}"/>
 
 <!-- ============ Hàng 1: logo | tìm kiếm | nhận hàng | tài khoản ============ -->
 <header class="site-header sticky-top">
     <div class="container py-2 d-flex align-items-center gap-2 gap-md-3">
         <a class="brand text-decoration-none" href="${ctx}/">
-            <i class="fas fa-mug-hot"></i> UTETra
+            <c:choose>
+                <c:when test="${isHomePage}"><i class="fas fa-mug-hot"></i> UTETra</c:when>
+                <c:otherwise><img class="ute-brand-logo" src="${ctx}/static/images/utetra-logo.png" alt="UTETra"></c:otherwise>
+            </c:choose>
         </a>
 
         <form class="header-search" action="${ctx}/products" method="get" role="search">
@@ -186,7 +191,7 @@
 </script>
 </c:if>
 
-<main class="container my-4">
+<main class="${isHomePage ? 'ute-home-main' : 'container my-4'}">
     <c:set var="ownMsgPage" value="${fn:contains(uri, '/login') or fn:contains(uri, '/register') or fn:contains(uri, '/otp')
                         or fn:contains(uri, '/forgot-password') or fn:contains(uri, '/reset-password') or fn:contains(uri, '/profile')}"/>
     <c:if test="${not ownMsgPage}">
@@ -214,7 +219,12 @@
     <div class="container">
         <div class="row g-4">
             <div class="col-lg-4 col-md-6">
-                <div class="brand-footer"><i class="fas fa-mug-hot"></i> UTETra</div>
+                <div class="brand-footer">
+                    <c:choose>
+                        <c:when test="${isHomePage}"><i class="fas fa-mug-hot"></i> UTETra</c:when>
+                        <c:otherwise><img class="ute-footer-logo" src="${ctx}/static/images/utetra-logo.png" alt="UTETra"></c:otherwise>
+                    </c:choose>
+                </div>
                 <p style="max-width:320px;font-size:.9rem;line-height:1.6">
                     Chuỗi trà sữa tươi mát, pha chế từ nguyên liệu chọn lọc. Giao nhanh trong 30 phút tại TP.HCM.
                 </p>

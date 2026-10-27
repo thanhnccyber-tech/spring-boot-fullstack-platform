@@ -1,0 +1,280 @@
+/* UTETra Tea Book — open-paper spread with a curled, draggable page turn. */
+.tea-book-hero {
+    --tb-paper: #eee2c8;
+    --tb-page: #fbf6e9;
+    --tb-page-warm: #f6ecd8;
+    --tb-ink: #30271f;
+    --tb-muted: #837363;
+    --tb-rule: rgba(79, 59, 42, .18);
+    --tb-navy: #2a3e68;
+    --tb-blue: #245bd6;
+    --tb-blue-dark: #1747b3;
+    --tb-earth: #966949;
+    position: relative;
+    isolation: isolate;
+    width: 100vw;
+    left: 50%;
+    margin: -1.5rem 0 54px -50vw;
+    padding: clamp(28px, 3.2vw, 46px) 0 24px;
+    overflow: hidden;
+    color: var(--tb-ink);
+    background:
+        radial-gradient(ellipse at 17% 21%, rgba(255, 255, 255, .37), transparent 36%),
+        radial-gradient(ellipse at 87% 76%, rgba(190, 151, 99, .15), transparent 34%),
+        linear-gradient(115deg, #e6d6b5, #efe3c7 48%, #e6d7b7);
+}
+.tea-book-hero::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    pointer-events: none;
+    opacity: .23;
+    background-image: repeating-linear-gradient(0deg, rgba(112, 81, 48, .025) 0, rgba(112, 81, 48, .025) 1px, transparent 1px, transparent 5px);
+}
+.tea-book-wash { position: absolute; inset: 0; pointer-events: none; z-index: -1; }
+.tea-book-container { position: relative; z-index: 1; max-width: 1180px; }
+.tea-book-kicker {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin: 0 auto 18px; color: #716958; text-align: center;
+    font-size: .67rem; font-weight: 800; letter-spacing: .22em; line-height: 1.6;
+}
+.tea-book-kicker span { display: inline-block; width: 17px; height: 1px; background: currentColor; opacity: .55; }
+
+/* Outer cloth cover and the two open pages */
+.tea-book-stage { position: relative; width: 100%; margin: 0 auto; perspective: 1800px; touch-action: pan-y; }
+.tea-book-edge {
+    position: absolute; top: 50%; z-index: 15; display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 48px; padding: 0; transform: translateY(-50%); border: 0; border-radius: 999px;
+    color: rgba(79, 66, 49, .45); background: transparent; font-size: 1.15rem; cursor: pointer;
+    transition: color .18s ease, background .18s ease, opacity .18s ease;
+}
+.tea-book-prev { left: calc(50% - min(44vw, 480px) - 18px); }
+.tea-book-next { right: calc(50% - min(44vw, 480px) - 18px); }
+.tea-book-edge:hover:not(:disabled) { color: var(--tb-blue); background: rgba(255, 250, 237, .82); }
+.tea-book-edge:disabled { opacity: .25; cursor: default; }
+.tea-book-frame {
+    position: relative; width: min(88vw, 960px); aspect-ratio: 1.62; margin: 0 auto;
+    padding: 8px; box-sizing: border-box; border: 1px solid rgba(255,255,255,.25);
+    border-radius: 17px; background: linear-gradient(135deg, #30466f, #1e3155 58%, #354a73);
+    box-shadow: 0 24px 36px rgba(63, 48, 30, .22), 0 7px 0 rgba(21, 35, 65, .14), inset 0 1px 0 rgba(255,255,255,.3);
+    transform: rotateX(var(--tb-rx, 0deg)) rotateY(var(--tb-ry, 0deg));
+    transform-style: preserve-3d; transition: transform .25s ease;
+}
+.tea-book-frame::before { content:""; position:absolute; inset:5px; border:1px solid rgba(224,207,168,.6); border-radius:12px; pointer-events:none; z-index:12; }
+.tea-book-frame::after { content:""; position:absolute; left:50%; bottom:-35px; width:78%; height:42px; transform:translateX(-50%); background:rgba(65,44,26,.24); filter:blur(23px); border-radius:50%; z-index:-1; }
+.tea-book-pages {
+    position: relative; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    width: 100%; height: 100%; overflow: hidden; border-radius: 6px;
+    background: var(--tb-page); transform: scale(var(--tb-zoom, 1)); transform-origin: center;
+    transform-style: preserve-3d; transition: transform .22s ease;
+}
+.tea-spread-page {
+    position: relative; min-width: 0; min-height: 0; height: 100%; overflow: hidden;
+    box-sizing: border-box; color: var(--tb-ink);
+    background: linear-gradient(120deg, #fffaf0, #f5ead4 100%);
+}
+.tea-spread-left { border-right: 1px solid rgba(83,62,43,.08); background: linear-gradient(100deg, #f5ead4, #fff9ed 53%, #f7eddd); }
+.tea-spread-right { background: linear-gradient(94deg, #f8efdf, #fff9eb 16%, #fbf5e8 100%); }
+.tea-book-spine {
+    position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 3px; z-index: 11; pointer-events: none;
+    background: linear-gradient(90deg, rgba(89,64,40,.14), rgba(255,255,255,.75), rgba(63,45,29,.08));
+    box-shadow: 3px 0 9px rgba(75,53,34,.08), -3px 0 8px rgba(75,53,34,.04);
+}
+.tea-spread-page::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:8; opacity:.42; background:linear-gradient(90deg,rgba(93,67,38,.045),transparent 13%,transparent 86%,rgba(93,67,38,.035)); }
+
+/* Opening spread: three taped snapshots on the left, editorial title on the right */
+.tea-cover-collage { position:absolute; inset:0; overflow:hidden; }
+.tea-cover-photo {
+    position:absolute; display:block; padding:clamp(7px,1.1vw,12px) clamp(7px,1.1vw,12px) clamp(24px,3.5vw,37px);
+    background:#fffdf7; box-shadow:0 9px 18px rgba(56,43,29,.16),0 1px 2px rgba(56,43,29,.08);
+    transform-style:preserve-3d;
+}
+.tea-cover-photo img { display:block; width:100%; height:100%; object-fit:cover; }
+.tea-photo-tape { position:absolute; top:-8px; left:33%; width:35%; height:clamp(13px,2vw,20px); z-index:2; transform:rotate(-4deg); background:rgba(232,203,143,.78); box-shadow:0 1px 2px rgba(67,48,25,.08); }
+.tea-cover-photo-one { left:8%; top:10%; width:39%; height:40%; transform:rotate(-6deg); z-index:2; }
+.tea-cover-photo-two { right:5%; top:29%; width:41%; height:43%; transform:rotate(4.5deg); z-index:3; }
+.tea-cover-photo-three { left:13%; bottom:9%; width:37%; height:35%; transform:rotate(-2.5deg); z-index:1; }
+.tea-cover-photo-one img { object-position: 50% 50%; }
+.tea-cover-photo-two img { object-position: 50% 50%; }
+.tea-cover-photo-three img { object-position: 50% 50%; }
+.tea-cover-side-note { position:absolute; left:8%; bottom:3%; margin:0; color:#9b8973; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.45rem,.8vw,.7rem); font-style:italic; letter-spacing:.04em; }
+.tea-cover-promo { position:absolute; inset:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; padding:clamp(23px,4.4vw,58px) clamp(22px,5.6vw,70px); }
+.tea-cup-doodle { width:clamp(42px,5.4vw,66px); height:clamp(54px,6.7vw,82px); margin:0 0 clamp(8px,1.5vw,17px) 7%; color:#60513e; }
+.tea-cup-doodle svg { width:100%; height:100%; }
+.tea-promo-eyebrow { margin:0 0 clamp(8px,1.2vw,14px); color:#986e51; font-size:clamp(.48rem,.8vw,.68rem); font-weight:800; letter-spacing:.2em; }
+.tea-cover-promo h1 { max-width:480px; margin:0; color:#30271f; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.55rem,3.45vw,2.85rem); font-weight:500; line-height:1.04; letter-spacing:-.045em; }
+.tea-cover-promo h1 em { color:var(--tb-blue); font-weight:400; }
+.tea-promo-copy { max-width:410px; margin:clamp(8px,1.2vw,14px) 0 0; color:#807365; font-size:clamp(.64rem,1.08vw,.93rem); line-height:1.6; }
+.tea-promo-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:clamp(12px,2vw,24px); }
+.tea-primary-button,.tea-secondary-button {
+    display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:clamp(32px,3.6vw,44px);
+    padding:9px clamp(13px,1.8vw,22px); border-radius:999px; font-size:clamp(.65rem,.95vw,.82rem); font-weight:800; text-decoration:none!important;
+    white-space:nowrap; transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.tea-primary-button { color:#fff!important; background:var(--tb-blue); box-shadow:0 6px 13px rgba(36,91,214,.2); }
+.tea-primary-button:hover { color:#fff!important; background:var(--tb-blue-dark); transform:translateY(-2px); box-shadow:0 9px 18px rgba(36,91,214,.25); }
+.tea-secondary-button { color:#3c3228!important; border:1px solid rgba(89,67,46,.17); background:rgba(255,253,246,.76); }
+.tea-secondary-button:hover { color:#3c3228!important; transform:translateY(-2px); background:#fffdf6; }
+.tea-promo-hint { margin:clamp(7px,1vw,12px) 0 0; color:#a0917f; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.56rem,.83vw,.73rem); font-style:italic; }
+.tea-page-number { position:absolute; bottom:4.5%; left:0; right:0; text-align:center; color:#ab9b85; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.56rem,.85vw,.75rem); letter-spacing:.15em; }
+
+/* Product spread: photo taped like a polaroid on the left, ordering information on the right */
+.tea-product-polaroid-page { position:absolute; inset:0; padding:clamp(14px,2.7vw,34px); box-sizing:border-box; }
+.tea-page-topline { display:flex; justify-content:space-between; align-items:center; padding-bottom:clamp(7px,1.3vw,13px); border-bottom:1px solid var(--tb-rule); color:#a18b74; font-size:clamp(.42rem,.7vw,.61rem); font-weight:800; letter-spacing:.14em; }
+.tea-polaroid {
+    position:relative; display:block; width:78%; height:70%; margin:clamp(12px,2.5vw,28px) auto 0; padding:clamp(8px,1.3vw,14px) clamp(8px,1.3vw,14px) clamp(27px,4.3vw,43px);
+    background:#fffdf7; box-shadow:0 13px 24px rgba(57,42,28,.18),0 2px 4px rgba(57,42,28,.07); transform:rotate(-2.2deg); color:var(--tb-ink)!important; text-decoration:none!important;
+}
+.tea-polaroid img { display:block; width:100%; height:100%; object-fit:cover; }
+.tea-polaroid-tape { position:absolute; z-index:2; top:-10px; left:34%; width:34%; height:clamp(13px,1.8vw,19px); transform:rotate(2deg); background:rgba(229,199,142,.82); }
+.tea-polaroid-caption { position:absolute; left:0; right:0; bottom:6px; color:#8d7a68; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.66rem,1.3vw,1.05rem); font-style:italic; text-align:center; }
+.tea-polaroid-detail { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:clamp(8px,1.4vw,15px) 3% 0; color:#988775; font-size:clamp(.49rem,.76vw,.68rem); }
+.tea-polaroid-detail a { color:var(--tb-blue)!important; font-weight:800; text-decoration:underline; text-underline-offset:3px; }
+.tea-product-page { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:stretch; padding:clamp(20px,4vw,52px) clamp(20px,5.5vw,68px); box-sizing:border-box; }
+.tea-product-page .tea-cup-doodle { margin-left:5%; margin-bottom:clamp(8px,1.3vw,16px); }
+.tea-product-kicker { margin:0 0 clamp(8px,1.2vw,14px); color:#9b795e; font-size:clamp(.48rem,.78vw,.68rem); font-weight:800; letter-spacing:.2em; text-transform:uppercase; }
+.tea-product-page h2 { margin:0; color:#30271f; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.45rem,3vw,2.35rem); font-weight:500; line-height:1.08; letter-spacing:-.035em; overflow-wrap:anywhere; }
+.tea-product-description { max-width:440px; margin:clamp(5px,.8vw,9px) 0 0; color:#877768; font-size:clamp(.65rem,1.04vw,.9rem); line-height:1.5; }
+.tea-price-line { display:flex; align-items:baseline; gap:clamp(7px,1vw,13px); margin-top:clamp(18px,3vw,35px); }
+.tea-price-label { flex:none; color:#9b8c7a; font-size:clamp(.49rem,.72vw,.63rem); font-weight:800; letter-spacing:.16em; }
+.tea-price-dots { flex:1; min-width:12px; height:1px; border-bottom:1px dotted rgba(125,101,78,.38); }
+.tea-product-price { color:var(--tb-blue); font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.4rem,3vw,2.35rem); font-weight:700; white-space:nowrap; letter-spacing:-.035em; }
+.tea-product-actions { display:flex; align-items:center; flex-wrap:wrap; gap:clamp(7px,1.1vw,13px); margin-top:clamp(13px,2vw,23px); }
+.tea-qty-stepper { display:inline-flex; align-items:center; justify-content:center; gap:clamp(9px,1.4vw,16px); min-height:clamp(34px,3.8vw,44px); padding:0 clamp(10px,1.4vw,16px); border:1px solid rgba(112,89,65,.15); border-radius:999px; background:rgba(255,253,246,.83); }
+.tea-qty-stepper button { display:inline-flex; align-items:center; justify-content:center; width:18px; height:25px; padding:0; border:0; background:none; color:#716252; cursor:pointer; }
+.tea-qty-stepper button:disabled { opacity:.3; cursor:default; }
+.tea-qty-value { min-width:10px; color:#3d3329; font-size:.83rem; font-weight:800; text-align:center; font-variant-numeric:tabular-nums; }
+.tea-order-link { display:inline-flex; flex:1 1 120px; align-items:center; justify-content:center; gap:8px; min-height:clamp(35px,3.9vw,46px); padding:9px clamp(13px,2vw,24px); border:0; border-radius:999px; background:var(--tb-blue); color:#fff!important; font-size:clamp(.68rem,.94vw,.82rem); font-weight:800; text-decoration:none!important; white-space:nowrap; box-shadow:0 6px 13px rgba(36,91,214,.18); transition:transform .2s ease,background .2s ease,box-shadow .2s ease; }
+.tea-order-link:hover { color:#fff!important; background:var(--tb-blue-dark); transform:translateY(-1px); box-shadow:0 9px 19px rgba(36,91,214,.24); }
+.tea-order-link.is-sold-out { background:#9e9488; pointer-events:none; box-shadow:none; }
+.tea-product-options { display:inline-block; align-self:flex-start; margin-top:clamp(10px,1.5vw,17px); color:#8a7966!important; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.56rem,.82vw,.73rem); text-decoration:underline!important; text-underline-offset:4px; }
+.tea-product-page .tea-page-number { bottom:4%; }
+
+/* Curled leaf: the page is divided into nested 3D strips so it bows and shades while turning. */
+.tea-book-curl-host { position:absolute; inset:0; z-index:10; overflow:visible; pointer-events:none; }
+.tea-book-curl { position:absolute; top:0; height:100%; width:calc(var(--bw, 0px) * var(--span, .449)); transform-style:preserve-3d; z-index:7; }
+.tea-book-curl.next { left:50%; transform-origin:left center; transform:rotateY(calc(-1 * var(--tt, 0deg))); }
+.tea-book-curl.prev { right:50%; transform-origin:right center; transform:rotateY(var(--tt, 0deg)); }
+.tea-book-strip { position:absolute; top:0; height:100%; width:calc(var(--bw, 0px) * var(--span, .449) / var(--n, 18)); transform-style:preserve-3d; }
+.tea-book-curl.next .tea-book-strip { transform-origin:left center; }
+.tea-book-curl.prev .tea-book-strip { transform-origin:right center; }
+.tea-book-curl.next > .tea-book-strip { left:0; }
+.tea-book-curl.prev > .tea-book-strip { right:0; left:auto; }
+.tea-book-curl.next .tea-book-strip .tea-book-strip { left:100%; transform:rotateY(var(--td, 0deg)); }
+.tea-book-curl.prev .tea-book-strip .tea-book-strip { right:100%; transform:rotateY(calc(-1 * var(--td, 0deg))); }
+.tea-curl-face { position:absolute; top:0; bottom:0; left:0; right:-1px; overflow:hidden; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:linear-gradient(90deg,#f5ead8,#fff9ed 50%,#eee0c7); transform-style:preserve-3d; }
+.tea-curl-face.back { transform:rotateY(180deg); }
+.tea-curl-content { position:absolute; top:0; left:0; width:calc(var(--bw, 0px) * .5); height:100%; overflow:hidden; }
+.tea-curl-content > * { width:100%; height:100%; }
+.tea-curl-shade { position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; opacity:calc(var(--shade,0) * .6); }
+.tea-book-curl.next .tea-curl-face.front .tea-curl-shade,.tea-book-curl.prev .tea-curl-face.back .tea-curl-shade { background:linear-gradient(90deg,rgba(48,35,20,var(--a1,0)),rgba(48,35,20,var(--a2,0))); }
+.tea-book-curl.next .tea-curl-face.back .tea-curl-shade,.tea-book-curl.prev .tea-curl-face.front .tea-curl-shade { background:linear-gradient(90deg,rgba(48,35,20,var(--a2,0)),rgba(48,35,20,var(--a1,0))); }
+.tea-book-curl .tea-curl-gloss { position:absolute; inset:0; pointer-events:none; opacity:calc(var(--shade,0) * var(--lit,1) * .15); background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.85),rgba(255,255,255,0)); }
+.tea-book-curl .tea-book-strip:last-child .tea-curl-face { box-shadow:inset 0 0 5px rgba(65,48,29,.13); }
+.tea-book-pages.is-turning { --tb-static-shadow: .8; }
+
+/* Floating glass and zoom controls */
+.tea-magnifier { position:absolute; z-index:20; left:calc(50% + min(44vw, 490px) - 105px); top:68%; width:clamp(118px,15vw,188px); height:clamp(118px,15vw,188px); cursor:grab; touch-action:none; user-select:none; }
+.tea-magnifier:active { cursor:grabbing; }
+.tea-magnifier-glass { position:absolute; inset:0; overflow:hidden; border:5px solid transparent; border-radius:50%; background:linear-gradient(rgba(231,222,199,.14),rgba(231,222,199,.14)) padding-box,linear-gradient(135deg,#fff3d6,#9b8050 30%,#5e4a2f 48%,#f2e0b8 68%,#9a8057) border-box; box-shadow:0 4px 7px rgba(52,38,20,.19),0 18px 27px rgba(54,40,21,.2),inset 0 0 0 1px rgba(255,255,255,.75); backdrop-filter:blur(1.2px); }
+.tea-magnifier-glass::after { content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.42),transparent 35%),radial-gradient(circle,transparent 57%,rgba(63,46,25,.17) 100%); box-shadow:inset 0 0 0 2px rgba(255,255,255,.2); z-index:2; }
+.tea-magnifier-handle { position:absolute; z-index:-1; width:clamp(74px,10vw,120px); height:clamp(15px,2vw,23px); left:72%; top:78%; border-radius:999px; transform:rotate(48deg); transform-origin:left center; background:linear-gradient(180deg,rgba(255,255,255,.65),transparent 42%,rgba(54,37,19,.25)),linear-gradient(90deg,#e5cf9e,#9e8050 22%,#6c4b2e 55%,#b69b6b); box-shadow:0 8px 13px rgba(53,38,20,.22),inset 0 1px 2px rgba(255,255,255,.55); }
+.tea-magnifier-copy { position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; border-radius:50%; pointer-events:none; }
+.tea-magnifier-copy-book { position:absolute; top:0; left:0; display:grid; grid-template-columns:1fr 1fr; transform-origin:top left; will-change:transform; }
+.tea-magnifier-copy-book .tea-spread-page { width:100%; height:100%; }
+.tea-book-toolbar { display:flex; align-items:center; justify-content:center; gap:7px; width:max-content; max-width:90%; margin:28px auto 0; padding:6px 9px; border:1px solid rgba(93,71,46,.15); border-radius:999px; color:#8b7a65; background:rgba(255,250,237,.7); box-shadow:0 5px 13px rgba(89,66,39,.05); backdrop-filter:blur(8px); }
+.tea-tool-button { display:inline-flex; align-items:center; justify-content:center; width:27px; height:27px; padding:0; border:0; border-radius:50%; color:#887966; background:transparent; cursor:pointer; transition:background .18s ease,color .18s ease; }
+.tea-tool-button:hover,.tea-tool-button[aria-pressed="true"] { color:var(--tb-blue); background:rgba(36,91,214,.09); }
+.tea-tool-button:disabled { opacity:.3; cursor:default; }
+.tea-tool-button i { font-size:.74rem; }
+.tea-zoom-readout { min-width:42px; color:#8b7d6a; font-size:.61rem; letter-spacing:.09em; text-align:center; font-variant-numeric:tabular-nums; }
+.tea-tool-separator { width:1px; height:17px; margin:0 2px; background:rgba(93,71,46,.16); }
+.tea-book-instruction { margin:14px auto 0; color:#a28f73; font-size:.59rem; font-weight:800; letter-spacing:.19em; text-align:center; }
+.tea-book-instruction span { margin-right:7px; font-size:.9rem; }
+.tea-book-data { display:none!important; }
+.tea-book-hero button:focus-visible,.tea-book-hero a:focus-visible,.tea-book-pages:focus-visible { outline:3px solid rgba(36,91,214,.55); outline-offset:3px; }
+.tea-book-hero a { position:relative; z-index:1; }
+
+@media (hover:hover) and (pointer:fine) {
+    .tea-book-stage { cursor:default; }
+    .tea-book-frame { transition:transform .25s ease; }
+}
+@media (max-width:900px) {
+    .tea-book-container { padding-left:14px; padding-right:14px; }
+    .tea-book-frame { width:min(91vw,840px); aspect-ratio:1.42; }
+    .tea-cover-promo { padding:clamp(18px,3.6vw,32px); }
+    .tea-cover-promo h1 { font-size:clamp(1.25rem,3.4vw,2rem); }
+    .tea-promo-copy { font-size:clamp(.61rem,1.15vw,.78rem); }
+    .tea-polaroid { width:84%; height:66%; }
+    .tea-product-page { padding:clamp(16px,3.2vw,28px); }
+    .tea-product-page h2 { font-size:clamp(1.25rem,3vw,1.85rem); }
+    .tea-magnifier { left:auto; right:2%; top:70%; }
+}
+@media (max-width:640px) {
+    .tea-book-hero { margin-top:-1rem; margin-bottom:35px; padding:30px 0 22px; }
+    .tea-book-kicker { gap:7px; margin-bottom:13px; font-size:.49rem; letter-spacing:.1em; }
+    .tea-book-kicker span { width:8px; }
+    .tea-book-frame { width:96%; aspect-ratio:1.15; padding:5px; border-radius:10px; }
+    .tea-book-edge { width:23px; height:36px; font-size:.9rem; background:rgba(255,250,237,.5); }
+    .tea-book-prev { left:0; }
+    .tea-book-next { right:0; }
+    .tea-book-frame::before { inset:3px; border-radius:7px; }
+    .tea-spread-page { min-width:0; }
+    .tea-cover-photo { padding:5px 5px 17px; }
+    .tea-photo-tape { top:-5px; height:10px; }
+    .tea-cover-photo-one { left:6%; top:14%; width:45%; height:33%; }
+    .tea-cover-photo-two { right:3%; top:35%; width:47%; height:38%; }
+    .tea-cover-photo-three { left:9%; bottom:8%; width:43%; height:30%; }
+    .tea-cover-side-note { font-size:.42rem; }
+    .tea-cover-promo { padding:14px 11px; }
+    .tea-cup-doodle { width:29px; height:39px; margin:0 0 5px 3%; }
+    .tea-promo-eyebrow { margin-bottom:6px; font-size:.38rem; letter-spacing:.1em; }
+    .tea-cover-promo h1 { font-size:clamp(.85rem,4.4vw,1.24rem); line-height:1.06; letter-spacing:-.04em; }
+    .tea-promo-copy { margin-top:7px; font-size:.53rem; line-height:1.38; }
+    .tea-promo-actions { gap:5px; margin-top:8px; }
+    .tea-primary-button,.tea-secondary-button { min-height:26px; padding:6px 8px; gap:4px; font-size:.49rem; }
+    .tea-promo-hint { margin-top:5px; font-size:.43rem; line-height:1.3; }
+    .tea-page-number { bottom:2.2%; font-size:.42rem; }
+    .tea-product-polaroid-page { padding:9px 7px; }
+    .tea-page-topline { padding-bottom:6px; font-size:.35rem; letter-spacing:.06em; }
+    .tea-polaroid { width:90%; height:65%; margin-top:16px; padding:6px 6px 20px; }
+    .tea-polaroid-tape { top:-6px; height:10px; }
+    .tea-polaroid-caption { bottom:4px; font-size:.61rem; }
+    .tea-polaroid-detail { flex-direction:column; align-items:flex-start; gap:3px; margin:7px 0 0; font-size:.39rem; }
+    .tea-product-page { padding:13px 10px; }
+    .tea-product-page .tea-cup-doodle { width:27px; height:35px; margin-bottom:5px; }
+    .tea-product-kicker { margin-bottom:6px; font-size:.4rem; letter-spacing:.1em; }
+    .tea-product-page h2 { font-size:clamp(.85rem,4.1vw,1.14rem); line-height:1.08; }
+    .tea-product-description { margin-top:5px; font-size:.5rem; line-height:1.34; }
+    .tea-price-line { gap:4px; margin-top:13px; }
+    .tea-price-label { font-size:.36rem; letter-spacing:.05em; }
+    .tea-product-price { font-size:clamp(.83rem,3.9vw,1.05rem); }
+    .tea-product-actions { gap:4px; margin-top:9px; }
+    .tea-qty-stepper { gap:4px; min-height:26px; padding:0 5px; }
+    .tea-qty-stepper button { width:13px; height:22px; font-size:.57rem; }
+    .tea-qty-value { font-size:.57rem; }
+    .tea-order-link { min-height:28px; flex-basis:80px; padding:6px 5px; gap:3px; font-size:.51rem; }
+    .tea-product-options { margin-top:7px; font-size:.43rem; }
+    .tea-magnifier { width:90px; height:90px; right:-1%; top:74%; }
+    .tea-magnifier-glass { border-width:3px; }
+    .tea-magnifier-handle { width:60px; height:11px; }
+    .tea-book-toolbar { margin-top:20px; padding:4px 7px; }
+    .tea-tool-button { width:24px; height:24px; }
+    .tea-zoom-readout { font-size:.56rem; }
+    .tea-book-instruction { margin-top:11px; font-size:.45rem; letter-spacing:.11em; line-height:1.5; }
+}
+@media (max-width:380px) {
+    .tea-book-frame { aspect-ratio:1.02; }
+    .tea-cover-promo { padding:10px 8px; }
+    .tea-promo-copy { font-size:.47rem; }
+    .tea-primary-button,.tea-secondary-button { font-size:.44rem; }
+    .tea-product-page { padding:10px 7px; }
+    .tea-product-page h2 { font-size:.8rem; }
+    .tea-product-price { font-size:.78rem; }
+    .tea-magnifier { display:none; }
+}
+@media (pointer:coarse) and (max-width:640px) { .tea-magnifier { display:none; } }
+@media (prefers-reduced-motion:reduce) {
+    .tea-book-frame,.tea-book-pages,.tea-primary-button,.tea-secondary-button,.tea-order-link { transition:none!important; }
+}
