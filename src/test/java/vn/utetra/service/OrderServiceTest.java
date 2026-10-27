@@ -161,6 +161,21 @@ class OrderServiceTest {
     }
 
     @Test
+    void redeemingPointsDoesNotDecreaseLifetimeTierProgress() {
+        user.setLoyaltyPoints(100);
+        user.setLifetimePoints(357);
+        OrderRequest r = request();
+        r.setUsePoints(10);
+        when(userRepo.spendPoints(1L, 10)).thenReturn(1);
+
+        service.placeOrder("a@b.vn", r);
+
+        assertEquals(357, user.getLifetimePoints(),
+                "dùng điểm để giảm giá không được trừ tổng điểm xét hạng");
+        verify(userRepo).spendPoints(1L, 10);
+    }
+
+    @Test
     void placeOrderFailsWhenPointsWereSpentConcurrently() {
         OrderRequest r = request();
         r.setUsePoints(10);
@@ -260,9 +275,11 @@ class OrderServiceTest {
         service.updateStatus(10L, Order.STATUS_COMPLETED);
         assertEquals(10, o.getPointsEarned());
         assertEquals(10, user.getPoints());
+        assertEquals(10, user.getLifetimePoints(), "điểm xét hạng tăng khi đơn hoàn thành");
 
         service.updateStatus(10L, Order.STATUS_COMPLETED);
         assertEquals(10, user.getPoints(), "không được cộng điểm lần 2");
+        assertEquals(10, user.getLifetimePoints(), "không được cộng điểm xét hạng lần 2");
     }
 
     /* ---------- VNPay ---------- */

@@ -51,7 +51,8 @@ public class AccountController {
     @GetMapping("/member")
     public String member(@RequestParam(required = false) String month, Authentication auth, Model model) {
         User u = me(auth);
-        int pts = u.getPoints();
+        // Hạng dựa trên tổng điểm đã kiếm được; số dư đổi thưởng có thể thấp hơn.
+        int pts = orderService.lifetimePointsFor(u);
 
         String rank, nextRank = null;
         int remaining = 0, progress;
@@ -75,6 +76,7 @@ public class AccountController {
         }
 
         model.addAttribute("me", u);
+        model.addAttribute("tierPoints", pts);
         model.addAttribute("rank", rank);
         model.addAttribute("nextRank", nextRank);
         model.addAttribute("remaining", remaining);

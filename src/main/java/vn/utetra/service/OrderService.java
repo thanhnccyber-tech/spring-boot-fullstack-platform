@@ -97,6 +97,29 @@ public class OrderService {
     }
 
     public long getPointValue() { return pointValue; }
+
+    /**
+     * Điểm xét hạng là tổng điểm đã kiếm được, không phải số dư có thể đổi thưởng.
+     * Tự khôi phục cho tài khoản cũ từ lịch sử pointsEarned; dùng max để không làm
+     * mất tiến độ đã lưu và không để số điểm lịch sử thấp hơn số dư cũ.
+     */
+    @Transactional
+    public int lifetimePointsFor(User user) {
+        if (user == null || user.getId() == null) return 0;
+
+        Integer storedValue = user.getLifetimePoints();
+        int stored = storedValue == null ? 0 : Math.max(0, storedValue);
+        Long earnedHistory = orderRepo.sumPointsEarnedByUserId(user.getId());
+        int historical = earnedHistory == null ? 0 : (int) Math.min(Integer.MAX_VALUE, Math.max(0L, earnedHistory));
+        int lifetime = Math.max(Math.max(stored, historical), user.getPoints());
+
+        if (storedValue == null || storedValue != lifetime) {
+            user.setLifetimePoints(lifetime);
+            userRepo.save(user);
+        }
+        return lifetime;
+    }
+
     public boolean isOnlinePaymentEnabled() { return vnPayService.enabled(); }
     public boolean isMomoPaymentEnabled() { return momoService.enabled(); }
 
@@ -390,7 +413,7 @@ public class OrderService {
 
     /* ==================== THANH TOÁN ONLINE ==================== */
 
-    /** Kết quả xử lý thông báo từ VNPay: rspCode theo chuẩn IPN (00 ok, 01 không thấy đơn, 02 đã xác nhận, 04 sai số tiền). */
+    /** Kết quả xử lý thông báo từ VNPay/MoMo: rspCode theo chuẩn IPN (00 ok, 01 không thấy đơn, 02 đã xác nhận, 04 sai số tiền). */
     public record PaymentResult(String rspCode, Order order, boolean success) { }
 
     @Transactional
@@ -433,10 +456,21 @@ public class OrderService {
     }
 
     /** Lấy đơn của chính khách (để tạo lại link thanh toán). */
+    @Transactional(readOnly = true)
     public Order ownedOrder(Long id, String email) {
-        Order o = orderRepo.findById(id).orElseThrow();
-        if (o.getUser() == null || !o.getUser().getEmail().equalsIgnoreCase(email))
-            throw new AccessDeniedException("Không có quyền thao tác đơn hàng này");
+        Order o = orderRepo.findByIdWithUser(id)
+                .orElseThrow(() ->
+                        new NoSuchElementException("Không tìm thấy đơn hàng"));
+
+        User user = o.getUser();
+
+        if (user == null
+                || user.getEmail() == null
+                || !user.getEmail().equalsIgnoreCase(email)) {
+            throw new AccessDeniedException(
+                    "Không có quyền thao tác đơn hàng này");
+        }
+
         return o;
     }
 
@@ -567,13 +601,20 @@ public class OrderService {
     private void awardPointsIfCompleted(Order o) {
         if (!Order.STATUS_COMPLETED.equals(o.getStatus())) return;
         if (o.getPointsEarned() != null || o.getUser() == null) return;
+
+        User u = o.getUser();
+        // Khởi tạo điểm xét hạng trước khi ghi pointsEarned của đơn hiện tại,
+        // để tổng lịch sử không đếm trùng chính đơn này.
+        int lifetimeBefore = lifetimePointsFor(u);
+
         BigDecimal paidGoods = o.getTotalAmount() == null ? BigDecimal.ZERO : o.getTotalAmount();
         if (o.getShippingFee() != null) paidGoods = paidGoods.subtract(o.getShippingFee());
         int pts = (int) Math.max(0, paidGoods.longValue() / POINT_UNIT);
         o.setPointsEarned(pts);
         if (pts > 0) {
-            User u = o.getUser();
+            // Số dư đổi thưởng tăng; điểm xét hạng cũng tăng nhưng không bị trừ khi đổi thưởng.
             u.setLoyaltyPoints(u.getPoints() + pts);
+            u.setLifetimePoints(lifetimeBefore + pts);
             userRepo.save(u);
             saveNotification(o, "Bạn được cộng " + pts + " điểm hội viên cho đơn này.");
         }

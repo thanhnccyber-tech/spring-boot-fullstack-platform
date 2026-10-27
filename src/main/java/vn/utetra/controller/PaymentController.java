@@ -19,10 +19,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Thanh toán online qua VNPay.
- *  - /payment/vnpay/{id}      : khách (đã đăng nhập) được chuyển sang cổng thanh toán
+ * Thanh toán online qua VNPay và MoMo.
+ *  - /payment/vnpay/{id}      : khách (đã đăng nhập) được chuyển sang cổng thanh toán VNPay
  *  - /payment/vnpay-return    : VNPay đưa khách quay lại (công khai, bảo vệ bằng chữ ký)
  *  - /payment/vnpay-ipn       : VNPay báo kết quả server-to-server (công khai, bảo vệ bằng chữ ký)
+ *  - /payment/momo/{id}       : khách được chuyển sang cổng thanh toán MoMo
+ *  - /payment/momo-return     : MoMo đưa khách quay lại
+ *  - /payment/momo-ipn        : MoMo báo kết quả server-to-server
  */
 @Controller
 @RequestMapping("/payment")
@@ -41,7 +44,7 @@ public class PaymentController {
             ra.addFlashAttribute("error", "Đơn này không cần thanh toán online hoặc đã thanh toán.");
             return "redirect:/order/detail/" + id;
         }
-        return "redirect:" + vnPay.buildPaymentUrl(o, req.getRemoteAddr());
+        return "redirect:" + vnPay.buildPaymentUrl(o, VnPayService.clientIp(req));
     }
 
     @GetMapping("/momo/{id}")
@@ -86,6 +89,7 @@ public class PaymentController {
             return "redirect:/order/history";
         }
         if (r.success()) ra.addFlashAttribute("success", "Thanh toán thành công đơn " + r.order().getOrderCode() + ". Cảm ơn bạn!");
+        else if ("24".equals(p.get("vnp_ResponseCode"))) ra.addFlashAttribute("error", "Bạn đã hủy thanh toán VNPay. Đơn vẫn được giữ, bạn có thể thanh toán lại hoặc hủy đơn trong 'Chi tiết đơn'.");
         else ra.addFlashAttribute("error", "Thanh toán chưa hoàn tất. Đơn vẫn được giữ, bạn có thể thanh toán lại trong 'Chi tiết đơn'.");
         return "redirect:/order/detail/" + r.order().getId();
     }

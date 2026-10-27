@@ -73,4 +73,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying
     @Query("UPDATE User u SET u.loyaltyPoints = COALESCE(u.loyaltyPoints, 0) + :p WHERE u.id = :id")
     int addPoints(@Param("id") Long id, @Param("p") int p);
+
+    /** Số tài khoản đã kích hoạt, đăng ký trong khoảng thời gian. */
+    @Query("SELECT COUNT(u) FROM User u WHERE u.enabled = true AND u.createdAt BETWEEN :from AND :to")
+    long countNewBetween(@Param("from") java.time.LocalDateTime from, @Param("to") java.time.LocalDateTime to);
 }

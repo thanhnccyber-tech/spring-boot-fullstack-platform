@@ -20,6 +20,33 @@ public class CartService {
     public static final int MAX_QTY = 50;
     public static final int MAX_CART_ITEMS = 30;
 
+    /** Hai dòng giỏ giống nhau khi cùng món, size, độ ngọt, đá và bộ topping (không phân biệt thứ tự). */
+    public static boolean sameLine(vn.utetra.dto.CartItem a, vn.utetra.dto.CartItem b) {
+        return java.util.Objects.equals(a.getProductId(), b.getProductId())
+                && java.util.Objects.equals(a.getSizeId(), b.getSizeId())
+                && java.util.Objects.equals(a.getSugarId(), b.getSugarId())
+                && java.util.Objects.equals(a.getIceId(), b.getIceId())
+                && toppingSet(a).equals(toppingSet(b));
+    }
+
+    private static java.util.Set<Long> toppingSet(vn.utetra.dto.CartItem c) {
+        return c.getToppingIds() == null ? java.util.Set.of() : new java.util.HashSet<>(c.getToppingIds());
+    }
+
+    /** Thêm vào giỏ: nếu đã có dòng giống hệt thì cộng dồn số lượng, ngược lại thêm dòng mới. Trả về false nếu giỏ đầy. */
+    public static boolean addOrMerge(java.util.List<vn.utetra.dto.CartItem> cart, vn.utetra.dto.CartItem item) {
+        for (vn.utetra.dto.CartItem ex : cart) {
+            if (sameLine(ex, item)) {
+                int q = (ex.getQuantity() == null ? 0 : ex.getQuantity()) + (item.getQuantity() == null ? 1 : item.getQuantity());
+                ex.setQuantity(clampQty(q));
+                return true;
+            }
+        }
+        if (cart.size() >= MAX_CART_ITEMS) return false;
+        cart.add(item);
+        return true;
+    }
+
     @Autowired private ToppingService toppingService;
     @Autowired private SizeService sizeService;
     @Autowired private SugarService sugarService;

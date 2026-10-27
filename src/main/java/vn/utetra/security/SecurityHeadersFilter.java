@@ -15,13 +15,17 @@ import java.io.IOException;
  * CSP cố ý để mở script/style từ https: và inline vì các trang JSP đang dùng
  * CDN (Bootstrap, SockJS...) và script inline. Các chỉ thị còn lại vẫn chặn
  * nhúng trang vào iframe, chèn thẻ base/object và gửi form ra ngoài domain.
+ *
+ * form-action phải liệt kê cổng VNPay: trình duyệt (Chrome/Edge) áp form-action cả lên
+ * các bước redirect sau khi gửi form, nên POST /order/place -> 302 sang VNPay sẽ bị chặn
+ * (nút quay mãi, không tới trang VNPay) nếu thiếu.
  */
 public class SecurityHeadersFilter extends OncePerRequestFilter {
 
     private static final String CSP =
             "default-src 'self' https: data: blob: 'unsafe-inline'; "
           + "connect-src 'self' ws: wss: https:; "
-          + "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+          + "object-src 'none'; base-uri 'self'; form-action 'self' https://sandbox.vnpayment.vn https://pay.vnpay.vn; frame-ancestors 'none'";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

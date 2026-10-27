@@ -148,6 +148,18 @@
             });
         }, 0);
     });
+    // Nếu sau 12 giây trang vẫn chưa chuyển đi (mạng lỗi, bị chặn chuyển hướng...), mở khoá để khách thử lại
+    function unlockAll() {
+        document.querySelectorAll('button[data-locked]').forEach(function (b) {
+            b.disabled = false; b.classList.remove('is-loading'); b.removeAttribute('data-locked');
+            var sp = b.querySelector('.spinner-border'); if (sp) sp.remove();
+        });
+    }
+    document.addEventListener('submit', function (e) {
+        var f = e.target;
+        if (!f || f.tagName !== 'FORM' || f.hasAttribute('data-no-lock') || e.defaultPrevented) return;
+        setTimeout(unlockAll, 12000);
+    });
     // Quay lại bằng nút Back của trình duyệt: mở khoá lại các nút
     window.addEventListener('pageshow', function (ev) {
         if (!ev.persisted) return;
