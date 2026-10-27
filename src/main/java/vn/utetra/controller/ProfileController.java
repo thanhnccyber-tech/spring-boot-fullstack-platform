@@ -24,13 +24,8 @@ public class ProfileController {
     @GetMapping
     public String profile(Authentication auth, Model model) {
         User u = userService.findByEmail(auth.getName()).orElseThrow();
-        // Tài khoản CHỈ có vai trò SHIPPER (không phải khách/nhân viên) → về trang riêng của shipper
-        boolean onlyShipper = u.isShipper()
-                && !u.hasRole(RoleName.USER)
-                && !u.isAdmin() && !u.isManager() && !u.isStaff();
-        if (onlyShipper) {
-            return "redirect:/shipper/profile";
-        }
+        // Shipper cũng là khách hàng: /profile luôn là hồ sơ khách hàng (điểm, hạng, địa chỉ nhận hàng).
+        // Hồ sơ riêng của shipper nằm ở /shipper/profile và có link trong menu tài khoản.
         model.addAttribute("user", u);
         return "user/profile";
     }

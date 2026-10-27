@@ -59,10 +59,10 @@ public class AccountController {
         if (pts >= diamondPoints) {
             rank = "DIAMOND"; progress = 100;
         } else if (pts >= vipPoints) {
-            rank = "VIP"; nextRank = "Diamond"; remaining = diamondPoints - pts;
+            rank = "VIP"; nextRank = "DIAMOND"; remaining = diamondPoints - pts;
             progress = 50 + (int) (50L * (pts - vipPoints) / Math.max(1, diamondPoints - vipPoints));
         } else {
-            rank = "MEMBER"; nextRank = "Vip"; remaining = vipPoints - pts;
+            rank = "MEMBER"; nextRank = "VIP"; remaining = vipPoints - pts;
             progress = (int) (50L * pts / Math.max(1, vipPoints));
         }
 

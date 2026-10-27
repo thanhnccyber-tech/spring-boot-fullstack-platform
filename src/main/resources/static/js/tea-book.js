@@ -208,7 +208,7 @@
   }
 
   function createPayload(page, offset) {
-    const payload = el('div', 'tea-curl-content');
+    const payload = el('div', 'tea-curl-content ' + (page.className || ''));
     payload.style.left = (-offset) + 'px';
     payload.style.width = (pagesSurface.clientWidth / 2) + 'px';
     payload.innerHTML = page.innerHTML;
@@ -243,8 +243,6 @@
       back.appendChild(createPayload(toPage, offsetTo));
       front.appendChild(el('div', 'tea-curl-shade'));
       back.appendChild(el('div', 'tea-curl-shade'));
-      front.appendChild(el('div', 'tea-curl-gloss'));
-      back.appendChild(el('div', 'tea-curl-gloss'));
       strip.append(front, back);
       host.appendChild(strip);
       host = strip;
@@ -323,7 +321,7 @@
     function frame(now) {
       if (activeTurn !== turn) return;
       const progress = Math.min(1, (now - startTime) / duration);
-      const eased = progress * progress * (3 - 2 * progress);
+      const eased = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
       turn.t = startValue + (target - startValue) * eased;
       applyCurl(turn, turn.t);
       if (progress >= 1) finishTurn(target >= 0.999);
@@ -337,7 +335,7 @@
     const turn = prepareTurn(direction);
     if (!turn) return;
     if (reduceMotion) finishTurn(true);
-    else animateTo(1, 860);
+    else animateTo(1, 1000);
   }
 
   prevButton.addEventListener('click', function () { turnByButton('prev'); });

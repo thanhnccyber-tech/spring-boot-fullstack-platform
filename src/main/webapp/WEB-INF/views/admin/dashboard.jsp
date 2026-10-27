@@ -233,7 +233,16 @@ function onRange(v) {
 
 document.addEventListener('DOMContentLoaded', function () {
     const vnd = v => Number(v).toLocaleString('vi-VN') + ' ₫';
-    const moneyScale = { y: { beginAtZero: true, ticks: { callback: v => vnd(v) } } };
+    // Bảng màu biểu đồ nổi bật nhưng vẫn đồng bộ nhận diện UTETra.
+    const chartColors = {
+        navy: '#243B53', blue: '#3B82F6', sky: '#38BDF8', teal: '#14B8A6',
+        green: '#22A06B', coral: '#F06C52', amber: '#F4B942', violet: '#8B5CF6',
+        rose: '#D9465F', slate: '#829AB1'
+    };
+    Chart.defaults.color = '#486581';
+    Chart.defaults.borderColor = 'rgba(72, 101, 129, .16)';
+    Chart.defaults.font.family = '"Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    const moneyScale = { y: { beginAtZero: true, grid: { color: 'rgba(72, 101, 129, .14)' }, ticks: { callback: v => vnd(v) } } };
     const moneyTip = { callbacks: { label: ctx => ctx.dataset.label + ': ' + vnd(ctx.raw) } };
 
     const labelsDay = [<c:forEach items="${labelsDay}" var="l" varStatus="s">"${fn:escapeXml(l)}"<c:if test="${!s.last}">,</c:if></c:forEach>];
@@ -243,19 +252,21 @@ document.addEventListener('DOMContentLoaded', function () {
     new Chart(document.getElementById('dayChart'), {
         type: 'bar',
         data: { labels: labelsDay, datasets: [
-            { label: 'Đã thu', data: dayCollected, backgroundColor: 'rgba(25,135,84,.75)', borderRadius: 4 },
-            { label: 'Dự kiến', data: dayExpected, backgroundColor: 'rgba(255,193,7,.6)', borderRadius: 4 }
+            { label: 'Đã thu', data: dayCollected, backgroundColor: 'rgba(59,130,246,.92)', borderColor: chartColors.blue, borderWidth: 1, borderRadius: 5 },
+            { label: 'Dự kiến', data: dayExpected, backgroundColor: 'rgba(244,185,66,.88)', borderColor: '#D99B16', borderWidth: 1, borderRadius: 5 }
         ]},
         options: { responsive: true, plugins: { tooltip: moneyTip }, scales: moneyScale }
     });
 
-    const statusColors = ['#ffc107', '#0d6efd', '#0dcaf0', '#198754', '#dc3545', '#6c757d'];
+    // Thứ tự màu tương ứng: chờ xác nhận, pha chế, đang giao, hoàn thành, đã hủy, giao thất bại.
+    const statusColors = [chartColors.amber, chartColors.blue, chartColors.teal,
+                          chartColors.green, chartColors.coral, chartColors.rose];
     new Chart(document.getElementById('statusChart'), {
         type: 'doughnut',
         data: {
             labels: [<c:forEach items="${statusLabels}" var="l" varStatus="s">"${fn:escapeXml(l)}"<c:if test="${!s.last}">,</c:if></c:forEach>],
             datasets: [{ data: [<c:forEach items="${statusData}" var="d" varStatus="s">${d}<c:if test="${!s.last}">,</c:if></c:forEach>],
-                         backgroundColor: statusColors, borderWidth: 2 }]
+                         backgroundColor: statusColors, borderColor: '#ffffff', borderWidth: 3, hoverOffset: 8 }]
         },
         options: { responsive: true, plugins: { legend: { position: 'bottom' },
             tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' đơn' } } } }
@@ -266,10 +277,16 @@ document.addEventListener('DOMContentLoaded', function () {
         data: {
             labels: [<c:forEach items="${hourLabels}" var="l" varStatus="s">"${fn:escapeXml(l)}"<c:if test="${!s.last}">,</c:if></c:forEach>],
             datasets: [{ label: 'Số đơn', data: [<c:forEach items="${hourOrders}" var="d" varStatus="s">${d}<c:if test="${!s.last}">,</c:if></c:forEach>],
-                         backgroundColor: 'rgba(13,110,253,.7)', borderRadius: 4 }]
+                         backgroundColor: context => {
+                             const values = context.chart.data.datasets[0].data;
+                             const peak = Math.max(0, ...values.map(Number));
+                             return Number(context.raw) === peak && peak > 0 ? chartColors.coral : 'rgba(59,130,246,.86)';
+                         },
+                         hoverBackgroundColor: chartColors.teal, borderRadius: 5, borderSkipped: false }]
         },
-        options: { responsive: true, plugins: { legend: { display: false } },
-                   scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+        options: { responsive: true, plugins: { legend: { display: false },
+                   tooltip: { callbacks: { label: ctx => 'Số đơn: ' + ctx.raw } } },
+                   scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: 'rgba(72, 101, 129, .14)' }, ticks: { precision: 0 } } } }
     });
 
     new Chart(document.getElementById('payChart'), {
@@ -277,7 +294,8 @@ document.addEventListener('DOMContentLoaded', function () {
         data: {
             labels: [<c:forEach items="${payLabels}" var="l" varStatus="s">"${fn:escapeXml(l)}"<c:if test="${!s.last}">,</c:if></c:forEach>],
             datasets: [{ data: [<c:forEach items="${payTotals}" var="d" varStatus="s">${d}<c:if test="${!s.last}">,</c:if></c:forEach>],
-                         backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#6c757d', '#dc3545'] }]
+                         backgroundColor: [chartColors.blue, chartColors.teal, chartColors.amber, chartColors.coral, chartColors.violet],
+                         borderColor: '#ffffff', borderWidth: 3, hoverOffset: 7 }]
         },
         options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } },
             tooltip: { callbacks: { label: ctx => ctx.label + ': ' + vnd(ctx.raw) } } } }
@@ -289,9 +307,9 @@ document.addEventListener('DOMContentLoaded', function () {
             labels: [<c:forEach items="${labels12}" var="l" varStatus="s">"${fn:escapeXml(l)}"<c:if test="${!s.last}">,</c:if></c:forEach>],
             datasets: [
                 { label: 'Đã thu', data: [<c:forEach items="${data12Collected}" var="d" varStatus="s">${d}<c:if test="${!s.last}">,</c:if></c:forEach>],
-                  borderColor: 'rgba(25,135,84,1)', backgroundColor: 'rgba(25,135,84,.2)', fill: true, tension: .3, borderWidth: 3, pointRadius: 4 },
+                  borderColor: chartColors.blue, backgroundColor: 'rgba(59,130,246,.14)', fill: true, tension: .3, borderWidth: 3, pointRadius: 4, pointHoverRadius: 6 },
                 { label: 'Dự kiến', data: [<c:forEach items="${data12Expected}" var="d" varStatus="s">${d}<c:if test="${!s.last}">,</c:if></c:forEach>],
-                  borderColor: 'rgba(255,193,7,1)', backgroundColor: 'rgba(255,193,7,0)', tension: .3, borderWidth: 2, borderDash: [6, 4], pointRadius: 3 }
+                  borderColor: chartColors.coral, backgroundColor: 'rgba(240,108,82,.05)', tension: .3, borderWidth: 3, borderDash: [7, 4], pointRadius: 3, pointHoverRadius: 5 }
             ]
         },
         options: { responsive: true, plugins: { tooltip: moneyTip }, scales: moneyScale }

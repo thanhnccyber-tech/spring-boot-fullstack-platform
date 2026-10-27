@@ -153,7 +153,7 @@
 
 /* Curled leaf: the page is divided into nested 3D strips so it bows and shades while turning. */
 .tea-book-curl-host { position:absolute; inset:0; z-index:10; overflow:visible; pointer-events:none; }
-.tea-book-curl { position:absolute; top:0; height:100%; width:calc(var(--bw, 0px) * var(--span, .449)); transform-style:preserve-3d; z-index:7; }
+.tea-book-curl { will-change:transform; position:absolute; top:0; height:100%; width:calc(var(--bw, 0px) * var(--span, .449)); transform-style:preserve-3d; z-index:7; }
 .tea-book-curl.next { left:50%; transform-origin:left center; transform:rotateY(calc(-1 * var(--tt, 0deg))); }
 .tea-book-curl.prev { right:50%; transform-origin:right center; transform:rotateY(var(--tt, 0deg)); }
 .tea-book-strip { position:absolute; top:0; height:100%; width:calc(var(--bw, 0px) * var(--span, .449) / var(--n, 18)); transform-style:preserve-3d; }
@@ -163,14 +163,14 @@
 .tea-book-curl.prev > .tea-book-strip { right:0; left:auto; }
 .tea-book-curl.next .tea-book-strip .tea-book-strip { left:100%; transform:rotateY(var(--td, 0deg)); }
 .tea-book-curl.prev .tea-book-strip .tea-book-strip { right:100%; transform:rotateY(calc(-1 * var(--td, 0deg))); }
-.tea-curl-face { position:absolute; top:0; bottom:0; left:0; right:-1px; overflow:hidden; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:linear-gradient(90deg,#f5ead8,#fff9ed 50%,#eee0c7); transform-style:preserve-3d; }
+.tea-curl-face { position:absolute; top:0; bottom:0; left:0; right:-2px; overflow:hidden; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:#fbf4e4; transform-style:preserve-3d; }
 .tea-curl-face.back { transform:rotateY(180deg); }
-.tea-curl-content { position:absolute; top:0; left:0; width:calc(var(--bw, 0px) * .5); height:100%; overflow:hidden; }
+.tea-curl-content { position:absolute; top:0; left:0; margin:0; border:0; width:calc(var(--bw, 0px) * .5); height:100%; overflow:hidden; }
 .tea-curl-content > * { width:100%; height:100%; }
 .tea-curl-shade { position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; opacity:calc(var(--shade,0) * .6); }
 .tea-book-curl.next .tea-curl-face.front .tea-curl-shade,.tea-book-curl.prev .tea-curl-face.back .tea-curl-shade { background:linear-gradient(90deg,rgba(48,35,20,var(--a1,0)),rgba(48,35,20,var(--a2,0))); }
 .tea-book-curl.next .tea-curl-face.back .tea-curl-shade,.tea-book-curl.prev .tea-curl-face.front .tea-curl-shade { background:linear-gradient(90deg,rgba(48,35,20,var(--a2,0)),rgba(48,35,20,var(--a1,0))); }
-.tea-book-curl .tea-curl-gloss { position:absolute; inset:0; pointer-events:none; opacity:calc(var(--shade,0) * var(--lit,1) * .15); background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.85),rgba(255,255,255,0)); }
+.tea-book-curl .tea-curl-gloss { display:none; }
 .tea-book-curl .tea-book-strip:last-child .tea-curl-face { box-shadow:inset 0 0 5px rgba(65,48,29,.13); }
 .tea-book-pages.is-turning { --tb-static-shadow: .8; }
 

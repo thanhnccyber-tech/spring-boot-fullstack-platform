@@ -16,11 +16,11 @@
 <link rel="stylesheet"
 	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/static/css/admin.css">
+	href="${pageContext.request.contextPath}/static/css/admin.css?v=20261028-logo-transparent">
 <sitemesh:write property="head" />
 <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/typography-loader.css">
 </head>
-<body>
+<body class="admin-theme">
 <div id="uteSiteLoader" class="ute-site-loader" role="status" aria-live="polite" aria-label="Đang tải trang UTETra">
   <div class="ute-site-loader__inner">
     <img class="ute-site-loader__logo" src="${pageContext.request.contextPath}/static/images/utetra-logo.png" alt="UTETra" width="340" height="207" fetchpriority="high">
@@ -33,22 +33,14 @@
 
 	<div class="d-flex" style="min-height: 100vh;">
 		<!-- Sidebar: Cố định chiều rộng 260px, luôn sticky, tự cuộn nếu menu dài -->
-		<aside class="text-white p-3"
-			style="width: 260px; min-width: 260px; flex-shrink: 0; background: #0f172a; position: sticky; top: 0; height: 100vh; overflow-y: auto;">
-			<div class="d-flex align-items-center gap-2 mb-4 mt-1 px-2">
-				<div
-					style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); display: flex; align-items: center; justify-content: center">
-					<i class="fas fa-mug-hot text-white"></i>
-				</div>
-				<div>
-					<div
-						style="font-weight: 800; font-size: 1.1rem; letter-spacing: -.02em">UTETra</div>
-					<div
-						style="font-size: .7rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em">Admin
-						Panel</div>
-				</div>
+		<aside class="ute-admin-sidebar text-white p-3">
+			<div class="ute-admin-brand mb-4 mt-1">
+				<a class="ute-admin-brand__link" href="${pageContext.request.contextPath}/admin/dashboard" aria-label="UTETra - Trang quản trị">
+					<img class="ute-admin-brand__logo" src="${pageContext.request.contextPath}/static/images/utetra-logo.png" alt="UTETra - Tea for you" width="166" height="101">
+				</a>
+				<div class="ute-admin-brand__caption">QUẢN TRỊ HỆ THỐNG</div>
 			</div>
-			<hr style="border-color: rgba(255, 255, 255, .08)" />
+			<hr class="ute-admin-divider" />
 			<ul class="nav flex-column">
 				<c:if test="${sessionScope.roles.contains('ROLE_ADMIN')}">
 					<li><a class="nav-link text-white"
@@ -133,10 +125,10 @@
 		</aside>
 
 		<!-- Nội dung chính: Cho phép co giãn lấp đầy khoảng trống còn lại -->
-		<div class="flex-grow-1" style="min-width: 0; overflow-x: hidden;">
+		<div class="ute-admin-main flex-grow-1" style="min-width: 0; overflow-x: hidden;">
 			<header
-				class="bg-white p-3 d-flex justify-content-between align-items-center sticky-top">
-				<h5 class="mb-0">
+				class="ute-admin-topbar p-3 d-flex justify-content-between align-items-center sticky-top">
+				<h5 class="ute-admin-page-title mb-0">
 					<sitemesh:write property="title" />
 				</h5>
 				<div class="d-flex align-items-center">
@@ -164,7 +156,7 @@
 					<span class="text-muted small">Xin chào, <b>${fn:escapeXml(sessionScope.fullName)}</b></span>
 				</div>
 			</header>
-			<div class="p-4">
+			<div class="ute-admin-content p-4">
 				<sitemesh:write property="body" />
 			</div>
 		</div>

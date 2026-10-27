@@ -32,7 +32,8 @@
     </div>
 </div>
 
-<%-- ===== Cập nhật thông tin ===== --%>
+<%-- ===== Hồ sơ và bảo mật: hai cột cân đối trên màn hình lớn ===== --%>
+<div class="sh-profile-grid">
 <div class="sh-card sh-card-pad mb-3">
     <div class="sh-section-label"><i class="fas fa-id-card"></i> Cập nhật thông tin</div>
     <form action="${ctx}/shipper/profile/update" method="post" enctype="multipart/form-data">
@@ -92,6 +93,7 @@
             <i class="fas fa-key"></i> Đổi mật khẩu
         </button>
     </form>
+</div>
 </div>
 
 <script>

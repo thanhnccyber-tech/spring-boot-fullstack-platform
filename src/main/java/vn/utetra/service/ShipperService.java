@@ -69,6 +69,11 @@ public class ShipperService {
         return u.getBranch() == null ? null : u.getBranch().getId();
     }
 
+    /** Shipper cũng có thể là khách hàng: không được tự nhận giao đơn do chính mình đặt. */
+    private static boolean isOwnPurchase(Order o, User me) {
+        return o.getUser() != null && me.getId() != null && me.getId().equals(o.getUser().getId());
+    }
+
     private static boolean isMine(Order o, User me) {
         return o.getShipper() != null && o.getShipper().getId().equals(me.getId());
     }
@@ -84,6 +89,7 @@ public class ShipperService {
                 && (Order.STATUS_PREPARING.equals(o.getStatus())
                     || Order.STATUS_READY.equals(o.getStatus()))
                 && sameBranch(o, me)
+                && !isOwnPurchase(o, me)
                 && (o.getShipper() == null || isMine(o, me));
     }
 

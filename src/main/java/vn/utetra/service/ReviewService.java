@@ -23,8 +23,6 @@ import java.util.Optional;
 @Service
 public class ReviewService {
 
-    private static final int MAX_COMMENT = 1000;
-
     @Autowired private ReviewRepository reviewRepo;
     @Autowired private ProductRepository productRepo;
     @Autowired private OrderDetailRepository orderDetailRepo;
@@ -77,11 +75,8 @@ public class ReviewService {
         if (rating == null || rating < 1 || rating > 5)
             throw new IllegalArgumentException("Vui lòng chọn số sao từ 1 đến 5.");
 
+        // Nội dung cảm nhận không bắt buộc và không giới hạn số ký tự; chỉ cần chọn số sao.
         String text = comment == null ? "" : comment.trim();
-        if (text.length() < 50)
-            throw new IllegalArgumentException("Bình luận đánh giá cần ít nhất 50 ký tự.");
-        if (text.length() > MAX_COMMENT)
-            throw new IllegalArgumentException("Bình luận tối đa " + MAX_COMMENT + " ký tự.");
 
         fileValidator.validateReviewMedia(media);
         Product product = productRepo.findById(productId)

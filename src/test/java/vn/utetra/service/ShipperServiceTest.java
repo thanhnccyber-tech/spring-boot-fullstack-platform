@@ -109,6 +109,25 @@ class ShipperServiceTest {
     }
 
     @Test
+    void acceptRejectedForOrderPlacedByTheShipperHimself() {
+        // Shipper cũng là khách hàng: không được tự nhận đơn mình đặt
+        order.setUser(shipper);
+
+        assertThrows(IllegalArgumentException.class, () -> service.accept(100L, "ship@utetra.vn"));
+        verify(orderService, never()).updateStatus(anyLong(), anyString());
+        assertNull(order.getShipper());
+    }
+
+    @Test
+    void acceptStillAllowedForOrderPlacedByAnotherCustomer() {
+        order.setUser(otherShipper);
+
+        service.accept(100L, "ship@utetra.vn");
+
+        assertSame(shipper, order.getShipper());
+    }
+
+    @Test
     void acceptAllowedWhenAdminAssignedThisShipper() {
         order.setShipper(shipper);
 

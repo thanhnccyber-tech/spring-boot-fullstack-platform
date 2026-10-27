@@ -37,6 +37,7 @@ public interface ShipperOrderRepository extends JpaRepository<Order, Long> {
            "AND o.status IN ('PREPARING', 'READY') " +
            "AND o.branch.id = :branchId " +
            "AND (o.shipper IS NULL OR o.shipper.id = :shipperId) " +
+           "AND (o.user IS NULL OR o.user.id <> :shipperId) " +
            "ORDER BY o.createdAt ASC")
     List<Order> findAvailable(@Param("branchId") Long branchId,
                               @Param("shipperId") Long shipperId);

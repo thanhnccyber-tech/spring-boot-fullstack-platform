@@ -11,27 +11,46 @@
     </div>
     <div class="col-lg-8 col-xl-9">
 
-        <div class="member-banner">
+        <section class="member-banner" aria-labelledby="memberRankTitle">
             <div class="member-panel">
-                <h5 class="mb-3">Hạng thành viên: <b class="text-capitalize">${fn:escapeXml(fn:toLowerCase(rank))}</b></h5>
-                <div class="rank-bar">
+                <div class="member-progress-heading">
+                    <div>
+                        <div class="member-eyebrow"><i class="fas fa-medal"></i> HỘI VIÊN UTETRA</div>
+                        <h5 id="memberRankTitle" class="mb-1">Hạng thành viên: <b class="member-rank-label rank-${fn:escapeXml(fn:toLowerCase(rank))}">${fn:escapeXml(rank)}</b></h5>
+                        <div class="member-progress-subtitle">Tích lũy qua các đơn hàng hoàn thành để nâng hạng</div>
+                    </div>
+                    <div class="member-total-points">
+                        <strong>${fn:escapeXml(tierPoints)}</strong>
+                        <span>điểm xét hạng</span>
+                    </div>
+                </div>
+                <div class="rank-bar" role="progressbar" aria-label="Tiến độ nâng hạng" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${fn:escapeXml(progress)}">
                     <div class="rank-fill" style="width:${fn:escapeXml(progress)}%"></div>
-                    <span class="rank-dot" style="left:0"></span>
-                    <span class="rank-dot" style="left:50%"></span>
-                    <span class="rank-dot" style="left:100%"></span>
+                    <span class="rank-dot ${tierPoints >= 0 ? 'reached' : ''}" style="left:0"><i class="fas fa-check"></i></span>
+                    <span class="rank-dot ${tierPoints >= vipPoints ? 'reached' : ''}" style="left:50%"><i class="fas fa-star"></i></span>
+                    <span class="rank-dot ${tierPoints >= diamondPoints ? 'reached' : ''}" style="left:100%"><i class="fas fa-crown"></i></span>
                 </div>
-                <div class="d-flex justify-content-between small fw-bold mb-3">
-                    <span class="${fn:escapeXml(rank == 'MEMBER' ? 'text-success' : 'text-muted')}">MEMBER</span>
-                    <span class="${fn:escapeXml(rank == 'VIP' ? 'text-success' : 'text-muted')}">VIP (${fn:escapeXml(vipPoints)} điểm)</span>
-                    <span class="${fn:escapeXml(rank == 'DIAMOND' ? 'text-success' : 'text-muted')}">DIAMOND (${fn:escapeXml(diamondPoints)} điểm)</span>
+                <div class="rank-milestones">
+                    <div class="rank-milestone ${rank == 'MEMBER' ? 'current' : (tierPoints >= 0 ? 'reached' : '')}">
+                        <b>MEMBER</b><span>0 điểm</span>
+                    </div>
+                    <div class="rank-milestone text-center ${rank == 'VIP' ? 'current' : (tierPoints >= vipPoints ? 'reached' : '')}">
+                        <b>VIP</b><span>${fn:escapeXml(vipPoints)} điểm</span>
+                    </div>
+                    <div class="rank-milestone text-end ${rank == 'DIAMOND' ? 'current' : (tierPoints >= diamondPoints ? 'reached' : '')}">
+                        <b>DIAMOND</b><span>${fn:escapeXml(diamondPoints)} điểm</span>
+                    </div>
                 </div>
-                <c:choose>
-                    <c:when test="${not empty nextRank}">Tích thêm <b class="text-success">${fn:escapeXml(remaining)}</b> điểm nữa để lên hạng <b class="text-success">${fn:escapeXml(nextRank)}</b></c:when>
-                    <c:otherwise>Bạn đang ở hạng cao nhất. Cảm ơn bạn đã đồng hành cùng UTeTra!</c:otherwise>
-                </c:choose>
-                <div class="small text-white-50 mt-2">Tổng điểm xét hạng: <b>${fn:escapeXml(tierPoints)}</b>. Điểm đã dùng để giảm giá không làm giảm tiến độ này.</div>
+                <div class="member-next-rank">
+                    <i class="fas fa-bullseye"></i>
+                    <c:choose>
+                        <c:when test="${not empty nextRank}">Tích thêm <b>${fn:escapeXml(remaining)} điểm</b> để đạt hạng <b>${fn:escapeXml(nextRank)}</b>.</c:when>
+                        <c:otherwise>Chúc mừng! Bạn đã đạt hạng cao nhất của UTeTra.</c:otherwise>
+                    </c:choose>
+                    <span>Điểm đã dùng đổi ưu đãi không làm giảm tiến độ xét hạng.</span>
+                </div>
             </div>
-        </div>
+        </section>
 
         <div class="row g-3 mt-1">
             <div class="col-md-6">

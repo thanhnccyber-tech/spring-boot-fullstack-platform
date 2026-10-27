@@ -44,8 +44,10 @@
         <form class="header-search" action="${ctx}/products" method="get" role="search">
             <i class="fas fa-search"></i>
             <input type="text" name="kw" maxlength="100" value="${fn:escapeXml(param.kw)}"
-                   placeholder="Bạn muốn uống gì hôm nay..." aria-label="Tìm sản phẩm" autocomplete="off">
-            <div class="search-suggest" id="searchSuggest" hidden role="listbox"></div>
+                   placeholder="Bạn muốn uống gì hôm nay..." aria-label="Tìm sản phẩm" aria-autocomplete="list"
+                   aria-controls="searchSuggest" aria-expanded="false" autocomplete="off">
+            <button type="button" class="header-search-clear" id="searchInputClear" aria-label="Xóa từ khóa tìm kiếm" hidden>×</button>
+            <div class="search-suggest" id="searchSuggest" hidden role="listbox" aria-label="Gợi ý tìm kiếm"></div>
         </form>
 
         <span class="ms-auto"></span>
@@ -64,7 +66,10 @@
 
         <c:choose>
             <c:when test="${not empty sessionScope.userId}">
-                <a class="icon-btn" href="${ctx}/notifications" title="Thông báo"><i class="fas fa-bell"></i></a>
+                <button type="button" class="icon-btn notification-trigger" id="notificationBell" title="Thông báo" aria-label="Mở thông báo" aria-controls="notificationDrawer" aria-expanded="false">
+                    <i class="fas fa-bell"></i>
+                    <c:if test="${notificationDrawer.unread > 0}"><span class="ute-notification-badge" id="notificationUnreadBadge">${fn:escapeXml(notificationDrawer.unread > 99 ? '99+' : notificationDrawer.unread)}</span></c:if>
+                </button>
                 <div class="dropdown">
                     <a class="icon-btn" href="#" data-bs-toggle="dropdown" title="Tài khoản"><i class="fas fa-user-circle"></i></a>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -83,7 +88,7 @@
                         </c:if>
                         <c:if test="${sessionScope.roles.contains('ROLE_SHIPPER')}">
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="${ctx}/shipper/dashboard"><i class="fas fa-truck"></i> Giao hàng</a></li>
+                            <li><a class="dropdown-item fw-semibold" href="${ctx}/shipper/dashboard"><i class="fas fa-motorcycle"></i> Chế độ Shipper · Nhận đơn giao</a></li>
                         </c:if>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="${ctx}/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
@@ -130,6 +135,52 @@
         </div>
     </nav>
 </header>
+
+<c:if test="${not empty sessionScope.userId}">
+<div class="ute-notification-backdrop" id="notificationBackdrop" hidden></div>
+<aside class="ute-notification-drawer" id="notificationDrawer" aria-label="Thông báo UTETra" aria-hidden="true" hidden>
+    <div class="ute-notification-head">
+        <div>
+            <h5><i class="fas fa-bell"></i> Thông báo</h5>
+            <p>Tin mới nhất về ưu đãi và đơn hàng của bạn</p>
+        </div>
+        <button type="button" class="ute-notification-close" id="notificationClose" aria-label="Đóng thông báo"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="ute-notification-tabs" role="tablist" aria-label="Nhóm thông báo">
+        <button type="button" class="active" role="tab" aria-selected="true" data-notification-tab="news"><i class="fas fa-bullhorn"></i> TIN TỨC <span>${fn:length(notificationDrawer.news)}</span></button>
+        <button type="button" role="tab" aria-selected="false" data-notification-tab="orders"><i class="fas fa-receipt"></i> ĐƠN HÀNG <span>${fn:length(notificationDrawer.orders)}</span></button>
+    </div>
+    <div class="ute-notification-list" data-notification-panel="news" role="tabpanel">
+        <c:forEach items="${notificationDrawer.news}" var="n">
+            <article class="ute-notification-item ${n.isRead ? '' : 'unread'}">
+                <div class="ute-notification-icon ${n.type == 'VOUCHER' ? 'voucher' : 'news'}"><i class="fas ${n.type == 'VOUCHER' ? 'fa-ticket' : 'fa-bell'}"></i></div>
+                <div class="ute-notification-copy">
+                    <div class="ute-notification-item-title">${fn:escapeXml(n.title)}</div>
+                    <p>${fn:escapeXml(n.content)}</p>
+                    <time>${fn:escapeXml(n.createdAtFormatted)}</time>
+                    <c:if test="${n.type == 'VOUCHER'}"><a href="${ctx}/account/vouchers" class="ute-notification-action">Xem ưu đãi <i class="fas fa-arrow-right"></i></a></c:if>
+                </div>
+            </article>
+        </c:forEach>
+        <c:if test="${empty notificationDrawer.news}"><div class="ute-notification-empty"><i class="fas fa-inbox"></i><b>Chưa có tin tức</b><span>Thông báo voucher và ưu đãi sẽ xuất hiện tại đây.</span></div></c:if>
+    </div>
+    <div class="ute-notification-list" data-notification-panel="orders" role="tabpanel" hidden>
+        <c:forEach items="${notificationDrawer.orders}" var="n">
+            <article class="ute-notification-item ${n.isRead ? '' : 'unread'}">
+                <div class="ute-notification-icon order"><i class="fas fa-motorcycle"></i></div>
+                <div class="ute-notification-copy">
+                    <div class="ute-notification-item-title">${fn:escapeXml(n.title)}</div>
+                    <p>${fn:escapeXml(n.content)}</p>
+                    <time>${fn:escapeXml(n.createdAtFormatted)}</time>
+                    <a href="${ctx}/order/history" class="ute-notification-action">Xem đơn hàng <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </article>
+        </c:forEach>
+        <c:if test="${empty notificationDrawer.orders}"><div class="ute-notification-empty"><i class="fas fa-receipt"></i><b>Chưa có thông báo đơn hàng</b><span>Cập nhật về đơn hàng sẽ xuất hiện tại đây.</span></div></c:if>
+    </div>
+    <div class="ute-notification-footer"><a href="${ctx}/notifications">Xem tất cả thông báo <i class="fas fa-arrow-right"></i></a></div>
+</aside>
+</c:if>
 
 <!-- ============ Modal chọn cách nhận hàng ============ -->
 <div class="modal fade" id="receiveModal" tabindex="-1" aria-hidden="true">

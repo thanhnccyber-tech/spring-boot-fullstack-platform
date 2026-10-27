@@ -4,12 +4,14 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions"%>
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:set var="uri" value="${pageContext.request.requestURI}" />
+<c:set var="cartCount" value="0" />
+<c:forEach items="${sessionScope.CART}" var="ci"><c:set var="cartCount" value="${cartCount + ci.quantity}" /></c:forEach>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#ffffff">
 <title><sitemesh:write property="title" /> - UTETra Shipper</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,18 +38,14 @@
 	<!-- ===== Top Bar ===== -->
 	<header class="sh-topbar">
 		<div class="sh-topbar-inner">
-			<a href="${ctx}/shipper/dashboard" class="sh-brand">
-				<div class="sh-brand-icon">
-					<i class="fas fa-motorcycle"></i>
-				</div>
-				<div class="sh-brand-label">
-					UTETra <small>SHIPPER</small>
-				</div>
+			<a href="${ctx}/shipper/dashboard" class="sh-brand" aria-label="UTETra Shipper - Đơn hàng">
+				<img class="sh-brand-logo" src="${ctx}/static/images/utetra-logo.png" alt="UTETra" width="76" height="46">
+				<span class="sh-brand-tag"><i class="fas fa-motorcycle"></i> Shipper</span>
 			</a>
 
 			<nav class="sh-topnav">
 				<a href="${ctx}/shipper/dashboard"
-					class="${fn:contains(uri, '/shipper/dashboard') ? 'active' : ''}">
+					class="${fn:contains(uri, '/shipper/dashboard') or fn:contains(uri, '/shipper/orders') ? 'active' : ''}">
 					<i class="fas fa-box-open"></i> Đơn hàng
 				</a> <a href="${ctx}/shipper/history"
 					class="${fn:contains(uri, '/shipper/history') ? 'active' : ''}">
@@ -58,35 +56,66 @@
 				</a>
 			</nav>
 
-			<div class="dropdown">
-				<button class="sh-user-btn" type="button" data-bs-toggle="dropdown"
-					aria-expanded="false" aria-label="Menu tài khoản">
-					<span class="sh-user-name">${fn:escapeXml(sessionScope.fullName)}</span>
-					<span class="sh-user-avatar">${fn:escapeXml(fn:substring(sessionScope.fullName, 0, 1))}</span>
-					<i class="fas fa-chevron-down sh-user-caret"></i>
-				</button>
-				<ul class="dropdown-menu dropdown-menu-end sh-user-menu">
-					<li class="sh-user-menu-head">
-						<div class="sh-user-menu-avatar">${fn:escapeXml(fn:substring(sessionScope.fullName, 0, 1))}</div>
-						<div class="sh-user-menu-info">
-							<div class="sh-user-menu-name">${fn:escapeXml(sessionScope.fullName)}</div>
-							<div class="sh-user-menu-role">
-								<i class="fas fa-motorcycle"></i> Shipper
+			<div class="sh-topbar-right">
+				<%-- Shipper cũng là khách hàng: chuyển nhanh giữa hai chế độ --%>
+				<div class="sh-mode" role="group" aria-label="Chuyển chế độ">
+					<a href="${ctx}/shipper/dashboard" class="on" aria-current="page"><i class="fas fa-motorcycle"></i> <span>Giao hàng</span></a>
+					<a href="${ctx}/" title="Mua sắm như một khách hàng"><i class="fas fa-mug-hot"></i> <span>Mua sắm</span></a>
+				</div>
+
+				<a class="sh-icon-btn d-none d-sm-inline-flex" href="${ctx}/cart" title="Giỏ hàng" aria-label="Giỏ hàng">
+					<i class="fas fa-shopping-cart"></i>
+					<c:if test="${cartCount > 0}"><span class="sh-icon-badge">${fn:escapeXml(cartCount)}</span></c:if>
+				</a>
+
+				<div class="dropdown">
+					<button class="sh-user-btn" type="button" data-bs-toggle="dropdown"
+						aria-expanded="false" aria-label="Menu tài khoản">
+						<span class="sh-user-name">${fn:escapeXml(sessionScope.fullName)}</span>
+						<span class="sh-user-avatar">${fn:escapeXml(fn:substring(sessionScope.fullName, 0, 1))}</span>
+						<i class="fas fa-chevron-down sh-user-caret"></i>
+					</button>
+					<ul class="dropdown-menu dropdown-menu-end sh-user-menu">
+						<li class="sh-user-menu-head">
+							<div class="sh-user-menu-avatar">${fn:escapeXml(fn:substring(sessionScope.fullName, 0, 1))}</div>
+							<div class="sh-user-menu-info">
+								<div class="sh-user-menu-name">${fn:escapeXml(sessionScope.fullName)}</div>
+								<div class="sh-user-menu-role">
+									<i class="fas fa-motorcycle"></i> Shipper · <i class="fas fa-id-card"></i> Khách hàng
+								</div>
 							</div>
-						</div>
-					</li>
-					<li><hr class="dropdown-divider"></li>
-					<li><a class="dropdown-item" href="${ctx}/shipper/profile"> <i
-							class="fas fa-user-circle"></i> Thông tin cá nhân
-					</a></li>
-					<li><a class="dropdown-item" href="${ctx}/shipper/history">
-							<i class="fas fa-clock-rotate-left"></i> Lịch sử giao hàng
-					</a></li>
-					<li><hr class="dropdown-divider"></li>
-					<li><a class="dropdown-item text-danger" href="${ctx}/logout">
-							<i class="fas fa-right-from-bracket"></i> Đăng xuất
-					</a></li>
-				</ul>
+						</li>
+						<li><hr class="dropdown-divider"></li>
+						<li><h6 class="dropdown-header">Giao hàng</h6></li>
+						<li><a class="dropdown-item" href="${ctx}/shipper/profile"> <i
+								class="fas fa-user-circle"></i> Hồ sơ shipper
+						</a></li>
+						<li><a class="dropdown-item" href="${ctx}/shipper/history">
+								<i class="fas fa-clock-rotate-left"></i> Lịch sử giao hàng
+						</a></li>
+						<li><hr class="dropdown-divider"></li>
+						<li><h6 class="dropdown-header">Mua sắm</h6></li>
+						<li><a class="dropdown-item sh-menu-switch" href="${ctx}/products">
+								<i class="fas fa-mug-hot"></i> Đặt đồ uống
+						</a></li>
+						<li><a class="dropdown-item" href="${ctx}/order/history">
+								<i class="fas fa-receipt"></i> Đơn hàng của tôi
+						</a></li>
+						<li><a class="dropdown-item" href="${ctx}/account/vouchers">
+								<i class="fas fa-ticket"></i> Ưu đãi của tôi
+						</a></li>
+						<li><a class="dropdown-item" href="${ctx}/profile">
+								<i class="fas fa-id-badge"></i> Tài khoản khách hàng
+						</a></li>
+						<li><a class="dropdown-item" href="${ctx}/notifications">
+								<i class="fas fa-bell"></i> Thông báo
+						</a></li>
+						<li><hr class="dropdown-divider"></li>
+						<li><a class="dropdown-item text-danger" href="${ctx}/logout">
+								<i class="fas fa-right-from-bracket"></i> Đăng xuất
+						</a></li>
+					</ul>
+				</div>
 			</div>
 		</div>
 	</header>
@@ -106,10 +135,15 @@
 		<sitemesh:write property="body" />
 	</main>
 
+    <footer class="sh-footer">
+        <span><i class="fas fa-mug-hot"></i> UTETra</span>
+        <span>Đồng hành cùng bạn trên mỗi chuyến giao hàng</span>
+    </footer>
+
 	<!-- ===== Bottom Nav (mobile) ===== -->
 	<nav class="sh-bottom-nav">
 		<a href="${ctx}/shipper/dashboard"
-			class="sh-nav-item ${fn:contains(uri, '/shipper/dashboard') ? 'active' : ''}">
+			class="sh-nav-item ${fn:contains(uri, '/shipper/dashboard') or fn:contains(uri, '/shipper/orders') ? 'active' : ''}">
 			<i class="fas fa-box-open"></i> <span>Đơn hàng</span>
 		</a> <a href="${ctx}/shipper/history"
 			class="sh-nav-item ${fn:contains(uri, '/shipper/history') ? 'active' : ''}">
@@ -117,6 +151,8 @@
 		</a> <a href="${ctx}/shipper/stats"
 			class="sh-nav-item ${fn:contains(uri, '/shipper/stats') ? 'active' : ''}">
 			<i class="fas fa-chart-column"></i> <span>Thống kê</span>
+		</a> <a href="${ctx}/" class="sh-nav-item">
+			<i class="fas fa-mug-hot"></i> <span>Mua sắm</span>
 		</a> <a href="${ctx}/shipper/profile"
 			class="sh-nav-item ${fn:contains(uri, '/shipper/profile') ? 'active' : ''}">
 			<i class="fas fa-user-circle"></i> <span>Tài khoản</span>
