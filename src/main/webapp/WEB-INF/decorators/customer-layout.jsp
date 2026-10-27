@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/brand-theme.css">
     <sitemesh:write property="head"/>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/typography-loader.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/typography-loader.css">
 </head>
 <body data-ctx="${pageContext.request.contextPath}" class="${fn:endsWith(pageContext.request.requestURI, '/home') or fn:endsWith(pageContext.request.requestURI, '/') ? 'ute-home-body' : ''}">
 <div id="uteSiteLoader" class="ute-site-loader" role="status" aria-live="polite" aria-label="Đang tải trang UTETra">
@@ -215,7 +215,7 @@
 <!-- Nút nổi -->
 <div class="float-actions">
     <a class="float-btn float-cart" href="${ctx}/cart" title="Giỏ hàng" aria-label="Giỏ hàng">
-        <i class="fas fa-cart-shopping"></i>
+        <i class="fas fa-shopping-cart"></i>
         <span class="float-badge" id="cartBadge">${fn:escapeXml(cartCount)}</span>
     </a>
     <a class="float-btn float-call" href="tel:0968523156" title="Gọi hotline 0968 523 156" aria-label="Gọi hotline"><i class="fas fa-phone"></i></a>
