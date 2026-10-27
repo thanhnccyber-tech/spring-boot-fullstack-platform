@@ -29,7 +29,7 @@ body.ute-home-body .ute-home-main > .alert { width: min(1180px, calc(100% - 32px
     padding: clamp(32px, 5vw, 70px) 0 clamp(72px, 7vw, 100px);
     overflow: hidden;
     color: var(--ute-home-ink);
-    background: linear-gradient(90deg, rgba(248,250,252,0.9), rgba(255,255,255,0.95)), url("../images/tea-book/bg.png") center 48% / cover no-repeat;
+    background: linear-gradient(90deg, rgba(248,250,252,0.6), rgba(255,255,255,0.8)), url("../images/tea-book/bg.png") center 48% / cover no-repeat;
     border-bottom: 1px solid #e2e8f0;
 }
 .ute-home-banner::after {
@@ -38,7 +38,7 @@ body.ute-home-body .ute-home-main > .alert { width: min(1180px, calc(100% - 32px
     z-index: -1;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(ellipse at 68% 48%, rgba(255, 255, 255, .8), transparent 52%);
+    background: radial-gradient(ellipse at 68% 48%, rgba(255, 255, 255, .4), transparent 60%);
 }
 .ute-banner-glow { position: absolute; z-index: -1; width: 34vw; aspect-ratio: 1; border: 1px solid rgba(16, 42, 67, .1); border-radius: 50%; pointer-events: none; }
 .ute-banner-glow-one { left: -16vw; top: -22vw; box-shadow: 0 0 0 28px rgba(16, 42, 67, .03), 0 0 0 60px rgba(16, 42, 67, .02); }

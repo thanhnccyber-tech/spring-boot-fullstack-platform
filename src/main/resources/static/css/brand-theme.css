@@ -24,6 +24,11 @@ body:not(.ute-home-body) {
     --ute-amber-soft: #fef3c7;
     --ute-green: #10b981;
     --ute-red: #ef4444;
+    
+    /* Kế thừa biến màu xanh tươi */
+    --ute-blue-fresh: #3b82f6;
+    --ute-blue-fresh-hover: #2563eb;
+    
     --ute-shadow-sm: 0 1px 2px rgba(16, 42, 67, .06);
     --ute-shadow: 0 4px 20px rgba(16, 42, 67, .07);
     --ute-shadow-lg: 0 20px 48px rgba(72, 101, 129, .14);
@@ -57,14 +62,21 @@ body:not(.ute-home-body) .receive-btn i { color: var(--ute-blue-600); }
 body:not(.ute-home-body) .icon-btn { color: var(--ute-navy-900); }
 body:not(.ute-home-body) .icon-btn:hover { color: var(--ute-blue-600); }
 
-body:not(.ute-home-body) .btn-warning,
+/* Đã đổi toàn bộ nút .btn-warning sang màu xanh tươi mới */
+body:not(.ute-home-body) .btn-warning {
+    background: var(--ute-blue-fresh) !important; 
+    border-color: transparent !important;
+    color: #fff !important; 
+    box-shadow: 0 4px 12px rgba(59, 130, 246, .22) !important;
+    border-radius: 50px !important;
+}
 body:not(.ute-home-body) .btn-warning:hover,
 body:not(.ute-home-body) .btn-warning:focus,
 body:not(.ute-home-body) .btn-warning:active {
-    background: var(--ute-blue-600) !important; border-color: transparent !important;
-    color: #fff !important; box-shadow: 0 4px 12px rgba(72, 101, 129, .22);
-    border-radius: 50px !important;
+    background: var(--ute-blue-fresh-hover) !important;
+    box-shadow: 0 8px 22px rgba(59, 130, 246, .35) !important;
 }
+
 body:not(.ute-home-body) .btn-primary {
     --bs-btn-bg: var(--ute-blue-600); --bs-btn-border-color: var(--ute-blue-600);
     --bs-btn-hover-bg: var(--ute-blue-700); --bs-btn-hover-border-color: var(--ute-blue-700);
@@ -81,8 +93,19 @@ body:not(.ute-home-body) .btn-outline-primary {
 body:not(.ute-home-body) .btn-outline-primary:hover {
     background: var(--ute-blue-50); color: var(--ute-blue-700); border-color: var(--ute-blue-500);
 }
-body:not(.ute-home-body) .btn-outline-dark { border-color: var(--ute-slate-300); color: var(--ute-slate-700); border-radius: 50px;}
-body:not(.ute-home-body) .btn-outline-dark:hover { background: var(--ute-blue-50); border-color: var(--ute-blue-300); color: var(--ute-blue-700); }
+
+/* ĐÃ SỬA: Chống bị đè màu chữ xanh của thẻ <a> */
+body:not(.ute-home-body) .btn-outline-dark { 
+    border-color: var(--ute-slate-300); 
+    color: var(--ute-slate-700) !important; 
+    border-radius: 50px;
+}
+body:not(.ute-home-body) .btn-outline-dark:hover { 
+    background: var(--ute-blue-50); 
+    border-color: var(--ute-blue-300); 
+    color: var(--ute-blue-700) !important; 
+}
+
 body:not(.ute-home-body) .form-control:focus,
 body:not(.ute-home-body) .form-select:focus {
     border-color: var(--ute-blue-400); box-shadow: 0 0 0 3px rgba(72, 101, 129, .1);

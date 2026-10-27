@@ -5,24 +5,39 @@
 
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <nav class="small mb-3"><a href="${ctx}/">Trang chủ</a> / Khuyến mãi</nav>
-<h3 class="mb-3">🎁 Tin tức &amp; Khuyến mãi</h3>
+<h3 class="mb-4" style="color:var(--ute-navy-900); font-weight:800;"> Tin tức &amp; Khuyến mãi</h3>
 
-<c:if test="${empty promotions}"><div class="alert alert-light border text-center">Hiện chưa có chương trình khuyến mãi nào.</div></c:if>
+<c:if test="${empty promotions}">
+    <div class="alert alert-light border text-center py-5">
+        <i class="fas fa-gift fa-3x text-muted mb-3 opacity-50"></i>
+        <h5>Hiện chưa có chương trình khuyến mãi nào.</h5>
+        <a href="${ctx}/products" class="btn btn-warning mt-2">Khám phá thực đơn</a>
+    </div>
+</c:if>
 
-<div class="row g-3">
+<div class="row g-4">
 <c:forEach items="${promotions}" var="p">
-    <div class="col-sm-6 col-lg-3">
-        <a href="${ctx}/khuyen-mai/${fn:escapeXml(p.id)}" class="text-decoration-none text-dark">
-            <div class="card promo-card h-100 shadow-sm">
-                <c:choose>
-                    <c:when test="${not empty p.imageUrl}"><img src="${fn:escapeXml(p.imageUrl)}" loading="lazy" alt="${fn:escapeXml(p.title)}"></c:when>
-                    <c:otherwise><div class="promo-ph"><i class="fas fa-gift"></i></div></c:otherwise>
-                </c:choose>
-                <div class="card-body">
-                    <div class="small text-muted mb-1"><i class="far fa-eye"></i> ${fn:escapeXml(p.views)} · ${fn:escapeXml(p.createdAtFormatted)}</div>
-                    <h6 class="mb-1">${fn:escapeXml(p.title)}</h6>
-                    <c:if test="${not empty p.summary}"><p class="small text-muted mb-0">${fn:escapeXml(p.summary)}</p></c:if>
+    <div class="col-sm-6 col-lg-4 col-xl-3">
+        <a href="${ctx}/khuyen-mai/${fn:escapeXml(p.id)}" class="promo-card h-100">
+            <c:choose>
+                <c:when test="${not empty p.imageUrl}">
+                    <img src="${fn:escapeXml(p.imageUrl)}" loading="lazy" alt="${fn:escapeXml(p.title)}">
+                </c:when>
+                <c:otherwise>
+                    <div class="promo-ph"><i class="fas fa-gift"></i></div>
+                </c:otherwise>
+            </c:choose>
+            
+            <div class="card-body">
+                <div class="small text-muted mb-1">
+                    <i class="far fa-eye"></i> ${fn:escapeXml(p.views)} lượt xem 
+                    <span class="mx-1">·</span> 
+                    ${fn:escapeXml(p.createdAtFormatted)}
                 </div>
+                <h6>${fn:escapeXml(p.title)}</h6>
+                <c:if test="${not empty p.summary}">
+                    <p class="mb-0 mt-auto">${fn:escapeXml(p.summary)}</p>
+                </c:if>
             </div>
         </a>
     </div>
