@@ -26,60 +26,36 @@
             };
         });
 
-        let map = null;
-        const markers = [];
-        if (window.L) {
-            map = L.map(mapElement, { scrollWheelZoom: false, zoomControl: true, tap: true });
-            map.setView([10.8231, 106.6297], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
-            }).addTo(map);
+        // Google Maps embed (no API key needed): shows the selected store with the red pin.
+        const embedUrl = (branch) => {
+            const q = branch.hasCoords ? branch.lat + ',' + branch.lng : (branch.address || branch.name);
+            return 'https://www.google.com/maps?q=' + encodeURIComponent(q) + '&hl=vi&z=16&output=embed';
+        };
+        const frame = document.createElement('iframe');
+        frame.title = 'Bản đồ cửa hàng UTETra';
+        frame.loading = 'lazy';
+        frame.referrerPolicy = 'no-referrer-when-downgrade';
+        frame.allowFullscreen = true;
+        mapElement.appendChild(frame);
 
-            branchData.filter((branch) => branch.hasCoords).forEach((branch) => {
-                const marker = L.marker([branch.lat, branch.lng], { title: branch.name });
-                const popup = document.createElement('div');
-                popup.className = 'ute-map-popup';
-                const title = document.createElement('strong');
-                title.textContent = branch.name;
-                const address = document.createElement('span');
-                address.textContent = branch.address;
-                popup.append(title, address);
-                if (branch.phone) {
-                    const phone = document.createElement('span');
-                    phone.textContent = branch.phone;
-                    popup.appendChild(phone);
-                }
-                const directions = document.createElement('a');
-                directions.href = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(branch.address);
-                directions.target = '_blank';
-                directions.rel = 'noopener noreferrer';
-                directions.textContent = 'Mở chỉ đường →';
-                popup.appendChild(directions);
-                marker.bindPopup(popup);
-                marker.addTo(map);
-                markers.push({ branch, marker });
-
-                branch.card.addEventListener('click', (event) => {
-                    if (event.target.closest('a, button, form')) return;
-                    cards.forEach((card) => card.classList.remove('is-active'));
-                    branch.card.classList.add('is-active');
-                    map.setView([branch.lat, branch.lng], Math.max(map.getZoom(), 15), { animate: true });
-                    marker.openPopup();
-                });
+        let activeBranch = null;
+        const showBranch = (branch) => {
+            if (!branch || branch === activeBranch) return;
+            activeBranch = branch;
+            cards.forEach((card) => card.classList.toggle('is-active', card === branch.card));
+            frame.src = embedUrl(branch);
+        };
+        branchData.forEach((branch) => {
+            branch.card.addEventListener('click', (event) => {
+                if (event.target.closest('a, button, form')) return;
+                showBranch(branch);
             });
-
-            if (markers.length) {
-                const bounds = L.featureGroup(markers.map((item) => item.marker)).getBounds();
-                map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
-                if (mapNotice) mapNotice.hidden = true;
-            } else if (mapNotice) {
-                mapNotice.hidden = false;
-            }
-            window.addEventListener('resize', () => map.invalidateSize());
+        });
+        if (branchData.length) {
+            showBranch(branchData[0]);
+            if (mapNotice) mapNotice.hidden = true;
         } else if (mapNotice) {
             mapNotice.hidden = false;
-            mapNotice.textContent = 'Không tải được bản đồ tương tác. Bạn vẫn có thể tìm cửa hàng và mở chỉ đường từ danh sách.';
         }
 
         // Keep search and filtering functional even if the external map library is unavailable.
@@ -92,12 +68,8 @@
                 branch.card.hidden = !visible;
                 if (visible) visibleCount += 1;
             });
-            markers.forEach(({ branch, marker }) => {
-                const haystack = (branch.name + ' ' + branch.address + ' ' + branch.phone).toLocaleLowerCase('vi');
-                const visible = !query || haystack.includes(query);
-                if (visible && map && !map.hasLayer(marker)) marker.addTo(map);
-                if (!visible && map && map.hasLayer(marker)) map.removeLayer(marker);
-            });
+            const firstVisible = branchData.find((branch) => !branch.card.hidden);
+            if (firstVisible && (!activeBranch || activeBranch.card.hidden)) showBranch(firstVisible);
             if (countElement) countElement.textContent = visibleCount + ' địa điểm';
             if (noResults) noResults.hidden = visibleCount > 0 || !query;
         };

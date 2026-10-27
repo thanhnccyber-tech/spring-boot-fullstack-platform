@@ -98,12 +98,12 @@
 .tea-cover-photo-one img { object-position: 50% 50%; }
 .tea-cover-photo-two img { object-position: 50% 50%; }
 .tea-cover-photo-three img { object-position: 50% 50%; }
-.tea-cover-side-note { position:absolute; left:8%; bottom:3%; margin:0; color:#9b8973; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.45rem,.8vw,.7rem); font-style:italic; letter-spacing:.04em; }
+.tea-cover-side-note { position:absolute; left:8%; bottom:3%; margin:0; color:#9b8973; font-family:var(--ute-font-serif); font-size:clamp(.45rem,.8vw,.7rem); font-style:italic; letter-spacing:.04em; }
 .tea-cover-promo { position:absolute; inset:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; padding:clamp(23px,4.4vw,58px) clamp(22px,5.6vw,70px); }
 .tea-cup-doodle { width:clamp(42px,5.4vw,66px); height:clamp(54px,6.7vw,82px); margin:0 0 clamp(8px,1.5vw,17px) 7%; color:#60513e; }
 .tea-cup-doodle svg { width:100%; height:100%; }
 .tea-promo-eyebrow { margin:0 0 clamp(8px,1.2vw,14px); color:#986e51; font-size:clamp(.48rem,.8vw,.68rem); font-weight:800; letter-spacing:.2em; }
-.tea-cover-promo h1 { max-width:480px; margin:0; color:#30271f; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.55rem,3.45vw,2.85rem); font-weight:500; line-height:1.04; letter-spacing:-.045em; }
+.tea-cover-promo h1 { max-width:480px; margin:0; color:#30271f; font-family:var(--ute-font-serif); font-size:clamp(1.55rem,3.45vw,2.85rem); font-weight:500; line-height:1.04; letter-spacing:-.02em; }
 .tea-cover-promo h1 em { color:var(--tb-blue); font-weight:400; }
 .tea-promo-copy { max-width:410px; margin:clamp(8px,1.2vw,14px) 0 0; color:#807365; font-size:clamp(.64rem,1.08vw,.93rem); line-height:1.6; }
 .tea-promo-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:clamp(12px,2vw,24px); }
@@ -116,8 +116,8 @@
 .tea-primary-button:hover { color:#fff!important; background:var(--tb-blue-dark); transform:translateY(-2px); box-shadow:0 9px 18px rgba(36,91,214,.25); }
 .tea-secondary-button { color:#3c3228!important; border:1px solid rgba(89,67,46,.17); background:rgba(255,253,246,.76); }
 .tea-secondary-button:hover { color:#3c3228!important; transform:translateY(-2px); background:#fffdf6; }
-.tea-promo-hint { margin:clamp(7px,1vw,12px) 0 0; color:#a0917f; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.56rem,.83vw,.73rem); font-style:italic; }
-.tea-page-number { position:absolute; bottom:4.5%; left:0; right:0; text-align:center; color:#ab9b85; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.56rem,.85vw,.75rem); letter-spacing:.15em; }
+.tea-promo-hint { margin:clamp(7px,1vw,12px) 0 0; color:#a0917f; font-family:var(--ute-font-serif); font-size:clamp(.56rem,.83vw,.73rem); font-style:italic; }
+.tea-page-number { position:absolute; bottom:4.5%; left:0; right:0; text-align:center; color:#ab9b85; font-family:var(--ute-font-serif); font-size:clamp(.56rem,.85vw,.75rem); letter-spacing:.15em; }
 
 /* Product spread: photo taped like a polaroid on the left, ordering information on the right */
 .tea-product-polaroid-page { position:absolute; inset:0; padding:clamp(14px,2.7vw,34px); box-sizing:border-box; }
@@ -128,18 +128,18 @@
 }
 .tea-polaroid img { display:block; width:100%; height:100%; object-fit:cover; }
 .tea-polaroid-tape { position:absolute; z-index:2; top:-10px; left:34%; width:34%; height:clamp(13px,1.8vw,19px); transform:rotate(2deg); background:rgba(229,199,142,.82); }
-.tea-polaroid-caption { position:absolute; left:0; right:0; bottom:6px; color:#8d7a68; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.66rem,1.3vw,1.05rem); font-style:italic; text-align:center; }
+.tea-polaroid-caption { position:absolute; left:0; right:0; bottom:6px; color:#8d7a68; font-family:var(--ute-font-serif); font-size:clamp(.66rem,1.3vw,1.05rem); font-style:italic; text-align:center; }
 .tea-polaroid-detail { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:clamp(8px,1.4vw,15px) 3% 0; color:#988775; font-size:clamp(.49rem,.76vw,.68rem); }
 .tea-polaroid-detail a { color:var(--tb-blue)!important; font-weight:800; text-decoration:underline; text-underline-offset:3px; }
 .tea-product-page { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:stretch; padding:clamp(20px,4vw,52px) clamp(20px,5.5vw,68px); box-sizing:border-box; }
 .tea-product-page .tea-cup-doodle { margin-left:5%; margin-bottom:clamp(8px,1.3vw,16px); }
 .tea-product-kicker { margin:0 0 clamp(8px,1.2vw,14px); color:#9b795e; font-size:clamp(.48rem,.78vw,.68rem); font-weight:800; letter-spacing:.2em; text-transform:uppercase; }
-.tea-product-page h2 { margin:0; color:#30271f; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.45rem,3vw,2.35rem); font-weight:500; line-height:1.08; letter-spacing:-.035em; overflow-wrap:anywhere; }
+.tea-product-page h2 { margin:0; color:#30271f; font-family:var(--ute-font-serif); font-size:clamp(1.45rem,3vw,2.35rem); font-weight:500; line-height:1.08; letter-spacing:-.015em; overflow-wrap:anywhere; }
 .tea-product-description { max-width:440px; margin:clamp(5px,.8vw,9px) 0 0; color:#877768; font-size:clamp(.65rem,1.04vw,.9rem); line-height:1.5; }
 .tea-price-line { display:flex; align-items:baseline; gap:clamp(7px,1vw,13px); margin-top:clamp(18px,3vw,35px); }
 .tea-price-label { flex:none; color:#9b8c7a; font-size:clamp(.49rem,.72vw,.63rem); font-weight:800; letter-spacing:.16em; }
 .tea-price-dots { flex:1; min-width:12px; height:1px; border-bottom:1px dotted rgba(125,101,78,.38); }
-.tea-product-price { color:var(--tb-blue); font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.4rem,3vw,2.35rem); font-weight:700; white-space:nowrap; letter-spacing:-.035em; }
+.tea-product-price { color:var(--tb-blue); font-family:var(--ute-font-serif); font-size:clamp(1.4rem,3vw,2.35rem); font-weight:700; white-space:nowrap; letter-spacing:-.035em; }
 .tea-product-actions { display:flex; align-items:center; flex-wrap:wrap; gap:clamp(7px,1.1vw,13px); margin-top:clamp(13px,2vw,23px); }
 .tea-qty-stepper { display:inline-flex; align-items:center; justify-content:center; gap:clamp(9px,1.4vw,16px); min-height:clamp(34px,3.8vw,44px); padding:0 clamp(10px,1.4vw,16px); border:1px solid rgba(112,89,65,.15); border-radius:999px; background:rgba(255,253,246,.83); }
 .tea-qty-stepper button { display:inline-flex; align-items:center; justify-content:center; width:18px; height:25px; padding:0; border:0; background:none; color:#716252; cursor:pointer; }
@@ -148,7 +148,7 @@
 .tea-order-link { display:inline-flex; flex:1 1 120px; align-items:center; justify-content:center; gap:8px; min-height:clamp(35px,3.9vw,46px); padding:9px clamp(13px,2vw,24px); border:0; border-radius:999px; background:var(--tb-blue); color:#fff!important; font-size:clamp(.68rem,.94vw,.82rem); font-weight:800; text-decoration:none!important; white-space:nowrap; box-shadow:0 6px 13px rgba(36,91,214,.18); transition:transform .2s ease,background .2s ease,box-shadow .2s ease; }
 .tea-order-link:hover { color:#fff!important; background:var(--tb-blue-dark); transform:translateY(-1px); box-shadow:0 9px 19px rgba(36,91,214,.24); }
 .tea-order-link.is-sold-out { background:#9e9488; pointer-events:none; box-shadow:none; }
-.tea-product-options { display:inline-block; align-self:flex-start; margin-top:clamp(10px,1.5vw,17px); color:#8a7966!important; font-family:Georgia,"Times New Roman",serif; font-size:clamp(.56rem,.82vw,.73rem); text-decoration:underline!important; text-underline-offset:4px; }
+.tea-product-options { display:inline-block; align-self:flex-start; margin-top:clamp(10px,1.5vw,17px); color:#8a7966!important; font-family:var(--ute-font-serif); font-size:clamp(.56rem,.82vw,.73rem); text-decoration:underline!important; text-underline-offset:4px; }
 .tea-product-page .tea-page-number { bottom:4%; }
 
 /* Curled leaf: the page is divided into nested 3D strips so it bows and shades while turning. */

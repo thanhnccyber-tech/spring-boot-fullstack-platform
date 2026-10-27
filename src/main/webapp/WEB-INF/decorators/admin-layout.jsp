@@ -8,9 +8,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><sitemesh:write property="title" /> - UTETra Admin</title>
-<link
-	href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-	rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap&subset=vietnamese,latin,latin-ext" rel="stylesheet">
 <link rel="stylesheet"
 	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet"
@@ -18,8 +18,18 @@
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/static/css/admin.css">
 <sitemesh:write property="head" />
+<link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/typography-loader.css">
 </head>
 <body>
+<div id="uteSiteLoader" class="ute-site-loader" role="status" aria-live="polite" aria-label="Đang tải trang UTETra">
+  <div class="ute-site-loader__inner">
+    <img class="ute-site-loader__logo" src="${pageContext.request.contextPath}/static/images/utetra-logo.png" alt="UTETra" width="340" height="207" fetchpriority="high">
+    <div class="ute-site-loader__percent"><span id="uteSiteLoaderPercent">0</span><span aria-hidden="true">%</span></div>
+    <div class="ute-site-loader__track" role="progressbar" aria-label="Tiến trình tải trang" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="uteSiteLoaderProgress"><span id="uteSiteLoaderBar"></span></div>
+    <p class="ute-site-loader__caption">ĐANG CHUẨN BỊ TRÀ NGON</p>
+  </div>
+</div>
+
 
 	<div class="d-flex" style="min-height: 100vh;">
 		<!-- Sidebar: Cố định chiều rộng 260px, luôn sticky, tự cuộn nếu menu dài -->
@@ -289,5 +299,6 @@
     })();
 </script>
 	<sitemesh:write property="bodyScript" />
+<script src="${pageContext.request.contextPath}/static/js/site-loader.js" defer></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
@@ -6,7 +6,6 @@
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/tea-book.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/homepage-immersive.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <section class="ute-home-banner" aria-labelledby="ute-banner-heading">
     <div class="ute-banner-glow ute-banner-glow-one" aria-hidden="true"></div>
@@ -202,7 +201,7 @@
                 <div class="ute-store-map-heading"><span><i class="fas fa-map-marked-alt" aria-hidden="true"></i> BẢN ĐỒ CỬA HÀNG</span><small><i class="fas fa-circle" aria-hidden="true"></i> Đang hoạt động</small></div>
                 <div id="uteStoreMap" class="ute-store-map" aria-label="Bản đồ các cửa hàng UTETra"></div>
                 <p class="ute-store-map-note" id="uteMapNotice" hidden><i class="fas fa-info-circle" aria-hidden="true"></i> Chưa có tọa độ cho các cửa hàng. Bạn vẫn có thể mở chỉ đường từ danh sách bên cạnh.</p>
-                <div class="ute-map-footer"><span><i class="fas fa-location-dot" aria-hidden="true"></i> Cửa hàng đang hoạt động</span><span>Bản đồ © OpenStreetMap</span></div>
+                <div class="ute-map-footer"><span><i class="fas fa-location-dot" aria-hidden="true"></i> Cửa hàng đang hoạt động</span><span>Bản đồ © Google Maps</span></div>
             </div>
             <div class="ute-store-directory">
                 <label class="ute-store-search"><i class="fas fa-search" aria-hidden="true"></i><input id="uteStoreSearch" type="search" placeholder="Tìm tên cửa hàng, địa chỉ..." autocomplete="off"><kbd>/</kbd></label>
@@ -235,5 +234,4 @@
         </div>
     </div>
 </section>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <script src="${pageContext.request.contextPath}/static/js/homepage-map.js" defer></script>

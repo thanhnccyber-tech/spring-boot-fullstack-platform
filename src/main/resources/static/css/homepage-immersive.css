@@ -53,7 +53,7 @@ body.ute-home-body .ute-home-main > .alert { width: min(1180px, calc(100% - 32px
 .ute-banner-art::before { content: ""; position: absolute; z-index: -1; left: 9%; top: 12%; width: 78%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(255,249,232,.85), rgba(255,240,209,.34) 55%, transparent 72%); }
 .ute-banner-photo { position: absolute; box-sizing: border-box; margin: 0; padding: 11px 11px 34px; background: rgba(255,253,246,.97); border: 1px solid rgba(104,76,48,.15); box-shadow: 0 20px 36px rgba(54, 31, 18, .21), 0 3px 7px rgba(54,31,18,.08); }
 .ute-banner-photo img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: cover; background: #e2d1b6; }
-.ute-banner-photo figcaption { position: absolute; left: 8px; right: 8px; bottom: 8px; color: #937b65; font: italic 12px/1.2 Georgia, serif; letter-spacing: .08em; text-align: center; }
+.ute-banner-photo figcaption { position: absolute; left: 8px; right: 8px; bottom: 8px; color: #937b65; font: italic 12px/1.2 var(--ute-font-serif); letter-spacing: .08em; text-align: center; }
 .ute-banner-photo-one { left: 10%; top: 13%; z-index: 2; width: 49%; height: 67%; transform: rotate(-7deg); }
 .ute-banner-photo-two { right: 3%; top: 4%; z-index: 3; width: 42%; height: 51%; transform: rotate(5deg); }
 .ute-banner-photo-three { right: 8%; bottom: 3%; z-index: 4; width: 43%; height: 48%; transform: rotate(3deg); }
@@ -62,17 +62,17 @@ body.ute-home-body .ute-home-main > .alert { width: min(1180px, calc(100% - 32px
 .ute-banner-photo-three img { object-position: 50% 55%; }
 .ute-banner-stamp { position: absolute; z-index: 6; left: 0; bottom: 4%; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 96px; height: 96px; color: #fdf2d9; background: #85462f; border: 1px solid rgba(255,255,255,.65); border-radius: 50%; box-shadow: 0 10px 22px rgba(65,36,19,.18); transform: rotate(-12deg); }
 .ute-banner-stamp i { font-size: 1.4rem; }
-.ute-banner-stamp span { margin-top: 2px; font: 700 1rem/1 Georgia, serif; letter-spacing: -.04em; }
+.ute-banner-stamp span { margin-top: 2px; font: 700 1rem/1 var(--ute-font-serif); letter-spacing: -.04em; }
 .ute-banner-stamp small { margin-top: 5px; font-size: .43rem; letter-spacing: .17em; }
 .ute-banner-orbit { position: absolute; z-index: -1; display: block; border: 1px solid rgba(133,74,47,.3); border-radius: 50%; transform: rotate(-23deg); }
 .ute-banner-orbit-one { left: 4%; top: 4%; width: 80%; height: 82%; }
 .ute-banner-orbit-two { left: 20%; top: 25%; width: 65%; height: 64%; border-style: dashed; opacity: .65; }
-.ute-banner-art-note { position: absolute; left: 16%; bottom: -1%; margin: 0; color: #8b674f; font: italic clamp(.8rem, 1.1vw, 1rem) Georgia, serif; letter-spacing: .04em; transform: rotate(-4deg); }
+.ute-banner-art-note { position: absolute; left: 16%; bottom: -1%; margin: 0; color: #8b674f; font: italic clamp(.8rem, 1.1vw, 1rem) var(--ute-font-serif); letter-spacing: .04em; transform: rotate(-4deg); }
 .ute-banner-copy { max-width: 630px; padding: clamp(10px, 2vw, 24px) 0; }
 .ute-banner-eyebrow, .ute-home-eyebrow { display: flex; align-items: center; gap: 10px; margin: 0 0 19px; color: #8a5a42; font-size: .68rem; font-weight: 800; letter-spacing: .2em; }
 .ute-banner-eyebrow span, .ute-home-eyebrow span { display: inline-block; width: 28px; height: 1px; background: currentColor; }
-.ute-banner-copy h1 { margin: 0; color: #934831; font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; font-size: clamp(3rem, 6.4vw, 6.25rem); font-weight: 900; line-height: .94; letter-spacing: .012em; text-shadow: 3px 5px 0 rgba(87,45,27,.14); }
-.ute-banner-copy h1 em { display: inline-block; margin-top: .12em; color: #543126; font-family: Georgia, "Times New Roman", serif; font-size: .56em; font-style: normal; font-weight: 700; letter-spacing: -.035em; line-height: 1.08; }
+.ute-banner-copy h1 { margin: 0; color: #934831; font-family: var(--ute-font-sans); font-size: clamp(2.4rem, 5.4vw, 5.2rem); font-weight: 800; line-height: .94; letter-spacing: .012em; text-shadow: 3px 5px 0 rgba(87,45,27,.14); }
+.ute-banner-copy h1 em { display: inline-block; margin-top: .12em; color: #543126; font-family: var(--ute-font-serif); font-size: .56em; font-style: normal; font-weight: 700; letter-spacing: -.035em; line-height: 1.08; }
 .ute-banner-lead { max-width: 540px; margin: 23px 0 0; color: #634d3d; font-size: clamp(.96rem, 1.25vw, 1.11rem); line-height: 1.8; }
 .ute-banner-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .ute-banner-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 50px; padding: 13px 22px; border: 1px solid transparent; border-radius: 5px; font-size: .92rem; font-weight: 800; text-decoration: none !important; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
@@ -100,7 +100,7 @@ body.ute-home-body .ute-home-main > .alert { width: min(1180px, calc(100% - 32px
 .ute-home-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
 .ute-home-section-heading > div { max-width: 760px; }
 .ute-home-eyebrow { margin-bottom: 11px; font-size: .63rem; letter-spacing: .2em; }
-.ute-home-section-heading h2 { margin: 0; color: #4a2c20; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2rem, 4vw, 3.45rem); font-weight: 500; letter-spacing: -.045em; line-height: 1.1; }
+.ute-home-section-heading h2 { margin: 0; color: #4a2c20; font-family: var(--ute-font-serif); font-size: clamp(2rem, 4vw, 3.45rem); font-weight: 500; letter-spacing: -.02em; line-height: 1.1; }
 .ute-home-section-heading h2 em { color: #9a5034; font-weight: 400; }
 .ute-home-section-heading > div > p:last-child { margin: 12px 0 0; color: #78614f; font-size: .98rem; line-height: 1.65; }
 .ute-section-link { display: inline-flex; align-items: center; gap: 11px; flex-shrink: 0; padding-bottom: 7px; color: #7f422e !important; border-bottom: 1px solid rgba(127,66,46,.35); font-size: .86rem; font-weight: 800; text-decoration: none !important; }
@@ -113,21 +113,21 @@ body.ute-home-body .ute-home-main > .alert { width: min(1180px, calc(100% - 32px
 .ute-promo-art > img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
 .ute-promo-card:hover .ute-promo-art > img { transform: scale(1.045); }
 .ute-promo-art-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #fff5dd; background: radial-gradient(circle at 55% 30%, rgba(247,218,164,.6), transparent 42%), linear-gradient(135deg, #603a2a, #b56f45); }
-.ute-promo-art-placeholder span { font-family: Georgia, serif; font-size: 1.6rem; font-style: italic; }
+.ute-promo-art-placeholder span { font-family: var(--ute-font-serif); font-size: 1.6rem; font-style: italic; }
 .ute-promo-art-placeholder i { font-size: 2rem; }
 .ute-promo-art-placeholder small { font-size: .57rem; font-weight: 800; letter-spacing: .22em; }
 .ute-promo-index { position: absolute; top: 12px; left: 12px; padding: 6px 9px; color: #fff6e5; background: rgba(84,43,28,.84); border: 1px solid rgba(255,255,255,.25); border-radius: 3px; font-size: .59rem; font-weight: 800; letter-spacing: .1em; }
 .ute-promo-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 18px 18px 17px; }
 .ute-promo-meta { margin: 0 0 10px; color: #9a826e; font-size: .69rem; }
 .ute-promo-meta span { margin: 0 5px; }
-.ute-promo-body h3 { margin: 0; color: #4a2c20; font-family: Georgia, serif; font-size: 1.26rem; font-weight: 600; line-height: 1.25; }
+.ute-promo-body h3 { margin: 0; color: #4a2c20; font-family: var(--ute-font-serif); font-size: 1.26rem; font-weight: 600; line-height: 1.25; }
 .ute-promo-body > p:not(.ute-promo-meta) { display: -webkit-box; overflow: hidden; margin: 9px 0 0; color: #786556; font-size: .83rem; line-height: 1.6; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 .ute-promo-read { display: inline-flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 17px; color: #8d492f; font-size: .79rem; font-weight: 800; }
 .ute-promo-read i { transition: transform .2s ease; }
 .ute-promo-card:hover .ute-promo-read i { transform: translateX(4px); }
 .ute-promo-empty { display: flex; align-items: center; gap: 18px; padding: 24px; color: #61412e; background: rgba(255,253,247,.75); border: 1px solid rgba(113,75,48,.15); border-radius: 10px; }
 .ute-promo-empty-icon { display: grid; place-items: center; width: 55px; height: 55px; flex: 0 0 55px; color: #fff4df; background: #8b492f; border-radius: 50%; font-size: 1.2rem; }
-.ute-promo-empty h3 { margin: 0; color: #4a2c20; font-family: Georgia, serif; font-size: 1.2rem; }
+.ute-promo-empty h3 { margin: 0; color: #4a2c20; font-family: var(--ute-font-serif); font-size: 1.2rem; }
 .ute-promo-empty p { margin: 5px 0 0; color: #786556; font-size: .88rem; }
 .ute-promo-empty > a { margin-left: auto; flex-shrink: 0; color: #8d492f; font-weight: 800; }
 
@@ -142,8 +142,7 @@ body.ute-home-body .ute-home-main > .alert { width: min(1180px, calc(100% - 32px
 .ute-store-map-heading small { color: #67804f; font-size: .67rem; font-weight: 700; letter-spacing: 0; }
 .ute-store-map-heading small i { margin-right: 4px; font-size: .47rem; }
 .ute-store-map { z-index: 0; width: 100%; height: clamp(360px, 39vw, 525px); background: #e9dfca; }
-.ute-store-map .leaflet-popup-content-wrapper { border-radius: 8px; }
-.ute-store-map .leaflet-popup-content { margin: 12px 15px; line-height: 1.55; }
+.ute-store-map iframe { display: block; width: 100%; height: 100%; border: 0; }
 .ute-map-popup strong { display: block; color: #71402d; font-size: .93rem; }
 .ute-map-popup span { display: block; margin-top: 3px; color: #746252; font-size: .78rem; }
 .ute-map-popup a { display: inline-block; margin-top: 7px; color: #8f492f; font-weight: 800; }
@@ -179,7 +178,7 @@ body.ute-home-body .ute-home-main > .alert { width: min(1180px, calc(100% - 32px
 .ute-store-pickup:hover { color: #fff8e8; background: #653323; }
 .ute-store-empty, .ute-store-no-results { padding: 38px 16px; color: #8c7660; text-align: center; }
 .ute-store-empty > i { color: #a76843; font-size: 1.8rem; }
-.ute-store-empty h3 { margin: 12px 0 5px; color: #5c3b2a; font-family: Georgia, serif; font-size: 1.1rem; }
+.ute-store-empty h3 { margin: 12px 0 5px; color: #5c3b2a; font-family: var(--ute-font-serif); font-size: 1.1rem; }
 .ute-store-empty p { margin: 0; font-size: .82rem; }
 .ute-store-no-results[hidden] { display: none; }
 

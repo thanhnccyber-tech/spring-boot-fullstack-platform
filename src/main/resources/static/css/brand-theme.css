@@ -131,7 +131,16 @@ body:not(.ute-home-body) .ute-brand-logo { display: block; width: 94px; height: 
 body:not(.ute-home-body) .ute-footer-logo { display: block; width: 104px; height: 64px; object-fit: contain; background: #fbf7ed; border-radius: 8px; padding: 3px; }
 body:not(.ute-home-body) .site-header .brand:has(.ute-brand-logo) { gap: 0; }
 body:not(.ute-home-body) .ute-footer .brand-footer:has(.ute-footer-logo) { gap: 10px; align-items: center; }
+
+/* Logo thương hiệu cũng xuất hiện trên homepage; các quy tắc này chỉ định kích thước logo, không đổi giao diện trang chủ. */
+.ute-home-body .ute-brand-logo { display: block; width: 94px; height: 58px; object-fit: contain; }
+.ute-home-body .site-header .brand:has(.ute-brand-logo) { gap: 0; flex: 0 0 auto; }
+.ute-home-body .ute-footer-logo { display: block; width: 104px; height: 64px; object-fit: contain; background: #fbf7ed; border-radius: 8px; padding: 3px; }
+.ute-home-body .ute-footer .brand-footer:has(.ute-footer-logo) { gap: 10px; align-items: center; }
 @media (max-width: 575px) {
+  .ute-home-body .ute-brand-logo { width: 76px; height: 48px; }
+  .ute-home-body .ute-footer-logo { width: 92px; height: 56px; }
+
   body:not(.ute-home-body) .ute-brand-logo { width: 76px; height: 48px; }
   body:not(.ute-home-body) .ute-footer-logo { width: 92px; height: 56px; }
 }
