@@ -6,7 +6,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><sitemesh:write property="title"/> - UTeTra</title>
+    <title><sitemesh:write property="title"/> - UTETra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css">
@@ -19,15 +22,17 @@
 <c:forEach items="${sessionScope.CART}" var="ci"><c:set var="cartCount" value="${cartCount + ci.quantity}"/></c:forEach>
 <c:set var="uri" value="${not empty requestScope['jakarta.servlet.forward.request_uri'] ? requestScope['jakarta.servlet.forward.request_uri'] : pageContext.request.requestURI}"/>
 
-<!-- ========== Hàng 1: logo | tìm kiếm | cách nhận hàng | thông báo | tài khoản ========== -->
-<header class="site-header sticky-top bg-white shadow-sm">
+<!-- ============ Hàng 1: logo | tìm kiếm | nhận hàng | tài khoản ============ -->
+<header class="site-header sticky-top">
     <div class="container py-2 d-flex align-items-center gap-2 gap-md-3">
-        <a class="brand text-decoration-none" href="${ctx}/"><i class="fas fa-mug-hot"></i> UTeTra</a>
+        <a class="brand text-decoration-none" href="${ctx}/">
+            <i class="fas fa-mug-hot"></i> UTETra
+        </a>
 
         <form class="header-search" action="${ctx}/products" method="get" role="search">
             <i class="fas fa-search"></i>
             <input type="text" name="kw" maxlength="100" value="${fn:escapeXml(param.kw)}"
-                   placeholder="Bạn muốn uống gì..." aria-label="Tìm sản phẩm" autocomplete="off">
+                   placeholder="Bạn muốn uống gì hôm nay..." aria-label="Tìm sản phẩm" autocomplete="off">
             <div class="search-suggest" id="searchSuggest" hidden role="listbox"></div>
         </form>
 
@@ -37,10 +42,10 @@
             <span class="text-start">
                 <c:choose>
                     <c:when test="${not empty sessionScope.RECV_METHOD}">
-                        <small class="d-block text-muted">${fn:escapeXml(sessionScope.RECV_METHOD == 'PICKUP' ? 'Đến lấy tại' : 'Giao hàng từ')}</small>
+                        <small class="d-block" style="color:#64748b;font-size:.72rem">${fn:escapeXml(sessionScope.RECV_METHOD == 'PICKUP' ? 'Đến lấy tại' : 'Giao hàng từ')}</small>
                         <b>${fn:escapeXml(sessionScope.RECV_BRANCH_NAME)}</b>
                     </c:when>
-                    <c:otherwise><b>Chọn phương thức nhận hàng</b></c:otherwise>
+                    <c:otherwise><b>Chọn cách nhận hàng</b></c:otherwise>
                 </c:choose>
             </span>
         </button>
@@ -80,7 +85,7 @@
         </c:choose>
     </div>
 
-    <!-- ========== Hàng 2: menu chính + mega-menu ========== -->
+    <!-- ============ Hàng 2: nav chính + mega-menu ============ -->
     <nav class="main-nav border-top">
         <div class="container">
             <button class="btn btn-sm d-md-none my-1" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Mở menu">
@@ -101,7 +106,7 @@
                         <div class="mega-col">
                             <h6>Gợi ý nhanh</h6>
                             <a href="${ctx}/products?sort=priceAsc">Giá tốt nhất</a>
-                            <a href="${ctx}/products?sort=newest">Món mới</a>
+                            <a href="${ctx}/products?sort=newest">Món mới ra mắt</a>
                         </div>
                     </div>
                 </li>
@@ -114,10 +119,10 @@
     </nav>
 </header>
 
-<!-- ========== Popup: Chọn phương thức nhận hàng ========== -->
+<!-- ============ Modal chọn cách nhận hàng ============ -->
 <div class="modal fade" id="receiveModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
       <form action="${ctx}/receive/set" method="post" id="receiveForm">
         <input type="hidden" name="returnUrl" id="receiveReturn" value="/products">
         <input type="hidden" name="lat" id="receiveLat" value="${fn:escapeXml(sessionScope.RECV_LAT)}">
@@ -138,7 +143,7 @@
               <input type="text" class="form-control" name="address" id="recvAddress" maxlength="500"
                      placeholder="Vui lòng nhập địa chỉ" value="${fn:escapeXml(sessionScope.RECV_ADDR)}">
             </div>
-            <button type="button" class="btn btn-link px-0 mt-1" id="recvLocate"><i class="fas fa-crosshairs"></i> Vị trí hiện tại của quý khách</button>
+            <button type="button" class="btn btn-link px-0 mt-1" id="recvLocate" style="text-decoration:none;font-size:.85rem;color:var(--ute-blue-600)"><i class="fas fa-crosshairs"></i> Vị trí hiện tại của tôi</button>
             <div class="small text-muted" id="recvLocateMsg"></div>
           </div>
           <label class="form-label small text-muted mb-1" id="recvBranchLabel">Cửa hàng phục vụ</label>
@@ -163,10 +168,10 @@
 
 <c:if test="${not empty welcomeNew}">
 <div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered"><div class="modal-content text-center p-4">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content text-center p-4 border-0 shadow-lg" style="border-radius:16px">
     <div style="font-size:3rem">🎉</div>
     <h4 class="mb-2">Chào mừng hội viên mới!</h4>
-    <p class="mb-3">Chúc mừng <b>${fn:escapeXml(welcomeNew)}</b>, bạn đã trở thành hội viên UTeTra.<br>
+    <p class="mb-3">Chúc mừng <b>${fn:escapeXml(welcomeNew)}</b>, bạn đã trở thành hội viên UTETra.<br>
        Mỗi 10.000đ mua hàng = 1 điểm. Dùng mã <b>WELCOME10</b> để giảm 10% cho đơn đầu tiên.</p>
     <div class="d-flex gap-2 justify-content-center">
       <a class="btn btn-warning" href="${ctx}/products">Đặt mua ngay</a>
@@ -182,7 +187,6 @@
 </c:if>
 
 <main class="container my-4">
-    <%-- Thông báo sau thao tác (flash). Các trang tự hiển thị lỗi riêng thì bỏ qua để không lặp --%>
     <c:set var="ownMsgPage" value="${fn:contains(uri, '/login') or fn:contains(uri, '/register') or fn:contains(uri, '/otp')
                         or fn:contains(uri, '/forgot-password') or fn:contains(uri, '/reset-password') or fn:contains(uri, '/profile')}"/>
     <c:if test="${not ownMsgPage}">
@@ -196,17 +200,62 @@
     <sitemesh:write property="body"/>
 </main>
 
-<!-- ========== Nút nổi: giỏ hàng + gọi hotline ========== -->
+<!-- Nút nổi -->
 <div class="float-actions">
     <a class="float-btn float-cart" href="${ctx}/cart" title="Giỏ hàng" aria-label="Giỏ hàng">
         <i class="fas fa-cart-shopping"></i>
         <span class="float-badge" id="cartBadge">${fn:escapeXml(cartCount)}</span>
     </a>
-    <a class="float-btn float-call" href="tel:19001234" title="Gọi hotline 1900 1234" aria-label="Gọi hotline"><i class="fas fa-phone"></i></a>
+    <a class="float-btn float-call" href="tel:0968523156" title="Gọi hotline 0968 523 156" aria-label="Gọi hotline"><i class="fas fa-phone"></i></a>
 </div>
 
-<footer class="bg-dark text-white text-center py-3 mt-5">
-    <p class="mb-0">&copy; 2025 UTeTra - Chuỗi trà sữa UTe. Hotline: 1900 1234</p>
+<!-- ============ Footer ============ -->
+<footer class="ute-footer">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="brand-footer"><i class="fas fa-mug-hot"></i> UTETra</div>
+                <p style="max-width:320px;font-size:.9rem;line-height:1.6">
+                    Chuỗi trà sữa tươi mát, pha chế từ nguyên liệu chọn lọc. Giao nhanh trong 30 phút tại TP.HCM.
+                </p>
+                <div class="d-flex gap-3 mt-3">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook fa-lg"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram fa-lg"></i></a>
+                    <a href="#" aria-label="TikTok"><i class="fab fa-tiktok fa-lg"></i></a>
+                    <a href="https://zalo.me" aria-label="Zalo"><i class="fas fa-comment-dots fa-lg"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <h6>Khám phá</h6>
+                <ul class="footer-list">
+                    <li><a href="${ctx}/">Trang chủ</a></li>
+                    <li><a href="${ctx}/products">Thực đơn</a></li>
+                    <li><a href="${ctx}/khuyen-mai">Khuyến mãi</a></li>
+                    <li><a href="${ctx}/hoi-vien">Hội viên</a></li>
+                    <li><a href="${ctx}/cua-hang">Cửa hàng</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <h6>Liên hệ</h6>
+                <ul class="footer-list">
+                    <li><i class="fas fa-location-dot"></i> Số 1 Võ Văn Ngân, Thủ Đức, TP.HCM</li>
+                    <li><i class="fas fa-phone"></i> <a href="tel:0968523156">0968 523 156</a></li>
+                    <li><i class="fas fa-envelope"></i> <a href="mailto:24162115@hcmute.edu.vn">24162115@hcmute.edu.vn</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <h6>Giờ mở cửa</h6>
+                <ul class="footer-list">
+                    <li><i class="fas fa-clock"></i> Thứ 2 – Thứ 6: 08:00 – 22:00</li>
+                    <li><i class="fas fa-clock"></i> Thứ 7 – CN: 08:00 – 23:00</li>
+                    <li><i class="fas fa-headset"></i> Hotline hỗ trợ 24/7</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom text-center">
+            © 2025 UTETra · Chuỗi trà sữa UTETra · Bảo lưu mọi quyền.
+        </div>
+    </div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

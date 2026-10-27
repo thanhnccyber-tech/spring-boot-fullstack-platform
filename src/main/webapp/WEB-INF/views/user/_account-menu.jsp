@@ -5,8 +5,10 @@
 <c:set var="act" value="${param.active}"/>
 <div class="checkout-box p-3">
     <div class="d-flex align-items-center gap-3 pb-3 mb-2 border-bottom">
-        <i class="fas fa-user-circle" style="font-size:44px;color:#b8860b"></i>
-        <div class="fw-bold">${fn:escapeXml(sessionScope.fullName)}</div>
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--ute-gradient-soft);display:flex;align-items:center;justify-content:center">
+            <i class="fas fa-user" style="color:var(--ute-blue-600);font-size:1.1rem"></i>
+        </div>
+        <div class="fw-bold" style="color:var(--ute-slate-900)">${fn:escapeXml(sessionScope.fullName)}</div>
     </div>
     <div class="list-group list-group-flush account-menu">
         <a class="list-group-item list-group-item-action ${fn:escapeXml(act == 'profile' ? 'active' : '')}" href="${ctx}/profile"><i class="fas fa-id-badge"></i> Thông tin cá nhân</a>

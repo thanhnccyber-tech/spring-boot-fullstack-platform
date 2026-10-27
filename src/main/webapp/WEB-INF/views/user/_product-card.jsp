@@ -10,8 +10,8 @@
 <c:set var="fq" value="${requestScope['jakarta.servlet.forward.query_string']}"/>
 <c:set var="furi" value="${not empty requestScope['jakarta.servlet.forward.request_uri'] ? requestScope['jakarta.servlet.forward.request_uri'] : '/products'}"/>
 <c:set var="here"><c:out value="${furi}" escapeXml="false"/><c:if test="${not empty fq}">?<c:out value="${fq}" escapeXml="false"/></c:if></c:set>
-<div class="card h-100 shadow-sm position-relative product-card">
-    <a href="${ctx}/product/${fn:escapeXml(p.id)}" class="d-block">
+<div class="card h-100 position-relative product-card">
+    <a href="${ctx}/product/${fn:escapeXml(p.id)}" class="d-block overflow-hidden">
         <img src="${fn:escapeXml(p.thumbUrl)}" loading="lazy" decoding="async" class="card-img-top" alt="${fn:escapeXml(p.name)}">
     </a>
     <c:choose>
@@ -32,19 +32,21 @@
         <span class="badge bg-danger position-absolute top-0 start-0 m-2"><i class="fas fa-times-circle"></i> Hết hàng</span>
     </c:if>
     <div class="card-body d-flex flex-column">
-        <h6 class="card-title">${fn:escapeXml(p.name)}</h6>
-        <div class="small mb-1">
+        <h6 class="card-title mb-1" style="font-size:.95rem">${fn:escapeXml(p.name)}</h6>
+        <div class="small mb-2">
             <span class="text-warning">
                 <c:forEach begin="1" end="5" var="i"><i class="${fn:escapeXml((not empty rs and i <= rs.rounded) ? 'fas' : 'far')} fa-star"></i></c:forEach>
             </span>
-            <span class="text-muted">
+            <span class="text-muted ms-1" style="font-size:.8rem">
                 <c:choose>
                     <c:when test="${not empty rs}">(<fmt:formatNumber value="${rs.average}" maxFractionDigits="1"/> · ${fn:escapeXml(rs.count)})</c:when>
-                    <c:otherwise>Chưa có đánh giá</c:otherwise>
+                    <c:otherwise>Chưa đánh giá</c:otherwise>
                 </c:choose>
             </span>
         </div>
-        <p class="text-danger fw-bold mb-2"><fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫</p>
-        <a href="${ctx}/product/${fn:escapeXml(p.id)}" class="btn btn-warning btn-sm w-100 mt-auto"><i class="fas fa-cart-plus"></i> Đặt mua</a>
+        <p class="fw-bold mb-2" style="color:var(--ute-blue-700);font-size:1.05rem"><fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫</p>
+        <a href="${ctx}/product/${fn:escapeXml(p.id)}" class="btn btn-warning btn-sm w-100 mt-auto fw-bold">
+            <i class="fas fa-cart-plus"></i> Đặt mua
+        </a>
     </div>
 </div>
