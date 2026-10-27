@@ -15,35 +15,31 @@ public class AdminSugarController {
     @Autowired private SugarService sugarService;
 
     @GetMapping
-    public String list(Model model) {
+    public String list(@RequestParam(required = false) Long edit, Model model) {
+        SugarLevel form = new SugarLevel();
+        if (edit != null) {
+            try { form = sugarService.get(edit); } catch (Exception ignored) { }
+        }
         model.addAttribute("sugars", sugarService.all());
+        model.addAttribute("form", form);
         return "admin/sugars";
-    }
-
-    @GetMapping("/new")
-    public String create(Model model) {
-        model.addAttribute("sugar", new SugarLevel());
-        return "admin/sugar-form";
-    }
-
-    @GetMapping("/edit/{id}")
-    public String edit(@PathVariable Long id, Model model) {
-        model.addAttribute("sugar", sugarService.get(id));
-        return "admin/sugar-form";
     }
 
     @PostMapping("/save")
     public String save(@ModelAttribute SugarLevel s,
                        @RequestParam(defaultValue = "false") Boolean active,
                        Model model, RedirectAttributes ra) {
+        boolean isNew = (s.getId() == null);
+        s.setActive(active);
         try {
             sugarService.save(s, active);
-            ra.addFlashAttribute("success", "Đã lưu mức đường.");
+            ra.addFlashAttribute("success", isNew ? "Đã thêm mức đường." : "Đã cập nhật mức đường.");
             return "redirect:/admin/sugars";
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("sugar", s);
+            model.addAttribute("form", s);
+            model.addAttribute("sugars", sugarService.all());
             model.addAttribute("error", ex.getMessage());
-            return "admin/sugar-form";
+            return "admin/sugars";
         }
     }
 

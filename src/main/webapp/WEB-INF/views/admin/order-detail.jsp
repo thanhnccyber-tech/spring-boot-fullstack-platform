@@ -6,214 +6,263 @@
 
 <c:if test="${success != null}">
     <div class="alert alert-success alert-dismissible fade show">
-        ${fn:escapeXml(success)}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        ${fn:escapeXml(success)}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 </c:if>
 <c:if test="${error != null}">
     <div class="alert alert-danger alert-dismissible fade show">
-        ${fn:escapeXml(error)}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        ${fn:escapeXml(error)}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 </c:if>
 
-<!-- ============ THÔNG TIN ĐƠN ============ -->
-<div class="card mb-3">
-    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-        <span><i class="fas fa-receipt"></i> Đơn hàng <b>${fn:escapeXml(order.orderCode)}</b></span>
-        <c:choose>
-            <c:when test="${order.status == 'PENDING'}">
-                <span class="badge bg-warning text-dark fs-6">Chờ xác nhận</span>
-            </c:when>
-            <c:when test="${order.status == 'PREPARING'}">
-                <span class="badge bg-info text-dark fs-6">Đang pha chế</span>
-            </c:when>
-            <c:when test="${order.status == 'READY'}">
-                <span class="badge bg-warning text-dark fs-6">Chờ giao lại</span>
-            </c:when>
-            <c:when test="${order.status == 'DELIVERING'}">
-                <span class="badge bg-primary fs-6">Đang giao</span>
-            </c:when>
-            <c:when test="${order.status == 'COMPLETED'}">
-                <span class="badge bg-success fs-6">Đã hoàn thành</span>
-            </c:when>
-            <c:when test="${order.status == 'FAILED'}">
-                <span class="badge bg-secondary fs-6">Giao thất bại</span>
-            </c:when>
-            <c:when test="${order.status == 'CANCELLED'}">
-                <span class="badge bg-danger fs-6">Đã hủy</span>
-            </c:when>
-        </c:choose>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <p><b>Khách:</b> ${fn:escapeXml(order.user.fullName)} (${fn:escapeXml(order.user.email)})</p>
-                <p><b>Điện thoại:</b> ${fn:escapeXml(order.user.phone != null ? order.user.phone : '—')}</p>
-                <p><b>Nhận hàng:</b> ${fn:escapeXml(order.pickup ? 'Đến lấy tại cửa hàng' : 'Giao tận nơi')}
-   · <b>SĐT:</b> ${fn:escapeXml(order.phone)}
-   · <b>Thời gian:</b> ${fn:escapeXml(order.deliveryTime == 'ASAP' ? 'Càng sớm càng tốt' : order.deliveryTime)}</p>
-                <p><b>Địa chỉ:</b> ${fn:escapeXml(order.shippingAddress)}</p>
-                <c:if test="${not empty order.vatInfo}"><p><b>Hoá đơn VAT:</b> ${fn:escapeXml(order.vatInfo)}</p></c:if>
-                <p class="small text-muted mb-1">Tiền hàng <fmt:formatNumber value="${order.subtotalAmount}" pattern="#,##0"/> ₫
-                   · Ship <fmt:formatNumber value="${order.shippingFee != null ? order.shippingFee : 0}" pattern="#,##0"/> ₫
-                   · Giảm <fmt:formatNumber value="${order.discountAmount != null ? order.discountAmount : 0}" pattern="#,##0"/> ₫
-                   <c:if test="${not empty order.voucherCode}">(mã ${fn:escapeXml(order.voucherCode)})</c:if></p>
-                <p><b>Chi nhánh:</b> ${fn:escapeXml(order.branch.name)}</p>
+<div class="row g-4">
+    <%-- ================= CỘT TRÁI: THÔNG TIN ĐƠN HÀNG ================= --%>
+    <div class="col-lg-8">
+        <%-- Card 1: Thông tin tổng quan --%>
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-receipt text-primary me-1"></i> Chi tiết đơn hàng</span>
+                <c:choose>
+                    <c:when test="${order.status == 'PENDING'}"><span class="badge bg-warning text-dark px-3 py-2">Chờ xác nhận</span></c:when>
+                    <c:when test="${order.status == 'PREPARING'}"><span class="badge bg-info text-dark px-3 py-2">Đang pha chế</span></c:when>
+                    <c:when test="${order.status == 'READY'}"><span class="badge bg-warning text-dark px-3 py-2">Chờ giao lại</span></c:when>
+                    <c:when test="${order.status == 'DELIVERING'}"><span class="badge bg-primary px-3 py-2">Đang giao</span></c:when>
+                    <c:when test="${order.status == 'COMPLETED'}"><span class="badge bg-success px-3 py-2">Đã hoàn thành</span></c:when>
+                    <c:when test="${order.status == 'FAILED'}"><span class="badge bg-secondary px-3 py-2">Giao thất bại</span></c:when>
+                    <c:when test="${order.status == 'CANCELLED'}"><span class="badge bg-danger px-3 py-2">Đã hủy</span></c:when>
+                </c:choose>
             </div>
-            <div class="col-md-6">
-                <p><b>Thanh toán:</b> ${fn:escapeXml(order.paymentMethod)}</p>
-                <p><b>Ngày đặt:</b> ${fn:escapeXml(order.createdAtFormatted)}</p>
-                <p><b>Cập nhật lần cuối:</b> ${fn:escapeXml(order.updatedAtFormatted)}</p>
-                <p><b>Tổng tiền:</b>
-                    <span class="text-danger fs-5 fw-bold">
-                        <fmt:formatNumber value="${order.totalAmount}" pattern="#,##0"/> ₫
-                    </span>
-                </p>
-                <c:if test="${order.note != null && !order.note.isBlank()}">
-                    <p><b>Ghi chú:</b> ${fn:escapeXml(order.note)}</p>
-                </c:if>
-                <c:if test="${order.failedReason != null}">
-                    <p><b>Lý do lần giao thất bại gần nhất:</b>
-                        <span class="text-danger">${fn:escapeXml(order.failedReason)}</span>
-                    </p>
-                </c:if>
-            </div>
-        </div>
-    </div>
-</div>
+            <div class="card-body">
+                <div class="row g-4 mb-4">
+                    <%-- Cột trái: Khách & Giao hàng --%>
+                    <div class="col-md-6 border-end-md">
+                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Thông tin khách hàng</h6>
+                        <div class="mb-2">
+                            <span class="text-muted small">Khách hàng:</span>
+                            <div class="fw-semibold">${fn:escapeXml(order.user.fullName)}</div>
+                            <div class="small text-muted">${fn:escapeXml(order.user.email)}</div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted small">SĐT nhận hàng:</span>
+                            <div class="fw-semibold">${fn:escapeXml(order.phone)}</div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted small">Hình thức:</span>
+                            <div class="fw-semibold">${fn:escapeXml(order.pickup ? 'Đến lấy tại cửa hàng' : 'Giao tận nơi')}</div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted small">Thời gian:</span>
+                            <div class="fw-semibold">${fn:escapeXml(order.deliveryTime == 'ASAP' ? 'Càng sớm càng tốt' : order.deliveryTime)}</div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted small">Địa chỉ:</span>
+                            <div class="fw-semibold">${fn:escapeXml(order.shippingAddress)}</div>
+                        </div>
+                        <c:if test="${not empty order.vatInfo}">
+                            <div class="mt-3 p-2 bg-light rounded small">
+                                <b>Hoá đơn VAT:</b> ${fn:escapeXml(order.vatInfo)}
+                            </div>
+                        </c:if>
+                    </div>
 
-<c:if test="${not empty deliveryFailures}">
-    <div class="card mb-3">
-        <div class="card-header"><i class="fas fa-clock-rotate-left"></i> Lịch sử giao thất bại</div>
-        <div class="card-body">
-            <c:forEach var="failure" items="${deliveryFailures}">
-                <div class="border-bottom py-2">
-                    <div class="small text-muted">${fn:escapeXml(failure.failedAtFormatted)}
-                        · Shipper: ${fn:escapeXml(failure.shipper.fullName)}</div>
-                    <div>${fn:escapeXml(failure.reason)}</div>
+                    <%-- Cột phải: Thanh toán & Chi nhánh --%>
+                    <div class="col-md-6">
+                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Thông tin thanh toán</h6>
+                        <div class="mb-2">
+                            <span class="text-muted small">Phương thức:</span>
+                            <div class="fw-semibold">${fn:escapeXml(order.paymentMethod)}</div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted small">Ngày đặt:</span>
+                            <div class="fw-semibold">${fn:escapeXml(order.createdAtFormatted)}</div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted small">Cập nhật cuối:</span>
+                            <div class="fw-semibold">${fn:escapeXml(order.updatedAtFormatted)}</div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted small">Chi nhánh xử lý:</span>
+                            <div class="fw-semibold">${fn:escapeXml(order.branch.name)}</div>
+                        </div>
+                        <c:if test="${not empty order.note}">
+                            <div class="mt-3 p-2 bg-light rounded small">
+                                <b>Ghi chú:</b> ${fn:escapeXml(order.note)}
+                            </div>
+                        </c:if>
+                    </div>
                 </div>
-            </c:forEach>
-        </div>
-    </div>
-</c:if>
 
-<!-- ============ PHÂN CÔNG SHIPPER ============ -->
-<div class="card mb-3">
-    <div class="card-header bg-info text-dark">
-        <i class="fas fa-motorcycle"></i> Phân công shipper
-    </div>
-    <div class="card-body">
-        <c:if test="${order.shipper != null}">
-            <div class="alert alert-info mb-3">
-                Shipper hiện tại: <b>${fn:escapeXml(order.shipper.fullName)}</b>
-                (${fn:escapeXml(order.shipper.phone != null ? order.shipper.phone : 'Chưa có SĐT')})
+                <%-- Khối tính tiền --%>
+                <div class="bg-light rounded p-3 mt-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span class="text-muted">Tiền hàng:</span>
+                                <span class="fw-semibold"><fmt:formatNumber value="${order.subtotalAmount}" pattern="#,##0"/> ₫</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span class="text-muted">Phí vận chuyển:</span>
+                                <span class="fw-semibold"><fmt:formatNumber value="${order.shippingFee}" pattern="#,##0"/> ₫</span>
+                            </div>
+                            <c:if test="${order.discountAmount != null && order.discountAmount > 0}">
+                                <div class="d-flex justify-content-between mb-1 small text-success">
+                                    <span>Mã giảm giá (${fn:escapeXml(order.voucherCode)}):</span>
+                                    <span class="fw-semibold">-<fmt:formatNumber value="${order.discountAmount}" pattern="#,##0"/> ₫</span>
+                                </div>
+                            </c:if>
+                            <c:if test="${order.pointsDiscount != null && order.pointsDiscount > 0}">
+                                <div class="d-flex justify-content-between mb-1 small text-success">
+                                    <span>Dùng điểm:</span>
+                                    <span class="fw-semibold">-<fmt:formatNumber value="${order.pointsDiscount}" pattern="#,##0"/> ₫</span>
+                                </div>
+                            </c:if>
+                        </div>
+                        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                            <div class="text-muted small text-uppercase mb-1">Tổng thanh toán</div>
+                            <div class="fs-3 fw-bold text-danger">
+                                <fmt:formatNumber value="${order.totalAmount}" pattern="#,##0"/> ₫
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%-- Card 2: Danh sách món --%>
+        <div class="card mb-4">
+            <div class="card-header bg-white fw-bold"><i class="fas fa-box-open text-primary me-1"></i> Danh sách món</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>Phân loại</th>
+                            <th class="text-center">SL</th>
+                            <th class="text-end">Đơn giá</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach items="${order.details}" var="d">
+                            <tr>
+                                <td class="fw-semibold">${fn:escapeXml(d.product.name)}</td>
+                                <td>
+                                    <div class="small text-muted">
+                                        <c:if test="${not empty d.size}">Size: ${fn:escapeXml(d.size)}</c:if>
+                                        <c:if test="${not empty d.sugarLevel}"> · Đường: ${fn:escapeXml(d.sugarLevel)}</c:if>
+                                        <c:if test="${not empty d.iceLevel}"> · Đá: ${fn:escapeXml(d.iceLevel)}</c:if>
+                                    </div>
+                                    <c:if test="${not empty d.toppings}">
+                                        <div class="small text-muted mt-1">
+                                            Topping:
+                                            <c:forEach items="${d.toppings}" var="t" varStatus="st">${fn:escapeXml(t.name)}<c:if test="${!st.last}">, </c:if></c:forEach>
+                                        </div>
+                                    </c:if>
+                                </td>
+                                <td class="text-center fw-semibold">${fn:escapeXml(d.quantity)}</td>
+                                <td class="text-end"><fmt:formatNumber value="${d.unitPrice}" pattern="#,##0"/> ₫</td>
+                                <td class="text-end fw-bold"><fmt:formatNumber value="${d.subtotal}" pattern="#,##0"/> ₫</td>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <%-- Card 3: Lịch sử giao thất bại (nếu có) --%>
+        <c:if test="${not empty deliveryFailures}">
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-white text-danger fw-bold"><i class="fas fa-triangle-exclamation me-1"></i> Lịch sử giao thất bại</div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <c:forEach var="failure" items="${deliveryFailures}">
+                            <li class="list-group-item py-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="fw-semibold text-danger">Shipper: ${fn:escapeXml(failure.shipper.fullName)}</span>
+                                    <span class="small text-muted">${fn:escapeXml(failure.failedAtFormatted)}</span>
+                                </div>
+                                <div class="small">Lý do: ${fn:escapeXml(failure.reason)}</div>
+                            </li>
+                        </c:forEach>
+                    </ul>
+                </div>
             </div>
         </c:if>
+    </div>
 
-        <form action="${pageContext.request.contextPath}/admin/orders/assign-shipper"
-              method="post" class="row g-2 align-items-center">
-            <input type="hidden" name="id" value="${fn:escapeXml(order.id)}">
-            <div class="col-md-6">
-                <label class="form-label small text-muted">Chọn shipper:</label>
-                <select name="shipperId" class="form-select">
-                    <option value="">-- Bỏ phân công --</option>
-                    <c:forEach items="${shippers}" var="s">
-                        <option value="${fn:escapeXml(s.id)}"
-                            <c:if test="${order.shipper != null && order.shipper.id == s.id}">selected</c:if>>
-                            ${fn:escapeXml(s.fullName)} - ${fn:escapeXml(s.phone != null ? s.phone : 'Chưa có SĐT')}
-                        </option>
-                    </c:forEach>
-                </select>
-                <c:if test="${empty shippers}">
-                    <small class="text-muted">Chưa có shipper nào trong chi nhánh này</small>
-                </c:if>
+    <%-- ================= CỘT PHẢI: HÀNH ĐỘNG (SIDEBAR) ================= --%>
+    <div class="col-lg-4">
+        <div class="sticky-top" style="top: 80px; z-index: 10;">
+            
+            <%-- Card Cập nhật trạng thái --%>
+            <div class="card mb-4">
+                <div class="card-header bg-white fw-bold"><i class="fas fa-exchange-alt text-primary me-1"></i> Cập nhật trạng thái</div>
+                <div class="card-body">
+                    <form action="${pageContext.request.contextPath}/admin/orders/update-status" method="post">
+                        <input type="hidden" name="id" value="${fn:escapeXml(order.id)}">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Trạng thái mới</label>
+                            <select name="status" class="form-select">
+                                <option value="PENDING"    <c:if test="${order.status=='PENDING'}">selected</c:if>>Chờ xác nhận</option>
+                                <option value="PREPARING"  <c:if test="${order.status=='PREPARING'}">selected</c:if>>Đang pha chế</option>
+                                <option value="READY"      <c:if test="${order.status=='READY'}">selected</c:if>>Chờ giao lại</option>
+                                <option value="DELIVERING" <c:if test="${order.status=='DELIVERING'}">selected</c:if>>Đang giao</option>
+                                <option value="COMPLETED"  <c:if test="${order.status=='COMPLETED'}">selected</c:if>>Đã hoàn thành</option>
+                                <option value="FAILED"     <c:if test="${order.status=='FAILED'}">selected</c:if>>Giao thất bại</option>
+                                <option value="CANCELLED"  <c:if test="${order.status=='CANCELLED'}">selected</c:if>>Đã hủy</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-warning w-100 fw-bold">
+                            <i class="fas fa-save me-1"></i> Lưu trạng thái
+                        </button>
+                    </form>
+                </div>
             </div>
-            <div class="col-md-3">
-                <button class="btn btn-info text-dark w-100 mt-4">
-                    <i class="fas fa-user-check"></i> Phân công
-                </button>
-            </div>
-        </form>
+
+            <%-- Card Phân công shipper --%>
+            <c:if test="${!order.pickup}">
+                <div class="card mb-4">
+                    <div class="card-header bg-white fw-bold"><i class="fas fa-motorcycle text-primary me-1"></i> Phân công giao hàng</div>
+                    <div class="card-body">
+                        <c:if test="${order.shipper != null}">
+                            <div class="alert alert-info py-2 mb-3">
+                                <div class="small text-muted mb-1">Shipper hiện tại:</div>
+                                <div class="fw-semibold">${fn:escapeXml(order.shipper.fullName)}</div>
+                                <div class="small">${fn:escapeXml(order.shipper.phone != null ? order.shipper.phone : 'Chưa có SĐT')}</div>
+                            </div>
+                        </c:if>
+                        
+                        <form action="${pageContext.request.contextPath}/admin/orders/assign-shipper" method="post">
+                            <input type="hidden" name="id" value="${fn:escapeXml(order.id)}">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Chọn shipper</label>
+                                <select name="shipperId" class="form-select">
+                                    <option value="">-- Bỏ phân công --</option>
+                                    <c:forEach items="${shippers}" var="s">
+                                        <option value="${fn:escapeXml(s.id)}" <c:if test="${order.shipper != null && order.shipper.id == s.id}">selected</c:if>>
+                                            ${fn:escapeXml(s.fullName)} (${fn:escapeXml(s.phone != null ? s.phone : 'Chưa SĐT')})
+                                        </option>
+                                    </c:forEach>
+                                </select>
+                                <c:if test="${empty shippers}">
+                                    <small class="text-danger d-block mt-1">Không có shipper nào trong chi nhánh này.</small>
+                                </c:if>
+                            </div>
+                            <button class="btn btn-outline-primary w-100 fw-bold">
+                                <i class="fas fa-user-check me-1"></i> Xác nhận
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </c:if>
+
+        </div>
     </div>
 </div>
 
-<!-- ============ CẬP NHẬT TRẠNG THÁI ============ -->
-<div class="card mb-3">
-    <div class="card-header bg-warning text-dark">
-        <i class="fas fa-exchange-alt"></i> Cập nhật trạng thái
-    </div>
-    <div class="card-body">
-        <form action="${pageContext.request.contextPath}/admin/orders/update-status"
-              method="post" class="row g-2">
-            <input type="hidden" name="id" value="${fn:escapeXml(order.id)}">
-            <div class="col-md-6">
-                <select name="status" class="form-select">
-                    <option value="PENDING"    <c:if test="${order.status=='PENDING'}">selected</c:if>>Chờ xác nhận</option>
-                    <option value="PREPARING"  <c:if test="${order.status=='PREPARING'}">selected</c:if>>Đang pha chế</option>
-                    <option value="READY"      <c:if test="${order.status=='READY'}">selected</c:if>>Chờ giao lại</option>
-                    <option value="DELIVERING" <c:if test="${order.status=='DELIVERING'}">selected</c:if>>Đang giao</option>
-                    <option value="COMPLETED"  <c:if test="${order.status=='COMPLETED'}">selected</c:if>>Đã hoàn thành</option>
-                    <option value="FAILED"     <c:if test="${order.status=='FAILED'}">selected</c:if>>Giao thất bại</option>
-                    <option value="CANCELLED"  <c:if test="${order.status=='CANCELLED'}">selected</c:if>>Đã hủy</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <button class="btn btn-warning w-100">
-                    <i class="fas fa-save"></i> Cập nhật
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- ============ CHI TIẾT MÓN ============ -->
-<div class="card">
-    <div class="card-header"><i class="fas fa-list"></i> Chi tiết món</div>
-    <div class="card-body p-0">
-        <table class="table mb-0 align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Sản phẩm</th>
-                    <th>Size</th>
-                    <th>Đường</th>
-                    <th>Đá</th>
-                    <th>Topping</th>
-                    <th class="text-center">SL</th>
-                    <th class="text-end">Đơn giá</th>
-                    <th class="text-end">Thành tiền</th>
-                </tr>
-            </thead>
-            <tbody>
-                <c:forEach items="${order.details}" var="d">
-                    <tr>
-                        <td>${fn:escapeXml(d.product.name)}</td>
-                        <td>${fn:escapeXml(d.size)}</td>
-                        <td>${fn:escapeXml(d.sugarLevel)}%</td>
-                        <td>${fn:escapeXml(d.iceLevel)}%</td>
-                        <td>
-                            <c:forEach items="${d.toppings}" var="t">
-                                <span class="badge bg-light text-dark border me-1">${fn:escapeXml(t.name)}</span>
-                            </c:forEach>
-                        </td>
-                        <td class="text-center">${fn:escapeXml(d.quantity)}</td>
-                        <td class="text-end">
-                            <fmt:formatNumber value="${d.unitPrice}" pattern="#,##0"/> ₫
-                        </td>
-                        <td class="text-end text-danger fw-bold">
-                            <fmt:formatNumber value="${d.subtotal}" pattern="#,##0"/> ₫
-                        </td>
-                    </tr>
-                </c:forEach>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="7" class="text-end">Tổng cộng:</th>
-                    <th class="text-end text-danger fs-5">
-                        <fmt:formatNumber value="${order.totalAmount}" pattern="#,##0"/> ₫
-                    </th>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-</div>
+<%-- Custom CSS để viền dọc phân cách 2 cột thông tin trên màn hình lớn --%>
+<style>
+@media (min-width: 768px) {
+    .border-end-md { border-right: 1px solid #dee2e6; }
+}
+</style>

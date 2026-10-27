@@ -19,9 +19,51 @@
         <i class="fas fa-snowflake me-1"></i>
         Tổng cộng <b class="text-dark">${fn:length(ices)}</b> mức đá
     </div>
-    <a href="${pageContext.request.contextPath}/admin/ices/new" class="btn btn-warning">
-        <i class="fas fa-plus me-1"></i> Thêm mức đá
-    </a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header bg-white">
+        <b>${form.id != null ? 'Cập nhật mức đá' : 'Thêm mức đá mới'}</b>
+    </div>
+    <div class="card-body">
+        <form action="${pageContext.request.contextPath}/admin/ices/save" method="post" class="row g-2">
+            <c:if test="${form.id != null}">
+                <input type="hidden" name="id" value="${fn:escapeXml(form.id)}">
+            </c:if>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1">Tên mức đá *</label>
+                <input name="name" class="form-control" required maxlength="30"
+                       value="${fn:escapeXml(form.name)}" placeholder="VD: Ít đá">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1">Phần trăm (%) *</label>
+                <input name="percent" type="number" min="0" max="100" class="form-control" required
+                       value="${fn:escapeXml(form.percent != null ? form.percent : 50)}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold mb-1">Thứ tự</label>
+                <input name="sortOrder" type="number" min="0" class="form-control"
+                       value="${fn:escapeXml(form.sortOrder != null ? form.sortOrder : 0)}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" name="active" value="true" id="icAct"
+                           <c:if test="${form.id == null || form.active}">checked</c:if>>
+                    <label class="form-check-label" for="icAct">Đang dùng</label>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-1">
+                <button class="btn btn-warning flex-grow-1">
+                    <i class="fas fa-save me-1"></i> ${form.id != null ? 'Cập nhật' : 'Thêm'}
+                </button>
+                <c:if test="${form.id != null}">
+                    <a href="${pageContext.request.contextPath}/admin/ices" class="btn btn-outline-secondary" title="Hủy sửa">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </c:if>
+            </div>
+        </form>
+    </div>
 </div>
 
 <div class="card">
@@ -39,7 +81,7 @@
             </thead>
             <tbody>
                 <c:forEach items="${ices}" var="s">
-                    <tr>
+                    <tr class="${form.id == s.id ? 'table-warning' : ''}">
                         <td class="text-muted small">#${fn:escapeXml(s.id)}</td>
                         <td class="fw-semibold">${fn:escapeXml(s.name)}</td>
                         <td class="text-center">
@@ -53,7 +95,7 @@
                         </td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-1">
-                                <a href="${pageContext.request.contextPath}/admin/ices/edit/${fn:escapeXml(s.id)}"
+                                <a href="${pageContext.request.contextPath}/admin/ices?edit=${fn:escapeXml(s.id)}"
                                    class="btn btn-sm btn-outline-primary" title="Sửa mức đá">
                                     <i class="fas fa-pen"></i>
                                 </a>

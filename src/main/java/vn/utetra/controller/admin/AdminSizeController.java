@@ -15,35 +15,31 @@ public class AdminSizeController {
     @Autowired private SizeService sizeService;
 
     @GetMapping
-    public String list(Model model) {
+    public String list(@RequestParam(required = false) Long edit, Model model) {
+        SizeOption form = new SizeOption();
+        if (edit != null) {
+            try { form = sizeService.get(edit); } catch (Exception ignored) { }
+        }
         model.addAttribute("sizes", sizeService.all());
+        model.addAttribute("form", form);
         return "admin/sizes";
-    }
-
-    @GetMapping("/new")
-    public String create(Model model) {
-        model.addAttribute("size", new SizeOption());
-        return "admin/size-form";
-    }
-
-    @GetMapping("/edit/{id}")
-    public String edit(@PathVariable Long id, Model model) {
-        model.addAttribute("size", sizeService.get(id));
-        return "admin/size-form";
     }
 
     @PostMapping("/save")
     public String save(@ModelAttribute SizeOption s,
                        @RequestParam(defaultValue = "false") Boolean active,
                        Model model, RedirectAttributes ra) {
+        boolean isNew = (s.getId() == null);
+        s.setActive(active);
         try {
             sizeService.save(s, active);
-            ra.addFlashAttribute("success", "Đã lưu size.");
+            ra.addFlashAttribute("success", isNew ? "Đã thêm size." : "Đã cập nhật size.");
             return "redirect:/admin/sizes";
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("size", s);
+            model.addAttribute("form", s);
+            model.addAttribute("sizes", sizeService.all());
             model.addAttribute("error", ex.getMessage());
-            return "admin/size-form";
+            return "admin/sizes";
         }
     }
 

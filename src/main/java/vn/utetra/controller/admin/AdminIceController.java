@@ -15,35 +15,31 @@ public class AdminIceController {
     @Autowired private IceService iceService;
 
     @GetMapping
-    public String list(Model model) {
+    public String list(@RequestParam(required = false) Long edit, Model model) {
+        IceLevel form = new IceLevel();
+        if (edit != null) {
+            try { form = iceService.get(edit); } catch (Exception ignored) { }
+        }
         model.addAttribute("ices", iceService.all());
+        model.addAttribute("form", form);
         return "admin/ices";
-    }
-
-    @GetMapping("/new")
-    public String create(Model model) {
-        model.addAttribute("ice", new IceLevel());
-        return "admin/ice-form";
-    }
-
-    @GetMapping("/edit/{id}")
-    public String edit(@PathVariable Long id, Model model) {
-        model.addAttribute("ice", iceService.get(id));
-        return "admin/ice-form";
     }
 
     @PostMapping("/save")
     public String save(@ModelAttribute IceLevel s,
                        @RequestParam(defaultValue = "false") Boolean active,
                        Model model, RedirectAttributes ra) {
+        boolean isNew = (s.getId() == null);
+        s.setActive(active);
         try {
             iceService.save(s, active);
-            ra.addFlashAttribute("success", "Đã lưu mức đá.");
+            ra.addFlashAttribute("success", isNew ? "Đã thêm mức đá." : "Đã cập nhật mức đá.");
             return "redirect:/admin/ices";
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("ice", s);
+            model.addAttribute("form", s);
+            model.addAttribute("ices", iceService.all());
             model.addAttribute("error", ex.getMessage());
-            return "admin/ice-form";
+            return "admin/ices";
         }
     }
 

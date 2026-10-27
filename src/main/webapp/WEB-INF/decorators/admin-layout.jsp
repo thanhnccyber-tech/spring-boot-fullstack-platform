@@ -1,97 +1,177 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions"%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><sitemesh:write property="title" /> - UTETra Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/admin.css">
+<link
+	href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+	rel="stylesheet">
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/static/css/admin.css">
 <sitemesh:write property="head" />
 </head>
 <body>
 
-<div class="d-flex" style="min-height: 100vh;">
-    <!-- Sidebar: Cố định chiều rộng 260px, luôn sticky, tự cuộn nếu menu dài -->
-    <aside class="text-white p-3" style="width: 260px; min-width: 260px; flex-shrink: 0; background: #0f172a; position: sticky; top: 0; height: 100vh; overflow-y: auto;">
-        <div class="d-flex align-items-center gap-2 mb-4 mt-1 px-2">
-            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center">
-                <i class="fas fa-mug-hot text-white"></i>
-            </div>
-            <div>
-                <div style="font-weight:800;font-size:1.1rem;letter-spacing:-.02em">UTETra</div>
-                <div style="font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Admin Panel</div>
-            </div>
-        </div>
-        <hr style="border-color:rgba(255,255,255,.08)" />
-        <ul class="nav flex-column">
-            <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')}">
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/products"><i class="fas fa-coffee"></i> Sản phẩm</a></li>
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/categories"><i class="fas fa-list"></i> Danh mục</a></li>
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/toppings"><i class="fas fa-ice-cream"></i> Topping</a></li>
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/sizes"><i class="fas fa-ruler"></i> Size</a></li>
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/sugars"><i class="fas fa-cubes-stacked"></i> Mức đường</a></li>
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/ices"><i class="fas fa-snowflake"></i> Mức đá</a></li>
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/branches"><i class="fas fa-store"></i> Chi nhánh</a></li>
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/vouchers"><i class="fas fa-ticket"></i> Mã giảm giá</a></li>
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/promotions"><i class="fas fa-bullhorn"></i> Khuyến mãi</a></li>
-            </c:if>
-            <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')
+	<div class="d-flex" style="min-height: 100vh;">
+		<!-- Sidebar: Cố định chiều rộng 260px, luôn sticky, tự cuộn nếu menu dài -->
+		<aside class="text-white p-3"
+			style="width: 260px; min-width: 260px; flex-shrink: 0; background: #0f172a; position: sticky; top: 0; height: 100vh; overflow-y: auto;">
+			<div class="d-flex align-items-center gap-2 mb-4 mt-1 px-2">
+				<div
+					style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); display: flex; align-items: center; justify-content: center">
+					<i class="fas fa-mug-hot text-white"></i>
+				</div>
+				<div>
+					<div
+						style="font-weight: 800; font-size: 1.1rem; letter-spacing: -.02em">UTETra</div>
+					<div
+						style="font-size: .7rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em">Admin
+						Panel</div>
+				</div>
+			</div>
+			<hr style="border-color: rgba(255, 255, 255, .08)" />
+			<ul class="nav flex-column">
+				<c:if test="${sessionScope.roles.contains('ROLE_ADMIN')}">
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/dashboard"><i
+							class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/products"><i
+							class="fas fa-coffee"></i> Sản phẩm</a></li>
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/categories"><i
+							class="fas fa-list"></i> Danh mục</a></li>
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/toppings"><i
+							class="fas fa-ice-cream"></i> Topping</a></li>
+
+					<%-- GOM 3 MỤC SIZE, ĐƯỜNG, ĐÁ VÀO LÀM 1 --%>
+					<li><a
+						class="nav-link text-white d-flex justify-content-between align-items-center"
+						data-bs-toggle="collapse" href="#attributeMenu" role="button"
+						aria-expanded="${fn:contains(pageContext.request.requestURI, '/admin/sizes') || fn:contains(pageContext.request.requestURI, '/admin/sugars') || fn:contains(pageContext.request.requestURI, '/admin/ices') ? 'true' : 'false'}"
+						aria-controls="attributeMenu"> <span><i
+								class="fas fa-sliders-h"></i> Thuộc tính</span> <i
+							class="fas fa-chevron-down d-inline-block"
+							style="font-size: 0.7rem; transition: transform 0.2s;"></i>
+					</a>
+						<div
+							class="collapse ${fn:contains(pageContext.request.requestURI, '/admin/sizes') || fn:contains(pageContext.request.requestURI, '/admin/sugars') || fn:contains(pageContext.request.requestURI, '/admin/ices') ? 'show' : ''}"
+							id="attributeMenu">
+							<ul class="nav flex-column ms-3 mt-1 mb-2"
+								style="border-left: 1px solid rgba(255, 255, 255, 0.1);">
+								<li><a class="nav-link text-white py-1"
+									style="font-size: 0.85rem;"
+									href="${pageContext.request.contextPath}/admin/sizes"><i
+										class="fas fa-ruler" style="font-size: 0.75rem;"></i> Kích cỡ
+										(Size)</a></li>
+								<li><a class="nav-link text-white py-1"
+									style="font-size: 0.85rem;"
+									href="${pageContext.request.contextPath}/admin/sugars"><i
+										class="fas fa-cubes-stacked" style="font-size: 0.75rem;"></i>
+										Mức đường</a></li>
+								<li><a class="nav-link text-white py-1"
+									style="font-size: 0.85rem;"
+									href="${pageContext.request.contextPath}/admin/ices"><i
+										class="fas fa-snowflake" style="font-size: 0.75rem;"></i> Mức
+										đá</a></li>
+							</ul>
+						</div></li>
+					<%-- KẾT THÚC KHỐI GOM --%>
+
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/branches"><i
+							class="fas fa-store"></i> Chi nhánh</a></li>
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/vouchers"><i
+							class="fas fa-ticket"></i> Mã giảm giá</a></li>
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/promotions"><i
+							class="fas fa-bullhorn"></i> Khuyến mãi</a></li>
+				</c:if>
+				<c:if
+					test="${sessionScope.roles.contains('ROLE_ADMIN')
                         || sessionScope.roles.contains('ROLE_MANAGER')
                         || sessionScope.roles.contains('ROLE_STAFF')}">
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/orders"><i class="fas fa-receipt"></i> Đơn hàng</a></li>
-            </c:if>
-            <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/orders"><i
+							class="fas fa-receipt"></i> Đơn hàng</a></li>
+				</c:if>
+				<c:if
+					test="${sessionScope.roles.contains('ROLE_ADMIN')
                         || sessionScope.roles.contains('ROLE_MANAGER')}">
-                <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/admin/users"><i class="fas fa-users"></i> Người dùng</a></li>
-            </c:if>
-            <li><a class="nav-link text-white" target="_blank" rel="noopener" href="${pageContext.request.contextPath}/"><i class="fas fa-globe"></i> Xem trang web</a></li>
-            <li><a class="nav-link text-white" href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-        </ul>
-    </aside>
+					<li><a class="nav-link text-white"
+						href="${pageContext.request.contextPath}/admin/users"><i
+							class="fas fa-users"></i> Người dùng</a></li>
+				</c:if>
+				<li><a class="nav-link text-white" target="_blank"
+					rel="noopener" href="${pageContext.request.contextPath}/"><i
+						class="fas fa-globe"></i> Xem trang web</a></li>
+				<li><a class="nav-link text-white"
+					href="${pageContext.request.contextPath}/logout"><i
+						class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+			</ul>
+		</aside>
 
-    <!-- Nội dung chính: Cho phép co giãn lấp đầy khoảng trống còn lại -->
-    <div class="flex-grow-1" style="min-width: 0; overflow-x: hidden;">
-        <header class="bg-white p-3 d-flex justify-content-between align-items-center sticky-top">
-            <h5 class="mb-0"><sitemesh:write property="title" /></h5>
-            <div class="d-flex align-items-center">
-                <div class="dropdown me-3">
-                    <button type="button" id="noti-bell" class="btn btn-link text-dark p-0 position-relative"
-                        data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Đơn hàng mới">
-                        <i class="fas fa-bell fa-lg"></i> <span id="noti-count"
-                            class="badge bg-danger position-absolute top-0 start-100 translate-middle d-none">0</span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end p-0 shadow" style="width: 360px; max-width: 92vw;">
-                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                            <b>Đơn hàng mới</b>
-                            <a class="small" href="${pageContext.request.contextPath}/admin/orders">Xem tất cả</a>
-                        </div>
-                        <div id="noti-list" style="max-height: 380px; overflow-y: auto;">
-                            <div class="text-center text-muted small py-4">Đang tải...</div>
-                        </div>
-                    </div>
-                </div>
-                <span class="text-muted small">Xin chào, <b>${fn:escapeXml(sessionScope.fullName)}</b></span>
-            </div>
-        </header>
-        <div class="p-4">
-            <sitemesh:write property="body" />
-        </div>
-    </div>
-</div>
+		<!-- Nội dung chính: Cho phép co giãn lấp đầy khoảng trống còn lại -->
+		<div class="flex-grow-1" style="min-width: 0; overflow-x: hidden;">
+			<header
+				class="bg-white p-3 d-flex justify-content-between align-items-center sticky-top">
+				<h5 class="mb-0">
+					<sitemesh:write property="title" />
+				</h5>
+				<div class="d-flex align-items-center">
+					<div class="dropdown me-3">
+						<button type="button" id="noti-bell"
+							class="btn btn-link text-dark p-0 position-relative"
+							data-bs-toggle="dropdown" data-bs-auto-close="outside"
+							aria-expanded="false" title="Đơn hàng mới">
+							<i class="fas fa-bell fa-lg"></i> <span id="noti-count"
+								class="badge bg-danger position-absolute top-0 start-100 translate-middle d-none">0</span>
+						</button>
+						<div class="dropdown-menu dropdown-menu-end p-0 shadow"
+							style="width: 360px; max-width: 92vw;">
+							<div
+								class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+								<b>Đơn hàng mới</b> <a class="small"
+									href="${pageContext.request.contextPath}/admin/orders">Xem
+									tất cả</a>
+							</div>
+							<div id="noti-list" style="max-height: 380px; overflow-y: auto;">
+								<div class="text-center text-muted small py-4">Đang tải...</div>
+							</div>
+						</div>
+					</div>
+					<span class="text-muted small">Xin chào, <b>${fn:escapeXml(sessionScope.fullName)}</b></span>
+				</div>
+			</header>
+			<div class="p-4">
+				<sitemesh:write property="body" />
+			</div>
+		</div>
+	</div>
 
-<div class="toast-container position-fixed top-0 end-0 p-3" id="noti-toasts" style="z-index: 2000;"></div>
-<audio id="noti-sound" preload="auto"></audio>
-<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script>
+	<div class="toast-container position-fixed top-0 end-0 p-3"
+		id="noti-toasts" style="z-index: 2000;"></div>
+	<audio id="noti-sound" preload="auto"></audio>
+	<script
+		src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+	<script
+		src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script
+		src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+	<script>
     (function() {
         var ctx = '${pageContext.request.contextPath}';
         var KEY = 'adminLastSeenOrderId';
@@ -208,6 +288,6 @@
         });
     })();
 </script>
-<sitemesh:write property="bodyScript" />
+	<sitemesh:write property="bodyScript" />
 </body>
 </html>
