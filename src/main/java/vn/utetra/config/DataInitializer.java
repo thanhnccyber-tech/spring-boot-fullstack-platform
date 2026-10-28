@@ -1,6 +1,7 @@
 package vn.utetra.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,10 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private VoucherRepository voucherRepo;
     @Autowired private PromotionRepository promoRepo;
     @Autowired private PasswordEncoder encoder;
+
+    /** Chỉ tạo tài khoản demo khi bật rõ ràng (dev local). Mặc định tắt để không có admin/admin123 trên server thật. */
+    @Value("${app.seed-demo-accounts:false}")
+    private boolean seedDemoAccounts;
 
     @Override
     public void run(String... args) {
@@ -55,11 +60,13 @@ public class DataInitializer implements CommandLineRunner {
         }
         Branch firstBranch = branchRepo.findAll().stream().findFirst().orElse(null);
 
-        seedUser("admin@utetra.vn",   "admin123",   "Admin UTeTra",     adminRole,   null);
-        seedUser("manager@utetra.vn", "manager123", "Quản lý Q1",       managerRole, firstBranch);
-        seedUser("staff@utetra.vn",   "staff123",   "Nhân viên Q1",     staffRole,   firstBranch);
-        seedUser("shipper@utetra.vn", "ship123",    "Shipper Q1",       shipperRole, firstBranch);
-        seedUser("user@utetra.vn",    "user123",    "Khách hàng mẫu",   userRole,    null);
+        if (seedDemoAccounts) {
+            seedUser("admin@utetra.vn",   "admin123",   "Admin UTeTra",     adminRole,   null);
+            seedUser("manager@utetra.vn", "manager123", "Quản lý Q1",       managerRole, firstBranch);
+            seedUser("staff@utetra.vn",   "staff123",   "Nhân viên Q1",     staffRole,   firstBranch);
+            seedUser("shipper@utetra.vn", "ship123",    "Shipper Q1",       shipperRole, firstBranch);
+            seedUser("user@utetra.vn",    "user123",    "Khách hàng mẫu",   userRole,    null);
+        }
 
         if (sizeRepo.count() == 0) {
             createSize("S", "0", 1);
@@ -115,7 +122,30 @@ public class DataInitializer implements CommandLineRunner {
                     "38000", true, false, ttc, null, sSize, sSugar, sIce);
         }
 
+        seedBookMenu();
         seedMarketing();
+    }
+
+    /** Thêm 7 món của Sổ thực đơn nếu chưa có (so khớp theo tên, không ghi đè món admin đã sửa). */
+    private void seedBookMenu() {
+        List<Category> cats = catRepo.findAll();
+        if (cats.isEmpty()) return;
+        Category milk = cats.stream().filter(c -> "Trà sữa".equalsIgnoreCase(c.getName())).findFirst().orElse(cats.get(0));
+        Category fruit = cats.stream().filter(c -> "Trà trái cây".equalsIgnoreCase(c.getName())).findFirst().orElse(milk);
+        List<Topping> tops = topRepo.findAll();
+        SizeOption defSize = sizeRepo.findAllByOrderBySortOrderAscIdAsc().stream().findFirst().orElse(null);
+        SugarLevel defSugar = sugarRepo.findByActiveTrueOrderBySortOrderAscIdAsc().stream()
+                .filter(x -> x.getPercent() == 50).findFirst().orElse(null);
+        IceLevel defIce = iceRepo.findByActiveTrueOrderBySortOrderAscIdAsc().stream()
+                .filter(x -> x.getPercent() == 50).findFirst().orElse(null);
+
+        for (BookMenu.Item item : BookMenu.ITEMS) {
+            if (prodRepo.existsByNameIgnoreCase(item.name())) continue;
+            createProduct(item.name(), item.description(), item.price(), false, false,
+                    item.fruitTea() ? fruit : milk, item.milkTea() ? tops : null, defSize, defSugar, defIce);
+            prodRepo.findAll().stream().filter(p -> item.name().equalsIgnoreCase(p.getName())).findFirst()
+                    .ifPresent(p -> { p.setImageUrl(item.imageUrl()); prodRepo.save(p); });
+        }
     }
 
     private void seedMarketing() {

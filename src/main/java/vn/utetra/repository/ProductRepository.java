@@ -14,6 +14,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByFeaturedTrueAndActiveTrue();
     List<Product> findByIsNewTrueAndActiveTrue();
+    Optional<Product> findFirstByNameIgnoreCaseAndActiveTrue(String name);
+    boolean existsByNameIgnoreCase(String name);
 
     /* =====================================================
      * SEARCH CHO KHÁCH — luôn chỉ lấy sản phẩm active = true

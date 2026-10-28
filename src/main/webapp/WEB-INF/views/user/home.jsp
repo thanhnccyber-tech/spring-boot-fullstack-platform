@@ -129,6 +129,9 @@
                  data-url="${pageContext.request.contextPath}/product/${fn:escapeXml(bookProduct.id)}"
                  data-out-of-stock="${bookProduct.outOfStock}">
                 <c:choose>
+                    <c:when test="${fn:startsWith(bookProduct.imageUrl, '/static/images/tea-book/')}">
+                        <span data-image="${pageContext.request.contextPath}${fn:escapeXml(bookProduct.imageUrl)}"></span>
+                    </c:when>
                     <c:when test="${fn:contains(bookNameLower, 'matcha') or fn:contains(bookNameLower, 'trà xanh')}">
                         <span data-image="${pageContext.request.contextPath}/static/images/tea-book/matcha-milk-tea.png"></span>
                     </c:when>

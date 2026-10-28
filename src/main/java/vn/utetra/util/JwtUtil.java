@@ -5,7 +5,10 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -22,6 +25,8 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expiration;
 
+    @Autowired private Environment env;
+
     private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
     private static final String DEFAULT_SECRET_PREFIX = "utetraSecretKey2024";
 
@@ -29,6 +34,10 @@ public class JwtUtil {
     void validateSecret() {
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
             throw new IllegalStateException("jwt.secret phải dài tối thiểu 32 byte (256 bit).");
+        }
+        if (secret.startsWith(DEFAULT_SECRET_PREFIX) && env.acceptsProfiles(Profiles.of("prod"))) {
+            throw new IllegalStateException("Không được dùng JWT secret mặc định trong source khi chạy profile prod. "
+                    + "Hãy đặt JWT_SECRET ngẫu nhiên (vd: openssl rand -base64 48).");
         }
         if (secret.startsWith(DEFAULT_SECRET_PREFIX)) {
             log.warn("Đang dùng JWT secret MẶC ĐỊNH trong source code. "

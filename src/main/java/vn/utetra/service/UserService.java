@@ -22,6 +22,8 @@ public class UserService {
     @Autowired private RoleRepository roleRepo;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private vn.utetra.repository.NotificationRepository notiRepo;
+    @Autowired private vn.utetra.service.OtpService otpService;
+    @Autowired private vn.utetra.security.TokenBlacklist tokenBlacklist;
 
     @Transactional
     public User registerPending(RegisterRequest req) {
@@ -31,6 +33,13 @@ public class UserService {
             User u = existing.get();
             if (Boolean.TRUE.equals(u.getEnabled())) {
                 throw new RuntimeException("Email đã tồn tại trong hệ thống");
+            }
+            // Chống chiếm tài khoản đang chờ kích hoạt: nếu chủ email đang giữ một OTP còn hạn thì
+            // người khác không được đăng ký lại cùng email để đổi mật khẩu (rồi chủ email nhập OTP là kích hoạt
+            // với mật khẩu của kẻ tấn công).
+            if (otpService.hasActive(u.getEmail(), vn.utetra.entity.OtpToken.TYPE_REGISTER)) {
+                throw new RuntimeException("Email này đang chờ xác thực OTP. Hãy nhập mã đã gửi tới email "
+                        + "hoặc thử lại sau 5 phút.");
             }
             u.setPassword(passwordEncoder.encode(req.getPassword()));
             u.setFullName(req.getFullName());
@@ -121,6 +130,7 @@ public class UserService {
         PasswordPolicy.require(newPwd);
         u.setPassword(passwordEncoder.encode(newPwd));
         userRepo.save(u);
+        tokenBlacklist.revokeAllFor(u.getEmail());
     }
 
     /**
@@ -133,5 +143,6 @@ public class UserService {
         PasswordPolicy.require(newPassword);
         u.setPassword(passwordEncoder.encode(newPassword));
         userRepo.save(u);
+        tokenBlacklist.revokeAllFor(u.getEmail());
     }
 }

@@ -240,7 +240,11 @@ public class AuthController {
     @GetMapping("/otp/register/resend")
     public String resendOtp(@RequestParam String email, RedirectAttributes ra) {
         try {
-            otpService.issue(email, OtpToken.TYPE_REGISTER);
+            // Chỉ gửi cho tài khoản đang chờ kích hoạt: không để endpoint này thành công cụ spam mail tới email bất kỳ.
+            Optional<User> pending = userService.findByEmail(email == null ? "" : email.trim());
+            if (pending.isPresent() && !Boolean.TRUE.equals(pending.get().getEnabled())) {
+                otpService.issue(pending.get().getEmail(), OtpToken.TYPE_REGISTER);
+            }
             ra.addFlashAttribute("success", "Đã gửi lại mã OTP. Vui lòng kiểm tra email.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", ErrorMessages.safe(e));
@@ -305,7 +309,10 @@ public class AuthController {
     @GetMapping("/otp/reset/resend")
     public String resendOtpReset(@RequestParam String email, RedirectAttributes ra) {
         try {
-            otpService.issue(email, OtpToken.TYPE_RESET);
+            // Chỉ gửi cho email có tài khoản (phản hồi giống nhau để không lộ email nào tồn tại).
+            if (userService.findByEmail(email == null ? "" : email.trim()).isPresent()) {
+                otpService.issue(email.trim(), OtpToken.TYPE_RESET);
+            }
             ra.addFlashAttribute("success", "Đã gửi lại mã OTP. Vui lòng kiểm tra email.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", ErrorMessages.safe(e));

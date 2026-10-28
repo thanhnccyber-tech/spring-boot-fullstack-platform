@@ -60,6 +60,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             String email = jwtUtil.getEmail(token);
+            java.util.Date issuedAt = jwtUtil.parse(token).getIssuedAt();
+            if (issuedAt != null && blacklist.isIssuedBeforeRevocation(email, issuedAt.getTime())) {
+                chain.doFilter(request, response);
+                return;
+            }
 
             // Đối chiếu lại với database: tài khoản bị khoá/xoá thì token cũ vô hiệu ngay,
             // và quyền (role) luôn lấy mới nhất từ DB thay vì tin quyền cũ trong token.

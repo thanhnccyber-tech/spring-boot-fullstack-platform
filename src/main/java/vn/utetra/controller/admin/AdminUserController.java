@@ -15,6 +15,7 @@ import vn.utetra.repository.*;
 import vn.utetra.service.BranchService;
 import vn.utetra.service.CloudinaryService;
 import vn.utetra.service.FileValidator;
+import vn.utetra.security.PasswordPolicy;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,6 +33,7 @@ public class AdminUserController {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private CloudinaryService cloudinaryService;
     @Autowired private FileValidator fileValidator;
+    @Autowired private vn.utetra.security.TokenBlacklist tokenBlacklist;
 
     private User me(Authentication a) {
         return userRepo.findByEmailWithBranch(a.getName()).orElseThrow();
@@ -212,10 +214,21 @@ public class AdminUserController {
                         "Mật khẩu bắt buộc khi tạo mới", email, fullName, phone, address,
                         roleIds, branchId, enabled);
             }
-            user.setEmail(email);
+            if (!PasswordPolicy.isValid(newPassword)) {
+                return rejectForm(model, user, isNew, me, admin,
+                        PasswordPolicy.MESSAGE, email, fullName, phone, address,
+                        roleIds, branchId, enabled);
+            }
+            user.setEmail(email.trim());
             user.setPassword(passwordEncoder.encode(newPassword));
         } else if (newPassword != null && !newPassword.isBlank()) {
+            if (!PasswordPolicy.isValid(newPassword)) {
+                return rejectForm(model, user, isNew, me, admin,
+                        PasswordPolicy.MESSAGE, email, fullName, phone, address,
+                        roleIds, branchId, enabled);
+            }
             user.setPassword(passwordEncoder.encode(newPassword));
+            tokenBlacklist.revokeAllFor(user.getEmail());
         }
 
         Set<Role> selected = new HashSet<>();

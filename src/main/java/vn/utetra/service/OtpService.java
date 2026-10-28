@@ -97,6 +97,12 @@ public class OtpService {
         }
     }
 
+    /** true nếu email này vừa được phát OTP và mã vẫn còn hạn (đang chờ người dùng nhập). */
+    @Transactional(readOnly = true)
+    public boolean hasActive(String email, String type) {
+        return repo.countIssuedSince(email, type, LocalDateTime.now().minusMinutes(EXPIRE_MINUTES)) > 0;
+    }
+
     @Transactional
     public boolean verify(String email, String code, String type) {
         String key = attemptKey(email, type);

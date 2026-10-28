@@ -42,6 +42,7 @@ public class HomeController {
     @Autowired private PromotionService promotionService;
     @Autowired private vn.utetra.repository.FavoriteRepository favoriteRepo;
     @Autowired private BranchService branchService;
+    @Autowired private vn.utetra.repository.ProductRepository productRepo;
 
     @GetMapping({"/", "/home"})
     public String home(Model model) {
@@ -61,6 +62,12 @@ public class HomeController {
             if (bookProducts.size() >= 3) break;
             boolean exists = bookProducts.stream().anyMatch(x -> x.getId().equals(candidate.getId()));
             if (!exists) bookProducts.add(candidate);
+        }
+        for (vn.utetra.config.BookMenu.Item item : vn.utetra.config.BookMenu.ITEMS) {
+            productRepo.findFirstByNameIgnoreCaseAndActiveTrue(item.name()).ifPresent(p -> {
+                boolean exists = bookProducts.stream().anyMatch(x -> x.getId().equals(p.getId()));
+                if (!exists) bookProducts.add(p);
+            });
         }
         model.addAttribute("bookProducts", bookProducts);
 

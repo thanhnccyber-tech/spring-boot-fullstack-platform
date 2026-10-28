@@ -97,12 +97,11 @@
     page.appendChild(polaroid);
 
     const detail = el('div', 'tea-polaroid-detail');
-    detail.appendChild(el('span', '', formatter.format(product.price) + ' ₫'));
     const link = el('a', '', 'Xem món ↗');
     link.href = product.url + '?quantity=1';
     detail.appendChild(link);
     page.appendChild(detail);
-    page.appendChild(pageNumber(String(productIndex + 3).padStart(2, '0')));
+    page.appendChild(pageNumber(String(productIndex * 2 + 3).padStart(2, '0')));
     leftPage.appendChild(page);
   }
 
@@ -167,7 +166,7 @@
     options.href = product.url + '?quantity=1';
     options.addEventListener('click', function (event) { event.stopPropagation(); });
     page.appendChild(options);
-    page.appendChild(pageNumber(String(productIndex + 4).padStart(2, '0')));
+    page.appendChild(pageNumber(String(productIndex * 2 + 4).padStart(2, '0')));
     rightPage.appendChild(page);
   }
 
@@ -177,8 +176,8 @@
       leftPage.innerHTML = coverLeftHTML;
       rightPage.innerHTML = coverRightHTML;
     } else {
-      const leftProductIndex = Math.max(0, state - 1);
-      renderLeftProduct(leftProductIndex);
+      // Trang trái = ảnh của món, trang phải = mô tả + giá của đúng món đó.
+      renderLeftProduct(state);
       renderRightProduct(state);
     }
     updateControls();

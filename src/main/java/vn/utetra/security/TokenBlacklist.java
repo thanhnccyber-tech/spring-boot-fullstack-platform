@@ -20,6 +20,20 @@ public class TokenBlacklist {
         if (token != null && !token.isBlank()) revoked.put(token, System.currentTimeMillis() + ttlMillis);
     }
 
+    /** email (chữ thường) -> mốc (giây epoch): mọi token cấp trước mốc này đều vô hiệu. */
+    private final Map<String, Long> revokedBefore = new ConcurrentHashMap<>();
+
+    /** Đổi/đặt lại mật khẩu: vô hiệu mọi token đã cấp trước đó của tài khoản (kể cả token bị đánh cắp). */
+    public void revokeAllFor(String email) {
+        if (email != null) revokedBefore.put(email.toLowerCase(), System.currentTimeMillis() / 1000 + 1);
+    }
+
+    /** true nếu token (thời điểm cấp issuedAtMillis) được cấp trước lần đổi mật khẩu gần nhất. */
+    public boolean isIssuedBeforeRevocation(String email, long issuedAtMillis) {
+        Long cutoff = email == null ? null : revokedBefore.get(email.toLowerCase());
+        return cutoff != null && issuedAtMillis / 1000 < cutoff;
+    }
+
     public boolean isRevoked(String token) {
         Long until = revoked.get(token);
         if (until == null) return false;
