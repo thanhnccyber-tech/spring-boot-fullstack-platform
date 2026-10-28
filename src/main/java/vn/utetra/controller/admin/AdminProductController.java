@@ -11,17 +11,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Product;
+import vn.utetra.entity.User;
+import vn.utetra.repository.UserRepository;
 import vn.utetra.service.*;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * Quản lý sản phẩm.
- * - ADMIN : toàn quyền CRUD.
- * - MANAGER: chỉ xem danh sách + toggle "Hết hàng" (báo hết hàng).
- *   Các method mutate (tạo/sửa/xoá/ẩn-hiện) bị chặn bằng @PreAuthorize(ADMIN).
- */
 @Controller
 @RequestMapping("/admin/products")
 public class AdminProductController {
@@ -34,6 +30,7 @@ public class AdminProductController {
     @Autowired private SizeService sizeService;
     @Autowired private SugarService sugarService;
     @Autowired private IceService iceService;
+    @Autowired private UserRepository userRepo;
 
     private static boolean isAdmin(Authentication auth) {
         return auth.getAuthorities().stream()
@@ -75,6 +72,18 @@ public class AdminProductController {
         model.addAttribute("sort", sort);
         model.addAttribute("categories", categoryService.all());
         model.addAttribute("isAdmin", isAdmin(auth));
+
+        // Bổ sung: cho Manager thấy trạng thái tồn kho riêng của chi nhánh
+        User me = userRepo.findByEmailWithBranch(auth.getName()).orElseThrow();
+        if (!me.isAdmin() && me.getBranch() != null) {
+            List<Long> ids = pageData.getContent().stream().map(Product::getId).toList();
+            model.addAttribute("branchStockMap",
+                    productService.branchStockMap(me.getBranch().getId(), ids));
+            model.addAttribute("managerBranchName", me.getBranch().getName());
+        } else {
+            model.addAttribute("branchStockMap", java.util.Map.of());
+            model.addAttribute("managerBranchName", null);
+        }
         return "admin/products";
     }
 
@@ -144,13 +153,23 @@ public class AdminProductController {
         return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/products");
     }
 
-    /** Manager + Admin đều được gọi: báo "Hết hàng" / "Còn hàng". */
+    /** Admin đổi trạng thái toàn hệ thống; Manager chỉ đổi tại chi nhánh của mình. */
     @PostMapping("/toggle-stock")
     public String toggleStock(@RequestParam Long id,
                               @RequestParam(required = false) String returnUrl,
+                              Authentication auth,
                               RedirectAttributes ra) {
-        productService.toggleOutOfStock(id);
-        ra.addFlashAttribute("success", "Đã cập nhật trạng thái tồn kho");
+        User me = userRepo.findByEmailWithBranch(auth.getName()).orElseThrow();
+        if (me.isAdmin()) {
+            productService.toggleOutOfStock(id);
+            ra.addFlashAttribute("success", "Đã cập nhật trạng thái tồn kho toàn hệ thống");
+        } else if (me.getBranch() != null) {
+            productService.toggleOutOfStockForBranch(id, me.getBranch().getId());
+            ra.addFlashAttribute("success",
+                    "Đã cập nhật tồn kho tại chi nhánh " + me.getBranch().getName());
+        } else {
+            ra.addFlashAttribute("error", "Tài khoản Manager chưa được gán chi nhánh.");
+        }
         return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/products");
     }
 

@@ -15,7 +15,6 @@
     </div>
 </c:if>
 
-<%-- ===================== TOOLBAR ===================== --%>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div class="text-muted">
         <i class="fas fa-box me-1"></i>
@@ -28,7 +27,6 @@
     </c:if>
 </div>
 
-<%-- ===================== BỘ LỌC ===================== --%>
 <div class="card mb-3">
     <div class="card-body py-3">
         <form method="get" class="row g-2 align-items-end">
@@ -89,7 +87,15 @@
     </div>
 </div>
 
-<%-- ===================== BẢNG ===================== --%>
+<%-- Banner cho Manager: chỉ áp dụng tồn kho cho chi nhánh của mình --%>
+<c:if test="${!isAdmin and managerBranchName != null}">
+    <div class="alert alert-info d-flex align-items-center mb-3">
+        <i class="fas fa-circle-info me-2"></i>
+        <span>Chi nhánh: <b>${fn:escapeXml(managerBranchName)}</b> — Bạn chỉ có thể bật/tắt tồn kho
+        cho sản phẩm tại chi nhánh của mình. Các chi nhánh khác không bị ảnh hưởng.</span>
+    </div>
+</c:if>
+
 <div class="card">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -100,7 +106,7 @@
                     <th style="width:150px">Danh mục</th>
                     <th class="text-end" style="width:140px">Giá bán</th>
                     <th class="text-center" style="width:130px">Hiển thị</th>
-                    <th class="text-center" style="width:130px">Tồn kho</th>
+                    <th class="text-center" style="width:180px">Tồn kho</th>
                     <th class="text-end" style="width:120px">Thao tác</th>
                 </tr>
             </thead>
@@ -157,15 +163,41 @@
                             </c:choose>
                         </td>
                         <td class="text-center">
-                            <form action="${pageContext.request.contextPath}/admin/products/toggle-stock" method="post">
-                                <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
-                                <input type="hidden" name="returnUrl"
-                                       value="/admin/products?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">
-                                <button class="badge border-0 px-3 py-2 ${fn:escapeXml(p.outOfStock ? 'bg-danger' : 'bg-success')}"
-                                        title="${fn:escapeXml(p.outOfStock ? 'Bấm để đánh dấu còn hàng' : 'Bấm để đánh dấu hết hàng')}">
-                                    <i class="fas ${fn:escapeXml(p.outOfStock ? 'fa-times-circle' : 'fa-check-circle')} me-1"></i>${fn:escapeXml(p.outOfStock ? 'Hết hàng' : 'Còn hàng')}
-                                </button>
-                            </form>
+                            <c:set var="branchState" value="${branchStockMap[p.id]}"/>
+                            <c:set var="effectiveOOS" value="${p.outOfStock or (branchState != null and branchState)}"/>
+                            <c:choose>
+                                <%-- ADMIN: bật/tắt toàn hệ thống --%>
+                                <c:when test="${isAdmin}">
+                                    <form action="${pageContext.request.contextPath}/admin/products/toggle-stock" method="post">
+                                        <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
+                                        <input type="hidden" name="returnUrl"
+                                               value="/admin/products?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">
+                                        <button class="badge border-0 px-3 py-2 ${fn:escapeXml(p.outOfStock ? 'bg-danger' : 'bg-success')}"
+                                                title="${fn:escapeXml(p.outOfStock ? 'Bấm để mở bán toàn hệ thống' : 'Bấm để báo hết hàng toàn hệ thống')}">
+                                            <i class="fas ${fn:escapeXml(p.outOfStock ? 'fa-times-circle' : 'fa-check-circle')} me-1"></i>${fn:escapeXml(p.outOfStock ? 'Hết hàng' : 'Còn hàng')}
+                                        </button>
+                                    </form>
+                                </c:when>
+                                <%-- MANAGER: nếu Admin đã đánh dấu hết toàn hệ thống -> chỉ hiển thị, không cho bật --%>
+                                <c:when test="${p.outOfStock}">
+                                    <span class="badge bg-danger"
+                                          title="Admin đã đánh dấu hết hàng toàn hệ thống">
+                                        <i class="fas fa-times-circle me-1"></i>Hết hàng (toàn hệ thống)
+                                    </span>
+                                </c:when>
+                                <%-- MANAGER: bật/tắt tại chi nhánh của mình --%>
+                                <c:otherwise>
+                                    <form action="${pageContext.request.contextPath}/admin/products/toggle-stock" method="post">
+                                        <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
+                                        <input type="hidden" name="returnUrl"
+                                               value="/admin/products?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">
+                                        <button class="badge border-0 px-3 py-2 ${fn:escapeXml(effectiveOOS ? 'bg-danger' : 'bg-success')}"
+                                                title="${fn:escapeXml(effectiveOOS ? 'Bấm để mở bán tại chi nhánh' : 'Bấm để báo hết hàng tại chi nhánh')}">
+                                            <i class="fas ${fn:escapeXml(effectiveOOS ? 'fa-times-circle' : 'fa-check-circle')} me-1"></i>${fn:escapeXml(effectiveOOS ? 'Hết hàng' : 'Còn hàng')}
+                                        </button>
+                                    </form>
+                                </c:otherwise>
+                            </c:choose>
                         </td>
                         <td class="text-end">
                             <c:if test="${isAdmin}">
@@ -199,7 +231,6 @@
     </div>
 </div>
 
-<%-- ===================== PHÂN TRANG ===================== --%>
 <c:if test="${pageData.totalPages > 1}">
     <nav class="mt-3">
         <ul class="pagination justify-content-center mb-0">

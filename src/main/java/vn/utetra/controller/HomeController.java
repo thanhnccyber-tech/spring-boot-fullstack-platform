@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import vn.utetra.entity.IceLevel;
 import vn.utetra.entity.Product;
+import vn.utetra.entity.Topping;
 import vn.utetra.entity.User;
 import vn.utetra.dto.RatingSummary;
 import vn.utetra.entity.SizeOption;
@@ -20,15 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Controller
 public class HomeController {
 
-    /** Khoá session lưu danh sách id sản phẩm đã xem, mới nhất ở đầu. */
     public static final String VIEWED_SESSION_KEY = "VIEWED_PRODUCTS";
-    /** Tổng số sản phẩm lưu tối đa trong lịch sử. */
     private static final int MAX_VIEWED = 20;
-    /** Số thẻ hiển thị ở mục "Sản phẩm đã xem gần đây" dưới trang chi tiết. */
     private static final int MINI_VIEWED_LIMIT = 8;
 
     @Autowired private ProductService productService;
@@ -43,8 +42,15 @@ public class HomeController {
     @Autowired private vn.utetra.repository.FavoriteRepository favoriteRepo;
     @Autowired private BranchService branchService;
 
+    /** Chi nhánh khách đã chọn trong popup "Cách nhận hàng" (null nếu chưa chọn). */
+    private static Long branchIdOf(HttpSession session) {
+        if (session == null) return null;
+        Object v = session.getAttribute("RECV_BRANCH");
+        return v instanceof Long id ? id : null;
+    }
+
     @GetMapping({"/", "/home"})
-    public String home(Model model) {
+    public String home(Model model, HttpSession session) {
         List<Product> featured = productService.featured();
         List<Product> newArrivals = productService.newArrivals();
         model.addAttribute("featured", featured);
@@ -72,6 +78,14 @@ public class HomeController {
         List<vn.utetra.entity.Promotion> promos = promotionService.active();
         model.addAttribute("promotions", promos.size() > 4 ? promos.subList(0, 4) : promos);
         model.addAttribute("branches", branchService.active());
+
+        // Badge "Hết tại chi nhánh" cho thẻ sản phẩm trên trang chủ
+        Long branchId = branchIdOf(session);
+        List<Product> all = new ArrayList<>(featured);
+        all.addAll(newArrivals);
+        all.addAll(bookProducts);
+        model.addAttribute("effectiveProductOOS",
+                productService.effectiveOOSMap(branchId, all));
         return "user/home";
     }
 
@@ -83,7 +97,7 @@ public class HomeController {
                            @RequestParam(defaultValue = "0") int page,
                            @RequestParam(defaultValue = "20") int size,
                            @RequestParam(defaultValue = "newest") String sort,
-                           Model model) {
+                           HttpSession session, Model model) {
         Page<Product> p = productService.search(kw, categoryId, minPrice, maxPrice, page, size, sort);
         model.addAttribute("pageData", p);
         model.addAttribute("kw", kw);
@@ -94,29 +108,28 @@ public class HomeController {
         model.addAttribute("categories", categoryService.active());
         model.addAttribute("ratings", reviewService.summaries(
                 p.getContent().stream().map(Product::getId).toList()));
+
+        Long branchId = branchIdOf(session);
+        model.addAttribute("effectiveProductOOS",
+                productService.effectiveOOSMap(branchId, p.getContent()));
         return "user/products";
     }
 
     /* ==================== SẢN PHẨM ĐÃ XEM ==================== */
 
-    /**
-     * Ghi nhận lượt xem vào session: đưa id lên đầu, loại trùng, giới hạn MAX_VIEWED.
-     * Dùng session thay vì DB → khách chưa đăng nhập vẫn có lịch sử xem.
-     */
     private void trackView(HttpSession session, Long productId) {
         if (session == null || productId == null) return;
         @SuppressWarnings("unchecked")
         List<Long> existing = (List<Long>) session.getAttribute(VIEWED_SESSION_KEY);
         List<Long> ids = existing == null ? new ArrayList<>() : new ArrayList<>(existing);
-        ids.remove(productId);          // bỏ vị trí cũ nếu đã có
-        ids.add(0, productId);          // đẩy lên đầu
+        ids.remove(productId);
+        ids.add(0, productId);
         if (ids.size() > MAX_VIEWED) {
             ids = new ArrayList<>(ids.subList(0, MAX_VIEWED));
         }
         session.setAttribute(VIEWED_SESSION_KEY, ids);
     }
 
-    /** Đọc danh sách id đã xem từ session. */
     @SuppressWarnings("unchecked")
     private List<Long> viewedIds(HttpSession session) {
         if (session == null) return List.of();
@@ -124,7 +137,6 @@ public class HomeController {
         return (o instanceof List<?>) ? (List<Long>) o : List.of();
     }
 
-    /** Trang xem toàn bộ sản phẩm đã xem (tối đa 20). */
     @GetMapping("/products/recently-viewed")
     public String recentlyViewedPage(HttpSession session, Model model) {
         List<Product> products = productService.findActiveInOrder(viewedIds(session));
@@ -133,10 +145,12 @@ public class HomeController {
             model.addAttribute("ratings", reviewService.summaries(
                     products.stream().map(Product::getId).toList()));
         }
+        Long branchId = branchIdOf(session);
+        model.addAttribute("effectiveProductOOS",
+                productService.effectiveOOSMap(branchId, products));
         return "user/recently-viewed";
     }
 
-    /** Xoá lịch sử xem trong session. */
     @PostMapping("/products/recently-viewed/clear")
     public String clearRecentlyViewed(HttpSession session) {
         session.removeAttribute(VIEWED_SESSION_KEY);
@@ -172,10 +186,8 @@ public class HomeController {
             return "redirect:/products";
         }
 
-        // Ghi nhận lượt xem vào session TRƯỚC (để danh sách đã xem khác món đang xem)
         trackView(session, id);
 
-        // Mục "Sản phẩm đã xem gần đây" — bỏ món hiện tại, tối đa 8 món
         List<Long> otherIds = viewedIds(session).stream()
                 .filter(x -> !x.equals(id))
                 .limit(MINI_VIEWED_LIMIT)
@@ -189,8 +201,35 @@ public class HomeController {
 
         model.addAttribute("product", p);
         model.addAttribute("productDetailQuantity", Math.max(1, Math.min(quantity, 50)));
-        model.addAttribute("toppings", toppingService.activeInStock());
 
+        Long branchId = branchIdOf(session);
+
+        // ===== Tồn kho tại chi nhánh đã chọn =====
+        boolean productOOSAtBranch = Boolean.TRUE.equals(p.getOutOfStock());
+        if (!productOOSAtBranch && branchId != null) {
+            productOOSAtBranch = Boolean.TRUE.equals(
+                    productService.branchStockMap(branchId, List.of(p.getId()))
+                            .get(p.getId()));
+        }
+        model.addAttribute("productOOSAtBranch", productOOSAtBranch);
+
+        String currentBranchName = null;
+        if (branchId != null) {
+            try { currentBranchName = branchService.get(branchId).getName(); } catch (Exception ignored) { }
+        }
+        model.addAttribute("currentBranchName", currentBranchName);
+
+        List<Topping> toppings = toppingService.activeInStock();
+        model.addAttribute("toppings", toppings);
+        Set<Long> branchOOSToppingIds = toppingService.branchOOSIds(branchId,
+                toppings.stream().map(Topping::getId).toList());
+        model.addAttribute("branchOOSToppingIds", branchOOSToppingIds);
+
+        // Badge cho sản phẩm đã xem gần đây
+        model.addAttribute("effectiveProductOOS",
+                productService.effectiveOOSMap(branchId, recentlyViewed));
+
+        // ===== Size / Sugar / Ice =====
         List<SizeOption> allowedSizes = (p.getSizes() == null || p.getSizes().isEmpty())
                 ? sizeService.active()
                 : new ArrayList<>(p.getSizes());

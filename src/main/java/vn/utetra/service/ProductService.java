@@ -9,8 +9,12 @@ import vn.utetra.entity.*;
 import vn.utetra.repository.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ProductService {
@@ -24,14 +28,11 @@ public class ProductService {
     @Autowired private CloudinaryService cloudinaryService;
     @Autowired private FileValidator fileValidator;
     @Autowired private ReviewRepository reviewRepo;
+    @Autowired private BranchProductStockRepository branchProductStockRepo;
 
     public List<Product> featured() { return productRepo.findByFeaturedTrueAndActiveTrue(); }
     public List<Product> newArrivals() { return productRepo.findByIsNewTrueAndActiveTrue(); }
 
-    /**
-     * Lấy danh sách sản phẩm theo đúng thứ tự id yêu cầu (dùng cho "sản phẩm đã xem"),
-     * đồng thời loại các món đã ngừng bán.
-     */
     public List<Product> findActiveInOrder(List<Long> ids) {
         if (ids == null || ids.isEmpty()) return List.of();
         java.util.Map<Long, Product> map = new java.util.HashMap<>();
@@ -46,11 +47,6 @@ public class ProductService {
         return result;
     }
 
-    /**
-     * Tìm kiếm cho trang khách.
-     * Hỗ trợ sắp xếp: newest (mặc định), bestSeller, topRated, mostFavorite,
-     * priceAsc, priceDesc, nameAsc, nameDesc.
-     */
     public Page<Product> search(String kw, Long catId, BigDecimal min, BigDecimal max,
                                 int page, int size, String sort) {
         String kwP = (kw == null || kw.isBlank()) ? null : kw.trim();
@@ -84,7 +80,6 @@ public class ProductService {
                 PageRequest.of(Math.max(page, 0), size, sortBy));
     }
 
-    /** Sắp xếp cho các cột chuẩn (dùng Sort) — luôn có id làm tiebreaker để phân trang ổn định. */
     private Sort resolveSort(String sort) {
         Sort tie = Sort.by("id").descending();
         if ("priceAsc".equals(sort))  return Sort.by("basePrice").ascending().and(tie);
@@ -174,6 +169,67 @@ public class ProductService {
         Product p = productRepo.findById(id).orElseThrow();
         p.setOutOfStock(!Boolean.TRUE.equals(p.getOutOfStock()));
         productRepo.save(p);
+    }
+
+    /* ==================== TỒN KHO THEO CHI NHÁNH ==================== */
+
+    @Transactional
+    public void toggleOutOfStockForBranch(Long productId, Long branchId) {
+        if (branchId == null)
+            throw new IllegalArgumentException("Tài khoản chưa được gán chi nhánh.");
+        Product p = productRepo.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Sản phẩm không tồn tại."));
+        BranchProductStock s = branchProductStockRepo
+                .findByBranchIdAndProductId(branchId, productId)
+                .orElseGet(() -> {
+                    BranchProductStock n = new BranchProductStock();
+                    n.setBranchId(branchId);
+                    n.setProductId(productId);
+                    n.setOutOfStock(Boolean.TRUE.equals(p.getOutOfStock()));
+                    return n;
+                });
+        s.setOutOfStock(!Boolean.TRUE.equals(s.getOutOfStock()));
+        s.setUpdatedAt(LocalDateTime.now());
+        branchProductStockRepo.save(s);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, Boolean> branchStockMap(Long branchId, Collection<Long> productIds) {
+        if (branchId == null || productIds == null || productIds.isEmpty()) return Map.of();
+        Map<Long, Boolean> m = new HashMap<>();
+        for (BranchProductStock s : branchProductStockRepo
+                .findByBranchIdAndProductIdIn(branchId, productIds)) {
+            m.put(s.getProductId(), s.getOutOfStock());
+        }
+        return m;
+    }
+
+    /**
+     * Map "productId → đang hết hàng" đã KẾT HỢP toàn hệ thống + chi nhánh.
+     * Chỉ chứa các sản phẩm đang hết hàng, dùng để hiển thị badge trên danh sách.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, Boolean> effectiveOOSMap(Long branchId, Collection<Product> products) {
+        Map<Long, Boolean> result = new HashMap<>();
+        if (products == null || products.isEmpty()) return result;
+
+        List<Long> idsToCheck = products.stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getOutOfStock()))
+                .map(Product::getId)
+                .toList();
+
+        for (Product p : products) {
+            if (Boolean.TRUE.equals(p.getOutOfStock())) result.put(p.getId(), true);
+        }
+        if (branchId != null && !idsToCheck.isEmpty()) {
+            for (BranchProductStock s : branchProductStockRepo
+                    .findByBranchIdAndProductIdIn(branchId, idsToCheck)) {
+                if (Boolean.TRUE.equals(s.getOutOfStock())) {
+                    result.put(s.getProductId(), true);
+                }
+            }
+        }
+        return result;
     }
 
     @Transactional

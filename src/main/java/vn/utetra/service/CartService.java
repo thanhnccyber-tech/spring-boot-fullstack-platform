@@ -4,23 +4,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vn.utetra.dto.CartItem;
 import vn.utetra.entity.*;
+import vn.utetra.repository.BranchProductStockRepository;
+import vn.utetra.repository.BranchToppingStockRepository;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-/**
- * Dựng một dòng giỏ hàng từ món + lựa chọn của khách. Dùng chung cho: thêm vào giỏ,
- * sửa món trong giỏ và "đặt lại" đơn cũ, để giá luôn tính theo cùng một quy tắc (giá hiện tại ở server).
- */
 @Service
 public class CartService {
 
     public static final int MAX_QTY = 50;
     public static final int MAX_CART_ITEMS = 30;
 
-    /** Hai dòng giỏ giống nhau khi cùng món, size, độ ngọt, đá và bộ topping (không phân biệt thứ tự). */
     public static boolean sameLine(vn.utetra.dto.CartItem a, vn.utetra.dto.CartItem b) {
         return java.util.Objects.equals(a.getProductId(), b.getProductId())
                 && java.util.Objects.equals(a.getSizeId(), b.getSizeId())
@@ -33,7 +35,6 @@ public class CartService {
         return c.getToppingIds() == null ? java.util.Set.of() : new java.util.HashSet<>(c.getToppingIds());
     }
 
-    /** Thêm vào giỏ: nếu đã có dòng giống hệt thì cộng dồn số lượng, ngược lại thêm dòng mới. Trả về false nếu giỏ đầy. */
     public static boolean addOrMerge(java.util.List<vn.utetra.dto.CartItem> cart, vn.utetra.dto.CartItem item) {
         for (vn.utetra.dto.CartItem ex : cart) {
             if (sameLine(ex, item)) {
@@ -51,19 +52,35 @@ public class CartService {
     @Autowired private SizeService sizeService;
     @Autowired private SugarService sugarService;
     @Autowired private IceService iceService;
+    @Autowired private BranchProductStockRepository branchProductStockRepo;
+    @Autowired private BranchToppingStockRepository branchToppingStockRepo;
 
     public static int clampQty(Integer q) {
         if (q == null) return 1;
         return Math.max(1, Math.min(q, MAX_QTY));
     }
 
-    /** @throws IllegalArgumentException khi món/topping không còn bán (thông báo hiển thị được cho khách) */
     public CartItem build(Product p, Integer quantity, Long sizeId, Long sugarId, Long iceId,
                           List<Long> toppingIds) {
+        return build(p, quantity, sizeId, sugarId, iceId, toppingIds, null);
+    }
+
+    public CartItem build(Product p, Integer quantity, Long sizeId, Long sugarId, Long iceId,
+                          List<Long> toppingIds, Long branchId) {
         if (!Boolean.TRUE.equals(p.getActive()))
             throw new IllegalArgumentException("Sản phẩm này hiện không còn bán.");
         if (Boolean.TRUE.equals(p.getOutOfStock()))
             throw new IllegalArgumentException("Sản phẩm \"" + p.getName() + "\" hiện đang hết hàng, vui lòng chọn món khác.");
+
+        if (branchId != null) {
+            boolean branchOOS = branchProductStockRepo
+                    .findByBranchIdAndProductId(branchId, p.getId())
+                    .map(BranchProductStock::getOutOfStock)
+                    .orElse(false);
+            if (branchOOS)
+                throw new IllegalArgumentException("Sản phẩm \"" + p.getName()
+                        + "\" hiện đang hết hàng tại chi nhánh này, vui lòng chọn món khác.");
+        }
 
         CartItem item = new CartItem();
         item.setProductId(p.getId());
@@ -120,10 +137,21 @@ public class CartService {
         }
 
         if (toppingIds != null && !toppingIds.isEmpty()) {
+            Set<Long> branchOOSTops = branchId == null ? Set.of()
+                    : branchToppingStockRepo.findByBranchIdAndToppingIdIn(branchId, toppingIds)
+                            .stream()
+                            .filter(s -> Boolean.TRUE.equals(s.getOutOfStock()))
+                            .map(BranchToppingStock::getToppingId)
+                            .collect(Collectors.toSet());
+
             List<Topping> tops = toppingService.activeInStock().stream()
-                    .filter(t -> toppingIds.contains(t.getId())).toList();
+                    .filter(t -> toppingIds.contains(t.getId()))
+                    .filter(t -> !branchOOSTops.contains(t.getId()))
+                    .toList();
             if (tops.size() != toppingIds.size()) {
-                throw new IllegalArgumentException("Một số topping đã hết hàng hoặc không còn bán. Vui lòng chọn lại.");
+                throw new IllegalArgumentException("Một số topping đã hết hàng hoặc không còn bán"
+                        + (branchId != null ? " tại chi nhánh này" : "")
+                        + ". Vui lòng chọn lại.");
             }
             item.setToppingIds(toppingIds);
             item.setToppingNames(tops.stream().map(Topping::getName).toList());
@@ -136,10 +164,6 @@ public class CartService {
         return item;
     }
 
-    /**
-     * "Đặt lại" một dòng của đơn cũ: dò lại size/đường/đá theo tên đã lưu, topping còn bán thì giữ.
-     * Trả null nếu món không còn bán.
-     */
     public CartItem rebuild(OrderDetail d) {
         Product p = d.getProduct();
         if (p == null) return null;
@@ -166,6 +190,44 @@ public class CartService {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    /**
+     * Kiểm tra giỏ hàng so với chi nhánh đang chọn — trả về Map&lt;index, cảnh báo&gt;
+     * để hiển thị cảnh báo trên từng dòng.
+     */
+    public Map<Integer, String> checkCartAgainstBranch(List<CartItem> cart, Long branchId) {
+        if (branchId == null || cart == null || cart.isEmpty()) return Map.of();
+        Map<Integer, String> warnings = new HashMap<>();
+
+        Set<Long> pids = cart.stream()
+                .map(CartItem::getProductId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Set<Long> pOOS = new HashSet<>();
+        for (BranchProductStock s : branchProductStockRepo.findByBranchIdAndProductIdIn(branchId, pids)) {
+            if (Boolean.TRUE.equals(s.getOutOfStock())) pOOS.add(s.getProductId());
+        }
+
+        for (int i = 0; i < cart.size(); i++) {
+            CartItem ci = cart.get(i);
+            List<String> msgs = new ArrayList<>();
+            if (ci.getProductId() != null && pOOS.contains(ci.getProductId())) {
+                msgs.add("Sản phẩm đã hết hàng tại chi nhánh đã chọn");
+            }
+            if (ci.getToppingIds() != null && !ci.getToppingIds().isEmpty()) {
+                Set<Long> branchOOS = branchToppingStockRepo
+                        .findByBranchIdAndToppingIdIn(branchId, ci.getToppingIds())
+                        .stream()
+                        .filter(s -> Boolean.TRUE.equals(s.getOutOfStock()))
+                        .map(BranchToppingStock::getToppingId)
+                        .collect(Collectors.toSet());
+                if (!branchOOS.isEmpty()) msgs.add("Một số topping đã hết hàng tại chi nhánh");
+            }
+            if (!msgs.isEmpty()) warnings.put(i, String.join(". ", msgs));
+        }
+        return warnings;
     }
 
     /* ---------- Danh sách lựa chọn cho trang sửa món ---------- */
