@@ -1,13 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<title>Đặt lại mật khẩu - UTeTra</title>
+<title>Đặt lại mật khẩu - UTETra</title>
 
 <div class="row justify-content-center">
     <div class="col-md-5">
         <div class="card shadow">
             <div class="card-body p-4">
-                <h3 class="text-center mb-3">🔒 Đặt mật khẩu mới</h3>
+                <h3 class="text-center mb-3"> Đặt mật khẩu mới</h3>
                 <p class="text-muted text-center">
                     Tài khoản: <b>${fn:escapeXml(resetRequest.email)}</b>
                 </p>

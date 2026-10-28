@@ -2,13 +2,13 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<title>Đăng ký - UTeTra</title>
+<title>Đăng ký - UTETra</title>
 
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow">
             <div class="card-body p-4">
-                <h3 class="text-center mb-3">📝 Đăng ký tài khoản</h3>
+                <h3 class="text-center mb-3"> Đăng ký tài khoản</h3>
 
                 <c:if test="${error != null}">
                     <div class="alert alert-danger">${fn:escapeXml(error)}</div>

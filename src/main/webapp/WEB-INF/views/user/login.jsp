@@ -1,13 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<title>Đăng nhập - UTeTra</title>
+<title>Đăng nhập - UTETra</title>
 
 <div class="row justify-content-center">
     <div class="col-md-5">
         <div class="card shadow">
             <div class="card-body p-4">
-                <h3 class="text-center mb-3">🔐 Đăng nhập</h3>
+                <h3 class="text-center mb-3"> Đăng nhập</h3>
 
                 <c:if test="${param.activated == 'true'}">
                     <div class="alert alert-success">

@@ -166,7 +166,7 @@ public class AuthController {
             ra.addFlashAttribute("welcomeNew", u.getFullName() == null || u.getFullName().isBlank() ? "bạn" : u.getFullName());
         }
         // Khách hàng: thông báo hội viên + quay lại trang đang làm dở (giỏ hàng, thanh toán...)
-        ra.addFlashAttribute("success", "Đăng nhập thành công! Bạn là hội viên UTeTra"
+        ra.addFlashAttribute("success", "Đăng nhập thành công! Bạn là hội viên UTETra"
                 + (u.getFullName() == null || u.getFullName().isBlank() ? "" : " (" + u.getFullName() + ")")
                 + ", hiện có " + u.getPoints() + " điểm. Mỗi 10.000đ mua hàng = 1 điểm.");
         return "redirect:" + SafeRedirect.localPath(next, "/");
@@ -230,7 +230,7 @@ public class AuthController {
         }
         userService.activate(req.getEmail());
         try {
-            mailService.send(req.getEmail(), "Chào mừng đến với UTeTra",
+            mailService.send(req.getEmail(), "Chào mừng đến với UTETra",
                     "Tài khoản của bạn đã được kích hoạt. Hãy đăng nhập và trải nghiệm nhé!");
         } catch (Exception ignored) {}
 

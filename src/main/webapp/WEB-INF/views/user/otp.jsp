@@ -2,13 +2,13 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<title>Xác thực OTP - UTeTra</title>
+<title>Xác thực OTP - UTETra</title>
 
 <div class="row justify-content-center">
     <div class="col-md-5">
         <div class="card shadow">
             <div class="card-body p-4 text-center">
-                <h3>📧 Xác thực OTP</h3>
+                <h3> Xác thực OTP</h3>
                 <p class="text-muted">
                     Mã OTP đã được gửi tới <b>${fn:escapeXml(email)}</b>. Mã có hiệu lực trong 5 phút.
                 </p>

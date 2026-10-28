@@ -38,7 +38,7 @@ public class DataInitializer implements CommandLineRunner {
 
         if (branchRepo.count() == 0) {
             Branch b1 = new Branch();
-            b1.setName("UTeTra Quận 1");
+            b1.setName("UTETra Quận 1");
             b1.setAddress("123 Nguyễn Huệ, Q.1, TP.HCM");
             b1.setPhone("0901234567");
             b1.setLatitude(10.7743);
@@ -46,7 +46,7 @@ public class DataInitializer implements CommandLineRunner {
             branchRepo.save(b1);
 
             Branch b2 = new Branch();
-            b2.setName("UTeTra Thủ Đức");
+            b2.setName("UTETra Thủ Đức");
             b2.setAddress("45 Võ Văn Ngân, TP.Thủ Đức, TP.HCM");
             b2.setPhone("0909876543");
             b2.setLatitude(10.8505);
@@ -55,7 +55,7 @@ public class DataInitializer implements CommandLineRunner {
         }
         Branch firstBranch = branchRepo.findAll().stream().findFirst().orElse(null);
 
-        seedUser("admin@utetra.vn",   "admin123",   "Admin UTeTra",     adminRole,   null);
+        seedUser("admin@utetra.vn",   "admin123",   "Admin UTETra",     adminRole,   null);
         seedUser("manager@utetra.vn", "manager123", "Quản lý Q1",       managerRole, firstBranch);
         seedUser("staff@utetra.vn",   "staff123",   "Nhân viên Q1",     staffRole,   firstBranch);
         seedUser("shipper@utetra.vn", "ship123",    "Shipper Q1",       shipperRole, firstBranch);
@@ -104,7 +104,7 @@ public class DataInitializer implements CommandLineRunner {
             IceLevel sIce      = iceRepo.findByActiveTrueOrderBySortOrderAscIdAsc().stream()
                     .filter(x -> x.getPercent() == 50).findFirst().orElse(null);
 
-            createProduct("Trà sữa trân châu UTe",
+            createProduct("Trà sữa trân châu UTE",
                     "Trà sữa đặc trưng với trân châu dai mềm",
                     "35000", true, false, ts, tops, sSize, sSugar, sIce);
             createProduct("Trà sữa matcha",
@@ -140,7 +140,7 @@ public class DataInitializer implements CommandLineRunner {
         if (promoRepo.count() == 0) {
             createPromo("Khai trương: giảm 10% đơn đầu tiên",
                     "Nhập mã WELCOME10 khi thanh toán để được giảm 10%, tối đa 30.000đ.",
-                    "Chào mừng bạn đến với UTeTra! Nhập mã WELCOME10 ở bước thanh toán để được giảm 10% (tối đa 30.000đ) cho đơn từ 50.000đ.",
+                    "Chào mừng bạn đến với UTETra! Nhập mã WELCOME10 ở bước thanh toán để được giảm 10% (tối đa 30.000đ) cho đơn từ 50.000đ.",
                     "WELCOME10");
             createPromo("Giảm ngay 15.000đ cho đơn từ 80.000đ",
                     "Nhập mã GIAM15K, áp dụng cho cả giao hàng và đến lấy tại cửa hàng.",

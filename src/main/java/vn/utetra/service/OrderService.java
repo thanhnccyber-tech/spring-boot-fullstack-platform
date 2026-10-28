@@ -332,8 +332,8 @@ public class OrderService {
         noti.put("createdAt", saved.getCreatedAt().toString());
         messaging.convertAndSend("/topic/orders", noti);
 
-        mailOrder(saved, user, details, "UTeTra - Đã nhận đơn hàng " + saved.getOrderCode(),
-                "Cảm ơn bạn đã đặt hàng tại UTeTra! Chúng tôi đã nhận đơn và sẽ sớm xác nhận.");
+        mailOrder(saved, user, details, "UTETra - Đã nhận đơn hàng " + saved.getOrderCode(),
+                "Cảm ơn bạn đã đặt hàng tại UTETra! Chúng tôi đã nhận đơn và sẽ sớm xác nhận.");
 
         return saved;
     }
@@ -376,7 +376,7 @@ public class OrderService {
             sb.append("\nDùng điểm: -").append(money(o.getPointsDiscount()));
         sb.append("\nTổng thanh toán: ").append(money(o.getTotalAmount()))
           .append("\nThanh toán: ").append(o.getPaymentMethod())
-          .append("\n\nBạn có thể theo dõi tiến trình đơn trong mục Đơn hàng của tôi.\n— UTeTra");
+          .append("\n\nBạn có thể theo dõi tiến trình đơn trong mục Đơn hàng của tôi.\n— UTETra");
         final String to = user.getEmail(), body = sb.toString();
         afterCommit(() -> mailService.sendQuietly(to, subject, body));
     }
@@ -395,7 +395,7 @@ public class OrderService {
             default -> null;
         };
         if (intro == null) return;
-        mailOrder(o, o.getUser(), null, "UTeTra - Đơn " + o.getOrderCode() + ": " + o.getStatusLabel(), intro);
+        mailOrder(o, o.getUser(), null, "UTETra - Đơn " + o.getOrderCode() + ": " + o.getStatusLabel(), intro);
     }
 
     /* ==================== HỦY ĐƠN / KHIẾU NẠI / HOÀN TIỀN / ĐẶT LẠI ==================== */
