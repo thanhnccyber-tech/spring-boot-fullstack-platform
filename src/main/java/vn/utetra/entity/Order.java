@@ -89,6 +89,9 @@ public class Order {
     @Column(name = "discount_amount", precision = 14, scale = 2)
     private BigDecimal discountAmount;
 
+    @Column(name = "shipping_discount", precision = 14, scale = 2)
+    private BigDecimal shippingDiscountAmount;
+
     @Column(name = "voucher_code", length = 30)
     private String voucherCode;
 
@@ -123,7 +126,6 @@ public class Order {
     @Column(name = "complaint_resolved_at")
     private LocalDateTime complaintResolvedAt;
 
-    /** Ảnh/video đính kèm khiếu nại (Cloudinary URL + MIME type) */
     @Column(name = "complaint_media_url", length = 500)
     private String complaintMediaUrl;
 
@@ -152,11 +154,12 @@ public class Order {
     public boolean isPickup() { return METHOD_PICKUP.equals(deliveryMethod); }
 
     public BigDecimal getSubtotalAmount() {
-        BigDecimal t = totalAmount == null ? BigDecimal.ZERO : totalAmount;
+        BigDecimal t   = totalAmount == null ? BigDecimal.ZERO : totalAmount;
         BigDecimal fee = shippingFee == null ? BigDecimal.ZERO : shippingFee;
         BigDecimal dis = discountAmount == null ? BigDecimal.ZERO : discountAmount;
         BigDecimal pts = pointsDiscount == null ? BigDecimal.ZERO : pointsDiscount;
-        return t.subtract(fee).add(dis).add(pts);
+        BigDecimal sd  = shippingDiscountAmount == null ? BigDecimal.ZERO : shippingDiscountAmount;
+        return t.subtract(fee).add(sd).add(dis).add(pts);
     }
 
     public String getStatusLabel() {
@@ -196,7 +199,6 @@ public class Order {
                 && STATUS_PENDING.equals(status);
     }
 
-    /** Khách chỉ được khiếu nại đơn đã hoàn thành và chưa từng khiếu nại trước đó. */
     public boolean isComplainable() {
         return STATUS_COMPLETED.equals(status) && complaintAt == null;
     }

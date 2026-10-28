@@ -20,8 +20,8 @@
                         <div class="voucher-code" id="vc-${fn:escapeXml(v.id)}">${fn:escapeXml(v.code)}</div>
                         <div class="fw-bold">
                             <c:choose>
-                                <c:when test="${v.percent}">Giảm ${fn:escapeXml(v.discountValue)}%<c:if test="${v.maxDiscountAmount != null}"> (tối đa <fmt:formatNumber value="${v.maxDiscountAmount}" pattern="#,##0"/>đ)</c:if></c:when>
-                                <c:otherwise>Giảm <fmt:formatNumber value="${v.discountValue}" pattern="#,##0"/>đ</c:otherwise>
+                                <c:when test="${v.percent}">Giảm ${fn:escapeXml(v.discountValue)}%<c:if test="${v.shippingVoucher}"> phí ship</c:if><c:if test="${v.maxDiscountAmount != null}"> (tối đa <fmt:formatNumber value="${v.maxDiscountAmount}" pattern="#,##0"/>đ)</c:if></c:when>
+                                <c:otherwise>Giảm <fmt:formatNumber value="${v.discountValue}" pattern="#,##0"/>đ<c:if test="${v.shippingVoucher}"> phí ship</c:if></c:otherwise>
                             </c:choose>
                         </div>
                         <div class="small text-muted">Đơn từ <fmt:formatNumber value="${v.minOrderAmount}" pattern="#,##0"/>đ

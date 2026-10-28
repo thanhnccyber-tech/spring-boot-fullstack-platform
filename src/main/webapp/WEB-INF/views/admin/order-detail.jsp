@@ -16,7 +16,6 @@
 </c:if>
 
 <div class="row g-4">
-    <%-- ================= CỘT TRÁI ================= --%>
     <div class="col-lg-8">
         <div class="card mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -108,6 +107,12 @@
                                     <span class="fw-semibold">-<fmt:formatNumber value="${order.discountAmount}" pattern="#,##0"/> ₫</span>
                                 </div>
                             </c:if>
+                            <c:if test="${order.shippingDiscountAmount != null && order.shippingDiscountAmount > 0}">
+                                <div class="d-flex justify-content-between mb-1 small text-success">
+                                    <span>Giảm phí vận chuyển (${fn:escapeXml(order.voucherCode)}):</span>
+                                    <span class="fw-semibold">-<fmt:formatNumber value="${order.shippingDiscountAmount}" pattern="#,##0"/> ₫</span>
+                                </div>
+                            </c:if>
                             <c:if test="${order.pointsDiscount != null && order.pointsDiscount > 0}">
                                 <div class="d-flex justify-content-between mb-1 small text-success">
                                     <span>Dùng điểm:</span>
@@ -126,7 +131,6 @@
             </div>
         </div>
 
-        <%-- Card khiếu nại / hoàn tiền --%>
         <c:if test="${order.status == 'COMPLAINED'}">
         <div class="card mb-4 border-warning">
             <div class="card-header bg-white fw-bold text-warning">
@@ -213,7 +217,6 @@
         </div>
         </c:if>
 
-        <%-- Danh sách món --%>
         <div class="card mb-4">
             <div class="card-header bg-white fw-bold"><i class="fas fa-box-open text-primary me-1"></i> Danh sách món</div>
             <div class="table-responsive">
@@ -274,7 +277,6 @@
         </c:if>
     </div>
 
-    <%-- ================= CỘT PHẢI ================= --%>
     <div class="col-lg-4">
         <div class="sticky-top" style="top: 80px; z-index: 10;">
 

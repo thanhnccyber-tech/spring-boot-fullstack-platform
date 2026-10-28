@@ -5,7 +5,6 @@
 <title>Chi tiết đơn hàng</title>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
-<%-- Tiêu đề + trạng thái + hành động --%>
 <div class="od-head">
     <div>
         <h3 class="od-title">Đơn hàng ${fn:escapeXml(order.orderCode)}</h3>
@@ -41,7 +40,6 @@
     </div>
 </div>
 
-<%-- Thanh tiến trình --%>
 <c:choose>
     <c:when test="${order.progressStep > 0}">
         <div class="od-card od-progress-card">
@@ -205,6 +203,9 @@
             <div class="sum-row"><span>Tiền hàng</span><span><fmt:formatNumber value="${order.subtotalAmount}" pattern="#,##0"/> ₫</span></div>
             <div class="sum-row"><span>Phí vận chuyển</span><span><fmt:formatNumber value="${order.shippingFee != null ? order.shippingFee : 0}" pattern="#,##0"/> ₫</span></div>
             <div class="sum-row"><span>Giảm giá<c:if test="${not empty order.voucherCode}"> <em class="od-voucher">${fn:escapeXml(order.voucherCode)}</em></c:if></span><span class="text-success">− <fmt:formatNumber value="${order.discountAmount != null ? order.discountAmount : 0}" pattern="#,##0"/> ₫</span></div>
+            <c:if test="${order.shippingDiscountAmount != null && order.shippingDiscountAmount > 0}">
+                <div class="sum-row"><span>Giảm phí vận chuyển</span><span class="text-success">− <fmt:formatNumber value="${order.shippingDiscountAmount}" pattern="#,##0"/> ₫</span></div>
+            </c:if>
             <c:if test="${order.pointsUsed != null && order.pointsUsed > 0}">
                 <div class="sum-row"><span>Dùng ${fn:escapeXml(order.pointsUsed)} điểm</span><span class="text-success">− <fmt:formatNumber value="${order.pointsDiscount}" pattern="#,##0"/> ₫</span></div>
             </c:if>
@@ -214,7 +215,6 @@
     </div>
 </div>
 
-<%-- Modal khiếu nại (hỗ trợ đính kèm ảnh/video) --%>
 <c:if test="${order.complainable}">
 <div class="modal fade" id="complaintModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">

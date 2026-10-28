@@ -38,8 +38,9 @@ public class VoucherService {
         return v;
     }
 
-    /** Số tiền được giảm cho đơn có tiền hàng = subtotal (không bao giờ vượt quá tiền hàng). */
+    /** Số tiền giảm trên TIỀN HÀNG. Voucher SHIPPING trả 0. */
     public BigDecimal discountOf(Voucher v, BigDecimal subtotal) {
+        if (v.isShippingVoucher()) return BigDecimal.ZERO;
         BigDecimal d;
         if (v.isPercent()) {
             d = subtotal.multiply(v.getDiscountValue()).divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN);
@@ -49,6 +50,22 @@ public class VoucherService {
             d = v.getDiscountValue();
         }
         if (d.compareTo(subtotal) > 0) d = subtotal;
+        return d.max(BigDecimal.ZERO);
+    }
+
+    /** Số tiền giảm trên PHÍ VẬN CHUYỂN. Voucher ORDER trả 0. */
+    public BigDecimal shippingDiscountOf(Voucher v, BigDecimal shippingFee) {
+        if (!v.isShippingVoucher() || shippingFee == null || shippingFee.signum() <= 0)
+            return BigDecimal.ZERO;
+        BigDecimal d;
+        if (v.isPercent()) {
+            d = shippingFee.multiply(v.getDiscountValue()).divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN);
+            if (v.getMaxDiscountAmount() != null && d.compareTo(v.getMaxDiscountAmount()) > 0)
+                d = v.getMaxDiscountAmount();
+        } else {
+            d = v.getDiscountValue();
+        }
+        if (d.compareTo(shippingFee) > 0) d = shippingFee;
         return d.max(BigDecimal.ZERO);
     }
 
@@ -67,7 +84,8 @@ public class VoucherService {
 
     @Transactional
     public void save(Voucher v, String code, String type, BigDecimal value, BigDecimal min,
-                     BigDecimal max, LocalDateTime expires, Integer limit, boolean active, String desc) {
+                     BigDecimal max, LocalDateTime expires, Integer limit, boolean active, String desc,
+                     String applyTo) {
         String c = code == null ? "" : code.trim().toUpperCase();
         if (!c.matches("[A-Z0-9_-]{3,30}"))
             throw new IllegalArgumentException("Mã chỉ gồm chữ HOA, số, gạch (3-30 ký tự).");
@@ -84,8 +102,12 @@ public class VoucherService {
             if (v.getId() == null || !e.getId().equals(v.getId()))
                 throw new IllegalArgumentException("Mã giảm giá đã tồn tại.");
         });
+
+        String at = Voucher.APPLY_SHIPPING.equals(applyTo) ? Voucher.APPLY_SHIPPING : Voucher.APPLY_ORDER;
+
         v.setCode(c);
         v.setDiscountType(type);
+        v.setApplyTo(at);
         v.setDiscountValue(value);
         v.setMinOrderAmount(min == null ? BigDecimal.ZERO : min);
         v.setMaxDiscountAmount(Voucher.PERCENT.equals(type) ? max : null);

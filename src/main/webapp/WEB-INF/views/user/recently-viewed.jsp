@@ -15,7 +15,6 @@
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                 <div>
                     <h4 class="mb-1" style="color:#956542;font-weight:700">
-                        <i class="fas fa-clock-rotate-left" style="color:var(--ute-blue-fresh)"></i>
                         Sản phẩm đã xem
                     </h4>
                     <c:if test="${not empty products}">
@@ -34,7 +33,6 @@
 
             <c:if test="${empty products}">
                 <div class="empty-state">
-                    <i class="fas fa-clock-rotate-left"></i>
                     <h5>Chưa có sản phẩm nào</h5>
                     <p class="text-muted mb-3">Các món bạn xem gần đây sẽ xuất hiện tại đây.</p>
                     <a href="${ctx}/products" class="btn btn-warning">Khám phá menu</a>

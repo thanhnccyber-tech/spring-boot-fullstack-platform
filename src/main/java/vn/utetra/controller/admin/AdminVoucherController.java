@@ -21,11 +21,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
 
-/**
- * Quản lý mã giảm giá.
- * - ADMIN : CRUD đầy đủ.
- * - MANAGER: chỉ xem danh sách (mutate bị chặn @PreAuthorize(ADMIN)).
- */
 @Controller
 @RequestMapping("/admin/vouchers")
 public class AdminVoucherController {
@@ -44,7 +39,9 @@ public class AdminVoucherController {
         String discount = voucher.isPercent()
                 ? "giảm " + voucher.getDiscountValue().stripTrailingZeros().toPlainString() + "%"
                 : "giảm " + String.format("%,d", voucher.getDiscountValue().longValue()).replace(',', '.') + "đ";
-        String content = "UTeTra vừa phát hành mã " + voucher.getCode() + " (" + discount + "). ";
+        String target = voucher.isShippingVoucher() ? " phí vận chuyển" : " đơn hàng";
+
+        String content = "UTeTra vừa phát hành mã " + voucher.getCode() + " (" + discount + target + "). ";
         if (voucher.getDescription() != null && !voucher.getDescription().isBlank()) content += voucher.getDescription().trim() + " ";
         if (voucher.getMinOrderAmount() != null && voucher.getMinOrderAmount().signum() > 0)
             content += "Đơn tối thiểu " + String.format("%,d", voucher.getMinOrderAmount().longValue()).replace(',', '.') + "đ. ";
@@ -80,6 +77,7 @@ public class AdminVoucherController {
     public String save(@RequestParam(required = false) Long id,
                        @RequestParam String code,
                        @RequestParam String discountType,
+                       @RequestParam(defaultValue = "ORDER") String applyTo,
                        @RequestParam BigDecimal discountValue,
                        @RequestParam(required = false) BigDecimal minOrderAmount,
                        @RequestParam(required = false) BigDecimal maxDiscountAmount,
@@ -93,7 +91,7 @@ public class AdminVoucherController {
             Voucher v = id == null ? new Voucher() : voucherService.get(id);
             boolean wasActive = Boolean.TRUE.equals(v.getActive());
             voucherService.save(v, code, discountType, discountValue, minOrderAmount,
-                    maxDiscountAmount, exp, usageLimit, active, description);
+                    maxDiscountAmount, exp, usageLimit, active, description, applyTo);
             if (active && (id == null || !wasActive)) notifyCustomersAboutVoucher(v);
             ra.addFlashAttribute("success", id == null ? "Đã tạo mã giảm giá." : "Đã cập nhật mã giảm giá.");
         } catch (DateTimeParseException e) {

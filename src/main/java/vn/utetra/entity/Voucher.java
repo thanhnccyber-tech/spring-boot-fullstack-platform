@@ -15,6 +15,11 @@ public class Voucher {
     public static final String PERCENT = "PERCENT";
     public static final String AMOUNT  = "AMOUNT";
 
+    /** Áp dụng cho tiền hàng (mặc định, tương thích voucher cũ). */
+    public static final String APPLY_ORDER    = "ORDER";
+    /** Áp dụng cho phí vận chuyển. */
+    public static final String APPLY_SHIPPING = "SHIPPING";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,6 +33,10 @@ public class Voucher {
     /** PERCENT (giảm theo %) hoặc AMOUNT (giảm số tiền cố định) */
     @Column(name = "discount_type", nullable = false, length = 10)
     private String discountType = AMOUNT;
+
+    /** ORDER: áp dụng tiền hàng — SHIPPING: áp dụng phí vận chuyển. */
+    @Column(name = "apply_to", length = 20)
+    private String applyTo = APPLY_ORDER;
 
     @Column(name = "discount_value", nullable = false, precision = 14, scale = 2)
     private BigDecimal discountValue = BigDecimal.ZERO;
@@ -56,5 +65,13 @@ public class Voucher {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    public boolean isPercent() { return PERCENT.equals(discountType); }
+    /** Cột apply_to vừa được thêm: dòng cũ NULL -> coi như ORDER. */
+    @PostLoad
+    void ensureDefaults() {
+        if (applyTo == null) applyTo = APPLY_ORDER;
+    }
+
+    public boolean isPercent()         { return PERCENT.equals(discountType); }
+    public boolean isShippingVoucher() { return APPLY_SHIPPING.equals(applyTo); }
+    public boolean isOrderVoucher()    { return !isShippingVoucher(); }
 }
