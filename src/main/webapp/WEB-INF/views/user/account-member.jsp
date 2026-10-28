@@ -45,7 +45,7 @@
                     <i class="fas fa-bullseye"></i>
                     <c:choose>
                         <c:when test="${not empty nextRank}">Tích thêm <b>${fn:escapeXml(remaining)} điểm</b> để đạt hạng <b>${fn:escapeXml(nextRank)}</b>.</c:when>
-                        <c:otherwise>Chúc mừng! Bạn đã đạt hạng cao nhất của UTeTra.</c:otherwise>
+                        <c:otherwise>Chúc mừng! Bạn đã đạt hạng cao nhất của UTETra.</c:otherwise>
                     </c:choose>
                     <span>Điểm đã dùng đổi ưu đãi không làm giảm tiến độ xét hạng.</span>
                 </div>

@@ -2,6 +2,7 @@ package vn.utetra.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import vn.utetra.entity.Branch;
@@ -23,6 +24,7 @@ import java.util.Map;
 @ControllerAdvice
 public class LayoutModelAdvice {
 
+    @Value("${app.google-maps.api-key:}") private String googleMapsApiKeyConfig;
     @Autowired private CategoryService categoryService;
     @Autowired private BranchService branchService;
     @Autowired private vn.utetra.repository.FavoriteRepository favoriteRepo;
@@ -83,6 +85,12 @@ public class LayoutModelAdvice {
         return new java.util.HashSet<>(favoriteRepo.findProductIdsByUserId(id));
     }
 
+
+    /** API key phía trình duyệt cho Google Maps JavaScript API (có thể để trống khi dùng bản đồ dự phòng). */
+    @ModelAttribute("googleMapsApiKey")
+    public String googleMapsApiKey(HttpServletRequest req) {
+        return customerPage(req) ? googleMapsApiKeyConfig : "";
+    }
 
     @ModelAttribute("receiveBranches")
     public List<Branch> receiveBranches(HttpServletRequest req) {

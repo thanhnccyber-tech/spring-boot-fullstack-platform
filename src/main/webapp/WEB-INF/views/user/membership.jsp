@@ -24,7 +24,7 @@
             <h2 class="text-center mb-4" style="color:#956542;font-weight:700">CÂU HỎI THƯỜNG GẶP (FAQ)</h2>
             <div class="accordion" id="faqList">
                 <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#f1">Làm sao để tôi có thể đăng ký thành viên UTeTra?</button></h2>
+                    <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#f1">Làm sao để tôi có thể đăng ký thành viên UTETra?</button></h2>
                     <div id="f1" class="accordion-collapse collapse show" data-bs-parent="#faqList"><div class="accordion-body">
                         Bạn <a href="${ctx}/register">đăng ký tài khoản</a> miễn phí và xác thực email là đã trở thành hội viên. Mọi đơn đặt sau khi đăng nhập sẽ được tích điểm tự động.
                     </div></div>

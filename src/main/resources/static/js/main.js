@@ -1,4 +1,4 @@
-/* UTeTra - giao diện khách hàng */
+/* UTETra - giao diện khách hàng */
 (function () {
     'use strict';
 
@@ -41,9 +41,14 @@
         var returnEl = document.getElementById('receiveReturn');
         if (returnEl) returnEl.value = location.pathname + location.search;
 
-        /* ---------- Leaflet map picker ---------- */
+        /* ---------- Google Maps picker (Leaflet fallback when API key is absent/unavailable) ---------- */
         var mapInstance = null;
-        var marker      = null;
+        var marker = null;
+        var mapProvider = null;
+        var googleWaitTimer = null;
+        var googleReadyListener = null;
+        var pendingCenter = null;
+        var mapHint = document.getElementById('recvMapHint');
 
         function fmtCoord(v) { return Number(v).toFixed(6); }
 
@@ -52,8 +57,48 @@
             if (lngInput) lngInput.value = fmtCoord(lng);
         }
 
-        function pushMarker(lat, lng) {
+        function setMapHint(provider) {
+            if (!mapHint) return;
+            if (provider === 'google') {
+                mapHint.innerHTML = '<i class="fas fa-info-circle"></i> Google Maps: nhấn vào bản đồ để chọn vị trí hoặc kéo ghim.';
+            } else {
+                mapHint.innerHTML = '<i class="fas fa-info-circle"></i> Bản đồ tương tác dự phòng: nhấn để chọn vị trí hoặc kéo ghim. Cấu hình GOOGLE_MAPS_API_KEY để dùng Google Maps.';
+            }
+        }
+
+        function moveMap(lat, lng, zoom) {
             if (!mapInstance) return;
+            if (mapProvider === 'google') {
+                mapInstance.setCenter({ lat: Number(lat), lng: Number(lng) });
+                if (zoom) mapInstance.setZoom(zoom);
+            } else if (mapProvider === 'leaflet') {
+                mapInstance.setView([lat, lng], zoom || 16);
+            }
+        }
+
+        function pushMarker(lat, lng) {
+            if (!mapInstance || !mapProvider) return;
+            if (mapProvider === 'google') {
+                var googlePosition = { lat: Number(lat), lng: Number(lng) };
+                if (!marker) {
+                    marker = new google.maps.Marker({
+                        position: googlePosition,
+                        map: mapInstance,
+                        draggable: true,
+                        title: 'Vị trí giao hàng'
+                    });
+                    marker.addListener('dragend', function () {
+                        var p = marker.getPosition();
+                        if (!p) return;
+                        setCoords(p.lat(), p.lng());
+                        lookup(p.lat(), p.lng());
+                    });
+                } else {
+                    marker.setPosition(googlePosition);
+                }
+                return;
+            }
+
             if (!marker) {
                 marker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
                 marker.on('dragend', function (e) {
@@ -99,34 +144,110 @@
             });
         }
 
+        function selectCoordinates(lat, lng) {
+            setCoords(lat, lng);
+            pushMarker(lat, lng);
+            lookup(lat, lng);
+        }
+
+        function initGoogleMap(latNum, lngNum) {
+            if (!window.google || !window.google.maps || !mapEl) return false;
+            var hasCoords = latNum != null && lngNum != null;
+            var center = hasCoords
+                ? { lat: latNum, lng: lngNum }
+                : { lat: 10.7769, lng: 106.7009 };
+            mapInstance = new google.maps.Map(mapEl, {
+                center: center,
+                zoom: hasCoords ? 16 : 12,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: true,
+                clickableIcons: false
+            });
+            mapProvider = 'google';
+            setMapHint('google');
+            if (msg) msg.textContent = 'Google Maps đã sẵn sàng. Nhấn vào bản đồ để chọn vị trí.';
+            mapInstance.addListener('click', function (event) {
+                if (!event.latLng) return;
+                selectCoordinates(event.latLng.lat(), event.latLng.lng());
+            });
+            if (hasCoords) pushMarker(latNum, lngNum);
+            return true;
+        }
+
+        function initLeafletMap(latNum, lngNum) {
+            if (typeof L === 'undefined' || !mapEl) {
+                if (msg) msg.textContent = 'Không tải được thư viện bản đồ. Vui lòng nhập địa chỉ hoặc thử lại.';
+                return false;
+            }
+            var hasCoords = latNum != null && lngNum != null;
+            var center = hasCoords ? [latNum, lngNum] : [10.7769, 106.7009];
+            mapInstance = L.map(mapEl, { zoomControl: true }).setView(center, hasCoords ? 16 : 12);
+            mapProvider = 'leaflet';
+            setMapHint('leaflet');
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                subdomains: 'abcd',
+                maxZoom: 20,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+            }).addTo(mapInstance).on('tileerror', function () {
+                if (msg) msg.textContent = 'Một số ô bản đồ không tải được. Hãy kiểm tra kết nối Internet hoặc thử lại.';
+            });
+            mapInstance.on('click', function (event) {
+                selectCoordinates(event.latlng.lat, event.latlng.lng);
+            });
+            if (hasCoords) pushMarker(latNum, lngNum);
+            return true;
+        }
+
         function openMap(lat, lng) {
             if (!mapBox || !mapEl) return;
             mapBox.style.display = 'block';
-            if (typeof L === 'undefined') {
-                if (msg) msg.textContent = 'Không tải được bản đồ. Vui lòng thử lại.';
+            var latNum = (lat != null && isFinite(Number(lat))) ? Number(lat) : null;
+            var lngNum = (lng != null && isFinite(Number(lng))) ? Number(lng) : null;
+            pendingCenter = { lat: latNum, lng: lngNum };
+
+            if (mapInstance) {
+                if (latNum != null && lngNum != null) {
+                    moveMap(latNum, lngNum, 16);
+                    pushMarker(latNum, lngNum);
+                } else if (mapProvider === 'leaflet') {
+                    setTimeout(function () { if (mapInstance) mapInstance.invalidateSize(); }, 120);
+                } else if (mapProvider === 'google' && window.google && google.maps) {
+                    setTimeout(function () { google.maps.event.trigger(mapInstance, 'resize'); }, 120);
+                }
                 return;
             }
-            var latNum = (lat != null && isFinite(lat)) ? Number(lat) : null;
-            var lngNum = (lng != null && isFinite(lng)) ? Number(lng) : null;
 
-            if (!mapInstance) {
-                var center = (latNum != null && lngNum != null) ? [latNum, lngNum] : [10.0452, 105.7469];
-                var zoom = (latNum != null) ? 16 : 11;
-                mapInstance = L.map(mapEl, { zoomControl: true }).setView(center, zoom);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
-                }).addTo(mapInstance);
-                mapInstance.on('click', function (e) {
-                    setCoords(e.latlng.lat, e.latlng.lng);
-                    pushMarker(e.latlng.lat, e.latlng.lng);
-                    lookup(e.latlng.lat, e.latlng.lng);
-                });
-            } else {
-                setTimeout(function () { mapInstance.invalidateSize(); }, 120);
-                if (latNum != null && lngNum != null) mapInstance.setView([latNum, lngNum], 16);
+            if (window.google && window.google.maps) {
+                initGoogleMap(latNum, lngNum);
+                return;
             }
-            if (latNum != null && lngNum != null) pushMarker(latNum, lngNum);
+
+            if (window.UTETRA_GOOGLE_MAPS_ENABLED) {
+                if (msg) msg.textContent = 'Đang tải Google Maps...';
+                if (!googleReadyListener) {
+                    googleReadyListener = function () {
+                        googleReadyListener = null;
+                        if (googleWaitTimer) clearTimeout(googleWaitTimer);
+                        googleWaitTimer = null;
+                        if (!mapBox || mapBox.style.display !== 'block' || mapProvider) return;
+                        var c = pendingCenter || { lat: null, lng: null };
+                        if (!initGoogleMap(c.lat, c.lng)) initLeafletMap(c.lat, c.lng);
+                    };
+                    window.addEventListener('uteTraGoogleMapsReady', googleReadyListener, { once: true });
+                    googleWaitTimer = setTimeout(function () {
+                        if (mapProvider || !mapBox || mapBox.style.display !== 'block') return;
+                        if (msg) msg.textContent = 'Google Maps chưa tải được (kiểm tra API key/quyền truy cập). Đang mở bản đồ dự phòng.';
+                        var c = pendingCenter || { lat: null, lng: null };
+                        initLeafletMap(c.lat, c.lng);
+                    }, 10000);
+                }
+                return;
+            }
+
+            if (msg) msg.textContent = 'Chưa cấu hình GOOGLE_MAPS_API_KEY; đang dùng bản đồ tương tác dự phòng.';
+            initLeafletMap(latNum, lngNum);
         }
 
         /* ---------- Nút "Vị trí hiện tại" ---------- */
@@ -148,7 +269,7 @@
                                               : ' (±' + Math.round(acc / 1000) + ' km)');
                         msg.textContent = 'Đã lấy vị trí' + txt + ', đang tìm địa chỉ...';
                     }
-                    if (mapInstance) { mapInstance.setView([lat, lng], 16); pushMarker(lat, lng); }
+                    if (mapInstance) { moveMap(lat, lng, 16); pushMarker(lat, lng); }
                     lookup(lat, lng);
                 }, function (err) {
                     if (err.code === err.TIMEOUT || err.code === err.POSITION_UNAVAILABLE) {
@@ -157,7 +278,7 @@
                             var lat = pos.coords.latitude, lng = pos.coords.longitude;
                             setCoords(lat, lng);
                             if (msg) msg.textContent = 'Vị trí có thể chưa chính xác. Hãy kiểm tra lại hoặc chọn trên bản đồ.';
-                            if (mapInstance) { mapInstance.setView([lat, lng], 16); pushMarker(lat, lng); }
+                            if (mapInstance) { moveMap(lat, lng, 16); pushMarker(lat, lng); }
                             lookup(lat, lng);
                         }, function () {
                             if (msg) msg.textContent = 'Không lấy được vị trí. Hãy chọn trên bản đồ hoặc nhập địa chỉ.';
@@ -187,7 +308,10 @@
         var modalEl = document.getElementById('receiveModal');
         if (modalEl) {
             modalEl.addEventListener('shown.bs.modal', function () {
-                if (mapInstance) setTimeout(function () { mapInstance.invalidateSize(); }, 120);
+                if (mapInstance) setTimeout(function () {
+                    if (mapProvider === 'leaflet') mapInstance.invalidateSize();
+                    else if (mapProvider === 'google' && window.google && google.maps) google.maps.event.trigger(mapInstance, 'resize');
+                }, 120);
             });
         }
     }

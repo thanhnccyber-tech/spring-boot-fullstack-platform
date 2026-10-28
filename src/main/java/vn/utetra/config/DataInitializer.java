@@ -65,7 +65,7 @@ public class DataInitializer implements CommandLineRunner {
 
 
         if (seedDemoAccounts) {
-            seedUser("admin@utetra.vn",   "admin123",   "Admin UTeTra",     adminRole,   null);
+            seedUser("admin@utetra.vn",   "admin123",   "Admin UTETra",     adminRole,   null);
             seedUser("manager@utetra.vn", "manager123", "Quản lý Q1",       managerRole, firstBranch);
             seedUser("staff@utetra.vn",   "staff123",   "Nhân viên Q1",     staffRole,   firstBranch);
             seedUser("shipper@utetra.vn", "ship123",    "Shipper Q1",       shipperRole, firstBranch);

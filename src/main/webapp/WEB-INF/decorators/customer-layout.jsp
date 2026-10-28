@@ -20,6 +20,18 @@
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+    <c:choose>
+      <c:when test="${not empty googleMapsApiKey}">
+        <script>
+          window.UTETRA_GOOGLE_MAPS_ENABLED = true;
+          window.uteTraGoogleMapsApiCallback = function () {
+            window.dispatchEvent(new Event("uteTraGoogleMapsReady"));
+          };
+        </script>
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key=${fn:escapeXml(googleMapsApiKey)}&amp;callback=uteTraGoogleMapsApiCallback&amp;language=vi&amp;region=VN"></script>
+      </c:when>
+      <c:otherwise><script>window.UTETRA_GOOGLE_MAPS_ENABLED = false;</script></c:otherwise>
+    </c:choose>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/brand-theme.css">
     <sitemesh:write property="head"/>
@@ -230,7 +242,7 @@
 
             <div id="recvMapBox" style="display:none; margin-top:8px;">
               <div id="recvMap" style="height:300px; border-radius:8px; overflow:hidden;"></div>
-              <small class="text-muted d-block mt-1">
+              <small id="recvMapHint" class="text-muted d-block mt-1">
                 <i class="fas fa-info-circle"></i> Nhấn vào bản đồ để chọn vị trí chính xác, hoặc kéo ghim.
               </small>
             </div>
