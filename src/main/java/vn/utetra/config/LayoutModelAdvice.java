@@ -69,17 +69,20 @@ public class LayoutModelAdvice {
         return customerPage(req) ? categoryService.active() : List.of();
     }
 
-    /** Id các món khách đã thả tim (để tô đỏ ♥ trên thẻ sản phẩm). Chỉ tính ở trang có danh sách món. */
+    /** Id các món khách đã thả tim (để tô đỏ ♥ trên thẻ sản phẩm). */
     @ModelAttribute("favIds")
     public java.util.Set<Long> favIds(HttpServletRequest req) {
         String uri = req.getRequestURI();
-        boolean listPage = uri.equals("/") || uri.equals("/home") || uri.equals("/products");
+        boolean listPage = uri.equals("/") || uri.equals("/home") || uri.equals("/products")
+                || uri.equals("/products/recently-viewed")
+                || uri.startsWith("/product/");
         if (!listPage) return java.util.Set.of();
         jakarta.servlet.http.HttpSession s = req.getSession(false);
         Object uid = s == null ? null : s.getAttribute("userId");
         if (!(uid instanceof Long id)) return java.util.Set.of();
         return new java.util.HashSet<>(favoriteRepo.findProductIdsByUserId(id));
     }
+
 
     @ModelAttribute("receiveBranches")
     public List<Branch> receiveBranches(HttpServletRequest req) {

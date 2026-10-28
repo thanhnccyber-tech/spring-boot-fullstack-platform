@@ -29,6 +29,24 @@ public class ProductService {
     public List<Product> newArrivals() { return productRepo.findByIsNewTrueAndActiveTrue(); }
 
     /**
+     * Lấy danh sách sản phẩm theo đúng thứ tự id yêu cầu (dùng cho "sản phẩm đã xem"),
+     * đồng thời loại các món đã ngừng bán.
+     */
+    public List<Product> findActiveInOrder(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        java.util.Map<Long, Product> map = new java.util.HashMap<>();
+        for (Product p : productRepo.findAllById(ids)) {
+            if (Boolean.TRUE.equals(p.getActive())) map.put(p.getId(), p);
+        }
+        List<Product> result = new java.util.ArrayList<>(ids.size());
+        for (Long id : ids) {
+            Product p = map.get(id);
+            if (p != null) result.add(p);
+        }
+        return result;
+    }
+
+    /**
      * Tìm kiếm cho trang khách.
      * Hỗ trợ sắp xếp: newest (mặc định), bestSeller, topRated, mostFavorite,
      * priceAsc, priceDesc, nameAsc, nameDesc.

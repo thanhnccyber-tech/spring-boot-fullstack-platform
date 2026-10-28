@@ -1,5 +1,6 @@
 package vn.utetra.controller;
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
@@ -23,6 +24,13 @@ import java.util.Optional;
 @Controller
 public class HomeController {
 
+    /** Khoá session lưu danh sách id sản phẩm đã xem, mới nhất ở đầu. */
+    public static final String VIEWED_SESSION_KEY = "VIEWED_PRODUCTS";
+    /** Tổng số sản phẩm lưu tối đa trong lịch sử. */
+    private static final int MAX_VIEWED = 20;
+    /** Số thẻ hiển thị ở mục "Sản phẩm đã xem gần đây" dưới trang chi tiết. */
+    private static final int MINI_VIEWED_LIMIT = 8;
+
     @Autowired private ProductService productService;
     @Autowired private CategoryService categoryService;
     @Autowired private ToppingService toppingService;
@@ -42,7 +50,6 @@ public class HomeController {
         model.addAttribute("featured", featured);
         model.addAttribute("newArrivals", newArrivals);
 
-        // Three real catalogue items power the interactive tea-book on the homepage.
         List<Product> bookProducts = new ArrayList<>();
         if (!featured.isEmpty()) bookProducts.add(featured.get(0));
         for (Product candidate : newArrivals) {
@@ -90,7 +97,54 @@ public class HomeController {
         return "user/products";
     }
 
-    /** Gợi ý khi gõ ô tìm kiếm trên header: tối đa 6 món đang bán khớp tên. Trả JSON, không cần đăng nhập. */
+    /* ==================== SẢN PHẨM ĐÃ XEM ==================== */
+
+    /**
+     * Ghi nhận lượt xem vào session: đưa id lên đầu, loại trùng, giới hạn MAX_VIEWED.
+     * Dùng session thay vì DB → khách chưa đăng nhập vẫn có lịch sử xem.
+     */
+    private void trackView(HttpSession session, Long productId) {
+        if (session == null || productId == null) return;
+        @SuppressWarnings("unchecked")
+        List<Long> existing = (List<Long>) session.getAttribute(VIEWED_SESSION_KEY);
+        List<Long> ids = existing == null ? new ArrayList<>() : new ArrayList<>(existing);
+        ids.remove(productId);          // bỏ vị trí cũ nếu đã có
+        ids.add(0, productId);          // đẩy lên đầu
+        if (ids.size() > MAX_VIEWED) {
+            ids = new ArrayList<>(ids.subList(0, MAX_VIEWED));
+        }
+        session.setAttribute(VIEWED_SESSION_KEY, ids);
+    }
+
+    /** Đọc danh sách id đã xem từ session. */
+    @SuppressWarnings("unchecked")
+    private List<Long> viewedIds(HttpSession session) {
+        if (session == null) return List.of();
+        Object o = session.getAttribute(VIEWED_SESSION_KEY);
+        return (o instanceof List<?>) ? (List<Long>) o : List.of();
+    }
+
+    /** Trang xem toàn bộ sản phẩm đã xem (tối đa 20). */
+    @GetMapping("/products/recently-viewed")
+    public String recentlyViewedPage(HttpSession session, Model model) {
+        List<Product> products = productService.findActiveInOrder(viewedIds(session));
+        model.addAttribute("products", products);
+        if (!products.isEmpty()) {
+            model.addAttribute("ratings", reviewService.summaries(
+                    products.stream().map(Product::getId).toList()));
+        }
+        return "user/recently-viewed";
+    }
+
+    /** Xoá lịch sử xem trong session. */
+    @PostMapping("/products/recently-viewed/clear")
+    public String clearRecentlyViewed(HttpSession session) {
+        session.removeAttribute(VIEWED_SESSION_KEY);
+        return "redirect:/products/recently-viewed";
+    }
+
+    /* ==================== GỢI Ý & CHI TIẾT ==================== */
+
     @GetMapping("/products/suggest")
     @ResponseBody
     public List<Map<String, Object>> suggest(@RequestParam(name = "q", required = false) String q) {
@@ -112,11 +166,27 @@ public class HomeController {
     @GetMapping("/product/{id}")
     public String productDetail(@PathVariable Long id,
                                 @RequestParam(name = "quantity", defaultValue = "1") int quantity,
-                                Authentication auth, Model model) {
+                                Authentication auth, Model model, HttpSession session) {
         Product p = productService.get(id);
         if (!Boolean.TRUE.equals(p.getActive())) {
             return "redirect:/products";
         }
+
+        // Ghi nhận lượt xem vào session TRƯỚC (để danh sách đã xem khác món đang xem)
+        trackView(session, id);
+
+        // Mục "Sản phẩm đã xem gần đây" — bỏ món hiện tại, tối đa 8 món
+        List<Long> otherIds = viewedIds(session).stream()
+                .filter(x -> !x.equals(id))
+                .limit(MINI_VIEWED_LIMIT)
+                .toList();
+        List<Product> recentlyViewed = productService.findActiveInOrder(otherIds);
+        model.addAttribute("recentlyViewed", recentlyViewed);
+        if (!recentlyViewed.isEmpty()) {
+            model.addAttribute("ratings", reviewService.summaries(
+                    recentlyViewed.stream().map(Product::getId).toList()));
+        }
+
         model.addAttribute("product", p);
         model.addAttribute("productDetailQuantity", Math.max(1, Math.min(quantity, 50)));
         model.addAttribute("toppings", toppingService.activeInStock());
@@ -158,7 +228,6 @@ public class HomeController {
         model.addAttribute("sugars", allowedSugars);
         model.addAttribute("ices", allowedIces);
 
-        // ----- Đánh giá & bình luận -----
         RatingSummary summary = reviewService.summary(id);
         model.addAttribute("ratingSummary", summary);
         model.addAttribute("reviews", reviewService.listByProduct(id));

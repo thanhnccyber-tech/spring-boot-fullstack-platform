@@ -17,6 +17,7 @@
         <a class="list-group-item list-group-item-action ${fn:escapeXml(act == 'addresses' ? 'active' : '')}" href="${ctx}/account/addresses"><i class="fas fa-location-dot"></i> Số địa chỉ</a>
         <a class="list-group-item list-group-item-action ${fn:escapeXml(act == 'orders' ? 'active' : '')}" href="${ctx}/order/history"><i class="fas fa-cart-shopping"></i> Đơn hàng</a>
         <a class="list-group-item list-group-item-action ${fn:escapeXml(act == 'favorites' ? 'active' : '')}" href="${ctx}/account/favorites"><i class="fas fa-heart"></i> Sản phẩm yêu thích</a>
+        <a class="list-group-item list-group-item-action ${fn:escapeXml(act == 'viewed' ? 'active' : '')}" href="${ctx}/products/recently-viewed"><i class="fas fa-clock-rotate-left"></i> Sản phẩm đã xem</a>
         <a class="list-group-item list-group-item-action ${fn:escapeXml(act == 'ordered' ? 'active' : '')}" href="${ctx}/account/ordered"><i class="fas fa-box-open"></i> Sản phẩm đã đặt</a>
         <a class="list-group-item list-group-item-action ${fn:escapeXml(act == 'help' ? 'active' : '')}" href="${ctx}/account/help"><i class="fas fa-headset"></i> Trung tâm trợ giúp</a>
         <a class="list-group-item list-group-item-action text-danger" href="${ctx}/logout"><i class="fas fa-right-from-bracket"></i> Đăng xuất</a>

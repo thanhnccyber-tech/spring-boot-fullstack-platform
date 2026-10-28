@@ -2,14 +2,22 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<%-- Thẻ sản phẩm dùng chung (trang chủ, danh sách). Cần request attribute: cardProduct; tuỳ chọn: ratings, favIds --%>
+<%-- Thẻ sản phẩm dùng chung (trang chủ, danh sách, đã xem). Cần request attribute: cardProduct; tuỳ chọn: ratings, favIds --%>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <c:set var="p" value="${cardProduct}"/>
 <c:set var="rs" value="${ratings[p.id]}"/>
 <c:set var="isFav" value="${not empty favIds and favIds.contains(p.id)}"/>
-<c:set var="fq" value="${requestScope['jakarta.servlet.forward.query_string']}"/>
-<c:set var="furi" value="${not empty requestScope['jakarta.servlet.forward.request_uri'] ? requestScope['jakarta.servlet.forward.request_uri'] : '/products'}"/>
+
+<%-- Xác định URL hiện tại để quay lại sau khi toggle yêu thích.
+     Ưu tiên forward attributes (khi include từ trang khác), fallback về request hiện tại. --%>
+<c:set var="furi" value="${not empty requestScope['jakarta.servlet.forward.request_uri']
+                            ? requestScope['jakarta.servlet.forward.request_uri']
+                            : pageContext.request.requestURI}"/>
+<c:set var="fq"   value="${not empty requestScope['jakarta.servlet.forward.query_string']
+                            ? requestScope['jakarta.servlet.forward.query_string']
+                            : pageContext.request.queryString}"/>
 <c:set var="here"><c:out value="${furi}" escapeXml="false"/><c:if test="${not empty fq}">?<c:out value="${fq}" escapeXml="false"/></c:if></c:set>
+
 <div class="card h-100 position-relative product-card">
     <a href="${ctx}/product/${fn:escapeXml(p.id)}" class="d-block overflow-hidden">
         <img src="${fn:escapeXml(p.thumbUrl)}" loading="lazy" decoding="async" class="card-img-top" alt="${fn:escapeXml(p.name)}">

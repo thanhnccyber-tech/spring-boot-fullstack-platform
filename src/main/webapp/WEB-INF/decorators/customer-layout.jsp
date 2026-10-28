@@ -83,6 +83,8 @@
                         <li><a class="dropdown-item" href="${ctx}/account/vouchers"><i class="fas fa-ticket"></i> Ưu đãi của tôi</a></li>
                         <li><a class="dropdown-item" href="${ctx}/account/addresses"><i class="fas fa-location-dot"></i> Số địa chỉ</a></li>
                         <li><a class="dropdown-item" href="${ctx}/order/history"><i class="fas fa-cart-shopping"></i> Đơn hàng</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/account/favorites"><i class="fas fa-heart"></i> Sản phẩm yêu thích</a></li>
+                        <li><a class="dropdown-item" href="${ctx}/products/recently-viewed"><i class="fas fa-clock-rotate-left"></i> Sản phẩm đã xem</a></li>
                         <li><a class="dropdown-item" href="${ctx}/notifications"><i class="fas fa-bell"></i> Thông báo</a></li>
                         <c:if test="${sessionScope.roles.contains('ROLE_ADMIN')
                                     || sessionScope.roles.contains('ROLE_MANAGER')
@@ -255,7 +257,8 @@
 
 <main class="${isHomePage ? 'ute-home-main' : 'container my-4'}">
     <c:set var="ownMsgPage" value="${fn:contains(uri, '/login') or fn:contains(uri, '/register') or fn:contains(uri, '/otp')
-                        or fn:contains(uri, '/forgot-password') or fn:contains(uri, '/reset-password') or fn:contains(uri, '/profile')}"/>
+                        or fn:contains(uri, '/forgot-password') or fn:contains(uri, '/reset-password') or fn:contains(uri, '/profile')
+                    or fn:contains(uri, '/product/')}"/>
     <c:if test="${not ownMsgPage}">
         <c:if test="${not empty success}">
             <div class="alert alert-success alert-dismissible fade show auto-hide" role="alert">${fn:escapeXml(success)}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
