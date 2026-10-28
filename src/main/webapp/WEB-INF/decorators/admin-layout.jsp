@@ -213,7 +213,9 @@
 
 	<div class="toast-container position-fixed top-0 end-0 p-3"
 		id="noti-toasts" style="z-index: 2000;"></div>
-	<audio id="noti-sound" preload="auto"></audio>
+	<%-- SỬA (Bước 2): Gắn src trỏ tới file chuông --%>
+	<audio id="noti-sound" preload="auto"
+		src="${pageContext.request.contextPath}/static/sounds/chuon.mp3"></audio>
 	<script
 		src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 	<script
@@ -227,6 +229,45 @@
         var ctx = '${pageContext.request.contextPath}';
         var KEY = 'adminLastSeenOrderId';
         var items = [];
+
+        // SỬA (Bước 3a + 4): Quản lý âm thanh chuông thông báo
+        var notiAudio = document.getElementById('noti-sound');
+        if (notiAudio) notiAudio.volume = 0.6;   // Bước 4: 0.0 – 1.0
+        var audioUnlocked = false;
+
+        function primeAudio() {
+            if (audioUnlocked || !notiAudio) return;
+            notiAudio.muted = true;
+            var p = notiAudio.play();
+            if (p && p.then) {
+                p.then(function () {
+                    notiAudio.pause();
+                    notiAudio.currentTime = 0;
+                    notiAudio.muted = false;
+                    audioUnlocked = true;
+                    removeUnlockListeners();
+                }).catch(function () {
+                    notiAudio.muted = false;
+                });
+            } else {
+                notiAudio.muted = false;
+            }
+        }
+        function removeUnlockListeners() {
+            ['click', 'keydown', 'touchstart', 'pointerdown'].forEach(function (ev) {
+                document.removeEventListener(ev, primeAudio, true);
+            });
+        }
+        ['click', 'keydown', 'touchstart', 'pointerdown'].forEach(function (ev) {
+            document.addEventListener(ev, primeAudio, true);
+        });
+
+        function playNotiSound() {
+            if (!notiAudio) return;
+            notiAudio.currentTime = 0;
+            var p = notiAudio.play();
+            if (p && p.catch) p.catch(function () { primeAudio(); });
+        }
 
         function getSeen() { try { return parseInt(localStorage.getItem(KEY)) || 0; } catch (e) { return 0; } }
         function setSeen(v) { try { localStorage.setItem(KEY, String(v)); } catch (e) { } }
@@ -328,7 +369,8 @@
         stomp.connect({}, function() {
             stomp.subscribe('/topic/orders', function(message) {
                 var data = JSON.parse(message.body);
-                try { document.getElementById('noti-sound').play(); } catch (e) { }
+                // SỬA (Bước 3b): gọi hàm phát chuông an toàn thay vì try/catch
+                playNotiSound();
                 toast(data);
                 load();
                 var p = window.location.pathname;
