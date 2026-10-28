@@ -118,7 +118,7 @@ public class HomeController {
             return "redirect:/products";
         }
         model.addAttribute("product", p);
-        model.addAttribute("productDetailQuantity", Math.max(1, Math.min(quantity, 99)));
+        model.addAttribute("productDetailQuantity", Math.max(1, Math.min(quantity, 50)));
         model.addAttribute("toppings", toppingService.activeInStock());
 
         List<SizeOption> allowedSizes = (p.getSizes() == null || p.getSizes().isEmpty())

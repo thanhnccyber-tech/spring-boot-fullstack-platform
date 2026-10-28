@@ -69,7 +69,7 @@
                 <div class="pd-price"><fmt:formatNumber value="${product.basePrice}" pattern="#,##0"/> ₫</div>
                 <div class="pd-qty" role="group" aria-label="Số lượng">
                     <button type="button" class="pd-qty-btn" data-qty="-1" aria-label="Giảm" <c:if test="${product.outOfStock}">disabled</c:if>><i class="fas fa-minus"></i></button>
-                    <input type="number" name="quantity" value="${productDetailQuantity}" min="1" max="99" aria-label="Số lượng"
+                    <input type="number" name="quantity" value="${productDetailQuantity}" min="1" max="50" aria-label="Số lượng"
                            <c:if test="${product.outOfStock}">disabled</c:if>>
                     <button type="button" class="pd-qty-btn" data-qty="1" aria-label="Tăng" <c:if test="${product.outOfStock}">disabled</c:if>><i class="fas fa-plus"></i></button>
                 </div>
@@ -313,7 +313,7 @@
         b.addEventListener('click', function () {
             var q = form.querySelector('input[name="quantity"]');
             var v = (parseInt(q.value, 10) || 1) + parseInt(b.dataset.qty, 10);
-            q.value = Math.min(99, Math.max(1, v));
+            q.value = Math.min(50, Math.max(1, v));
             recalc();
         });
     });

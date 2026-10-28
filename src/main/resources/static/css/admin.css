@@ -355,3 +355,79 @@ a:hover { color: var(--ute-navy-900); }
     .ute-admin-page-title { font-size: .95rem; }
     .ute-admin-content { padding: .85rem !important; }
 }
+
+/* 1. Nút bấm (Button) */
+.btn,
+.btn-sm,
+.btn-lg,
+.btn-group > .btn,
+button.badge {
+    border-radius: 0 !important;
+}
+
+/* 2. Ô nhập liệu, Dropdown, Input group */
+.form-control,
+.form-select,
+.input-group-text,
+.input-group > .form-control,
+.input-group > .form-select,
+.input-group > .btn {
+    border-radius: 0 !important;
+}
+
+/* 3. Nhãn trạng thái (Badge) */
+.badge,
+.badge-pill {
+    border-radius: 0 !important;
+}
+
+/* 4. Khung (Card, Panel, Alert) */
+.card,
+.card-header,
+.card-footer,
+.card-img-top,
+.alert,
+.info-tile {
+    border-radius: 0 !important;
+}
+
+/* 5. Menu Dropdown (User, Chuông thông báo) */
+.dropdown-menu,
+.dropdown-item,
+.dropdown-divider {
+    border-radius: 0 !important;
+}
+
+/* 6. Sidebar menu */
+.ute-admin-sidebar .nav-link,
+.ute-admin-sidebar #attributeMenu .nav-link {
+    border-radius: 0 !important;
+}
+
+/* 7. Phân trang */
+.pagination .page-link,
+.pagination .page-item:first-child .page-link,
+.pagination .page-item:last-child .page-link {
+    border-radius: 0 !important;
+}
+
+/* 8. Khung bảng (Table) */
+.table-responsive {
+    border-radius: 0 !important;
+}
+
+/* 9. Ảnh đại diện, Nút icon tròn -> vuông */
+img.rounded-circle,
+img.rounded,
+.ute-user-avatar,
+.sh-user-avatar,
+.sh-profile-avatar {
+    border-radius: 0 !important;
+}
+
+/* 10. Modal (Popup) nếu có */
+.modal-content,
+.modal-header,
+.modal-footer {
+    border-radius: 0 !important;
+}

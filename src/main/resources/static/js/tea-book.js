@@ -154,11 +154,11 @@
     function updateQuantity() {
       count.textContent = String(quantity);
       minus.disabled = quantity <= 1;
-      plus.disabled = quantity >= 99;
+      plus.disabled = quantity >= 50;
       if (orderLink.tagName === 'A') orderLink.href = product.url + '?quantity=' + quantity;
     }
     minus.addEventListener('click', function (event) { event.stopPropagation(); quantity = Math.max(1, quantity - 1); updateQuantity(); });
-    plus.addEventListener('click', function (event) { event.stopPropagation(); quantity = Math.min(99, quantity + 1); updateQuantity(); });
+    plus.addEventListener('click', function (event) { event.stopPropagation(); quantity = Math.min(50, quantity + 1); updateQuantity(); });
     if (orderLink.tagName === 'A') orderLink.addEventListener('click', function (event) { event.stopPropagation(); });
     updateQuantity();
     page.appendChild(actions);
