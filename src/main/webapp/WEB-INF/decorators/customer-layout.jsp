@@ -7,6 +7,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><sitemesh:write property="title"/> - UTETra</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="${pageContext.request.contextPath}/static/images/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="${pageContext.request.contextPath}/static/images/favicon-192.png">
+    <link rel="shortcut icon" href="${pageContext.request.contextPath}/static/images/favicon.ico">
+    <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/static/images/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap&subset=vietnamese,latin,latin-ext" rel="stylesheet">
