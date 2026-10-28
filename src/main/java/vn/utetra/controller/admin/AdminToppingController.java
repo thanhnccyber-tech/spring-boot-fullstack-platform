@@ -3,6 +3,8 @@ package vn.utetra.controller.admin;
 import vn.utetra.security.SafeRedirect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +12,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Topping;
 import vn.utetra.service.ToppingService;
 
+/**
+ * Quản lý topping.
+ * - ADMIN : toàn quyền CRUD.
+ * - MANAGER: chỉ xem danh sách + toggle "Hết hàng".
+ */
 @Controller
 @RequestMapping("/admin/toppings")
 public class AdminToppingController {
@@ -18,11 +25,17 @@ public class AdminToppingController {
 
     @Autowired private ToppingService toppingService;
 
+    private static boolean isAdmin(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
     @GetMapping
     public String list(@RequestParam(required = false) String kw,
                        @RequestParam(required = false) String active,
                        @RequestParam(required = false) String outOfStock,
                        @RequestParam(defaultValue = "0") int page,
+                       Authentication auth,
                        Model model) {
 
         Boolean activeP = "true".equalsIgnoreCase(active) ? Boolean.TRUE
@@ -40,10 +53,12 @@ public class AdminToppingController {
         model.addAttribute("kw", kw);
         model.addAttribute("activeFilter", active);
         model.addAttribute("outOfStockFilter", outOfStock);
+        model.addAttribute("isAdmin", isAdmin(auth));
         return "admin/toppings";
     }
 
     @GetMapping("/new")
+    @PreAuthorize("hasRole('ADMIN')")
     public String create(Model model) {
         Topping t = new Topping();
         t.setActive(true);
@@ -54,6 +69,7 @@ public class AdminToppingController {
     }
 
     @GetMapping("/edit/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String edit(@PathVariable Long id, Model model) {
         model.addAttribute("topping", toppingService.get(id));
         model.addAttribute("isNew", false);
@@ -61,6 +77,7 @@ public class AdminToppingController {
     }
 
     @PostMapping("/save")
+    @PreAuthorize("hasRole('ADMIN')")
     public String save(@ModelAttribute Topping t,
                        @RequestParam(defaultValue = "false") Boolean active,
                        @RequestParam(defaultValue = "false") Boolean outOfStock,
@@ -85,6 +102,7 @@ public class AdminToppingController {
     }
 
     @PostMapping("/toggle-active")
+    @PreAuthorize("hasRole('ADMIN')")
     public String toggleActive(@RequestParam Long id,
                                @RequestParam(required = false) String returnUrl,
                                RedirectAttributes ra) {
@@ -93,6 +111,7 @@ public class AdminToppingController {
         return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/toppings");
     }
 
+    /** Manager + Admin đều được gọi: báo "Hết hàng" / "Còn hàng". */
     @PostMapping("/toggle-stock")
     public String toggleStock(@RequestParam Long id,
                               @RequestParam(required = false) String returnUrl,
@@ -103,6 +122,7 @@ public class AdminToppingController {
     }
 
     @PostMapping("/delete")
+    @PreAuthorize("hasRole('ADMIN')")
     public String delete(@RequestParam Long id, RedirectAttributes ra) {
         try {
             toppingService.delete(id);

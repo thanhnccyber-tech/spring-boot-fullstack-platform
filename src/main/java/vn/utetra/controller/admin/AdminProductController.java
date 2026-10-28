@@ -3,6 +3,8 @@ package vn.utetra.controller.admin;
 import vn.utetra.security.SafeRedirect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,12 @@ import vn.utetra.service.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Quản lý sản phẩm.
+ * - ADMIN : toàn quyền CRUD.
+ * - MANAGER: chỉ xem danh sách + toggle "Hết hàng" (báo hết hàng).
+ *   Các method mutate (tạo/sửa/xoá/ẩn-hiện) bị chặn bằng @PreAuthorize(ADMIN).
+ */
 @Controller
 @RequestMapping("/admin/products")
 public class AdminProductController {
@@ -26,6 +34,11 @@ public class AdminProductController {
     @Autowired private SizeService sizeService;
     @Autowired private SugarService sugarService;
     @Autowired private IceService iceService;
+
+    private static boolean isAdmin(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
 
     private void loadOptions(Model model) {
         model.addAttribute("categories", categoryService.all());
@@ -43,6 +56,7 @@ public class AdminProductController {
                        @RequestParam(required = false) BigDecimal maxPrice,
                        @RequestParam(defaultValue = "0") int page,
                        @RequestParam(defaultValue = "newest") String sort,
+                       Authentication auth,
                        Model model) {
 
         Boolean activeP = "true".equalsIgnoreCase(active) ? Boolean.TRUE
@@ -60,10 +74,12 @@ public class AdminProductController {
         model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("sort", sort);
         model.addAttribute("categories", categoryService.all());
+        model.addAttribute("isAdmin", isAdmin(auth));
         return "admin/products";
     }
 
     @GetMapping("/new")
+    @PreAuthorize("hasRole('ADMIN')")
     public String createForm(Model model) {
         Product p = new Product();
         p.setAllowSize(true);
@@ -75,6 +91,7 @@ public class AdminProductController {
     }
 
     @GetMapping("/edit/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("product", productService.getWithDetails(id));
         loadOptions(model);
@@ -82,6 +99,7 @@ public class AdminProductController {
     }
 
     @PostMapping("/save")
+    @PreAuthorize("hasRole('ADMIN')")
     public String save(@ModelAttribute Product product,
                        @RequestParam(required = false) Long categoryId,
                        @RequestParam(required = false) List<Long> toppingIds,
@@ -117,6 +135,7 @@ public class AdminProductController {
     }
 
     @PostMapping("/toggle-active")
+    @PreAuthorize("hasRole('ADMIN')")
     public String toggleActive(@RequestParam Long id,
                                @RequestParam(required = false) String returnUrl,
                                RedirectAttributes ra) {
@@ -125,6 +144,7 @@ public class AdminProductController {
         return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/products");
     }
 
+    /** Manager + Admin đều được gọi: báo "Hết hàng" / "Còn hàng". */
     @PostMapping("/toggle-stock")
     public String toggleStock(@RequestParam Long id,
                               @RequestParam(required = false) String returnUrl,
@@ -135,6 +155,7 @@ public class AdminProductController {
     }
 
     @PostMapping("/delete")
+    @PreAuthorize("hasRole('ADMIN')")
     public String delete(@RequestParam Long id, RedirectAttributes ra) {
         productService.delete(id);
         ra.addFlashAttribute("success", "Đã xóa sản phẩm");

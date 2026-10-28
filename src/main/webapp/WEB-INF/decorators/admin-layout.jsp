@@ -9,8 +9,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><sitemesh:write property="title" /> - UTETra Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap&subset=vietnamese,latin,latin-ext" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+	href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap&subset=vietnamese,latin,latin-ext"
+	rel="stylesheet">
 <link rel="stylesheet"
 	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet"
@@ -18,45 +20,78 @@
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/static/css/admin.css?v=20261028-logo-transparent">
 <sitemesh:write property="head" />
-<link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/typography-loader.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/static/css/typography-loader.css">
 </head>
 <body class="admin-theme">
-<div id="uteSiteLoader" class="ute-site-loader" role="status" aria-live="polite" aria-label="Đang tải trang UTETra">
-  <div class="ute-site-loader__inner">
-    <img class="ute-site-loader__logo" src="${pageContext.request.contextPath}/static/images/utetra-logo.png" alt="UTETra" width="340" height="207" fetchpriority="high">
-    <div class="ute-site-loader__percent"><span id="uteSiteLoaderPercent">0</span><span aria-hidden="true">%</span></div>
-    <div class="ute-site-loader__track" role="progressbar" aria-label="Tiến trình tải trang" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="uteSiteLoaderProgress"><span id="uteSiteLoaderBar"></span></div>
-    <p class="ute-site-loader__caption">ĐANG CHUẨN BỊ TRÀ NGON</p>
-  </div>
-</div>
+	<div id="uteSiteLoader" class="ute-site-loader" role="status"
+		aria-live="polite" aria-label="Đang tải trang UTETra">
+		<div class="ute-site-loader__inner">
+			<img class="ute-site-loader__logo"
+				src="${pageContext.request.contextPath}/static/images/utetra-logo.png"
+				alt="UTETra" width="340" height="207" fetchpriority="high">
+			<div class="ute-site-loader__percent">
+				<span id="uteSiteLoaderPercent">0</span><span aria-hidden="true">%</span>
+			</div>
+			<div class="ute-site-loader__track" role="progressbar"
+				aria-label="Tiến trình tải trang" aria-valuemin="0"
+				aria-valuemax="100" aria-valuenow="0" id="uteSiteLoaderProgress">
+				<span id="uteSiteLoaderBar"></span>
+			</div>
+			<p class="ute-site-loader__caption">ĐANG CHUẨN BỊ TRÀ NGON</p>
+		</div>
+	</div>
 
 
 	<div class="d-flex" style="min-height: 100vh;">
 		<!-- Sidebar: Cố định chiều rộng 260px, luôn sticky, tự cuộn nếu menu dài -->
 		<aside class="ute-admin-sidebar text-white p-3">
 			<div class="ute-admin-brand mb-4 mt-1">
-				<a class="ute-admin-brand__link" href="${pageContext.request.contextPath}/admin/dashboard" aria-label="UTETra - Trang quản trị">
-					<img class="ute-admin-brand__logo" src="${pageContext.request.contextPath}/static/images/utetra-logo.png" alt="UTETra - Tea for you" width="166" height="101">
+				<a class="ute-admin-brand__link"
+					href="${pageContext.request.contextPath}/admin/dashboard"
+					aria-label="UTETra - Trang quản trị"> <img
+					class="ute-admin-brand__logo"
+					src="${pageContext.request.contextPath}/static/images/utetra-logo.png"
+					alt="UTETra - Tea for you" width="166" height="101">
 				</a>
 				<div class="ute-admin-brand__caption">QUẢN TRỊ HỆ THỐNG</div>
 			</div>
 			<hr class="ute-admin-divider" />
 			<ul class="nav flex-column">
-				<c:if test="${sessionScope.roles.contains('ROLE_ADMIN')}">
+				<%-- ============ Nhóm ADMIN + MANAGER ============ --%>
+				<c:if
+					test="${sessionScope.roles.contains('ROLE_ADMIN')
+                || sessionScope.roles.contains('ROLE_MANAGER')}">
 					<li><a class="nav-link text-white"
 						href="${pageContext.request.contextPath}/admin/dashboard"><i
 							class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+				</c:if>
+				<c:if
+					test="${sessionScope.roles.contains('ROLE_ADMIN')
+                || sessionScope.roles.contains('ROLE_MANAGER')}">
 					<li><a class="nav-link text-white"
 						href="${pageContext.request.contextPath}/admin/products"><i
 							class="fas fa-coffee"></i> Sản phẩm</a></li>
+				</c:if>
+
+				<%-- ============ Chỉ ADMIN: Danh mục ============ --%>
+				<c:if test="${sessionScope.roles.contains('ROLE_ADMIN')}">
 					<li><a class="nav-link text-white"
 						href="${pageContext.request.contextPath}/admin/categories"><i
 							class="fas fa-list"></i> Danh mục</a></li>
+				</c:if>
+
+				<%-- ============ Nhóm ADMIN + MANAGER: Topping ============ --%>
+				<c:if
+					test="${sessionScope.roles.contains('ROLE_ADMIN')
+                || sessionScope.roles.contains('ROLE_MANAGER')}">
 					<li><a class="nav-link text-white"
 						href="${pageContext.request.contextPath}/admin/toppings"><i
 							class="fas fa-ice-cream"></i> Topping</a></li>
+				</c:if>
 
-					<%-- GOM 3 MỤC SIZE, ĐƯỜNG, ĐÁ VÀO LÀM 1 --%>
+				<%-- ============ Chỉ ADMIN: Thuộc tính (Size/Sugar/Ice) ============ --%>
+				<c:if test="${sessionScope.roles.contains('ROLE_ADMIN')}">
 					<li><a
 						class="nav-link text-white d-flex justify-content-between align-items-center"
 						data-bs-toggle="collapse" href="#attributeMenu" role="button"
@@ -88,11 +123,19 @@
 										đá</a></li>
 							</ul>
 						</div></li>
-					<%-- KẾT THÚC KHỐI GOM --%>
+				</c:if>
 
+				<%-- ============ Chỉ ADMIN: Chi nhánh ============ --%>
+				<c:if test="${sessionScope.roles.contains('ROLE_ADMIN')}">
 					<li><a class="nav-link text-white"
 						href="${pageContext.request.contextPath}/admin/branches"><i
 							class="fas fa-store"></i> Chi nhánh</a></li>
+				</c:if>
+
+				<%-- ============ Nhóm ADMIN + MANAGER: Voucher, Khuyến mãi ============ --%>
+				<c:if
+					test="${sessionScope.roles.contains('ROLE_ADMIN')
+                || sessionScope.roles.contains('ROLE_MANAGER')}">
 					<li><a class="nav-link text-white"
 						href="${pageContext.request.contextPath}/admin/vouchers"><i
 							class="fas fa-ticket"></i> Mã giảm giá</a></li>
@@ -100,21 +143,26 @@
 						href="${pageContext.request.contextPath}/admin/promotions"><i
 							class="fas fa-bullhorn"></i> Khuyến mãi</a></li>
 				</c:if>
+
+				<%-- ============ Đơn hàng: ADMIN + MANAGER + STAFF ============ --%>
 				<c:if
 					test="${sessionScope.roles.contains('ROLE_ADMIN')
-                        || sessionScope.roles.contains('ROLE_MANAGER')
-                        || sessionScope.roles.contains('ROLE_STAFF')}">
+            || sessionScope.roles.contains('ROLE_MANAGER')
+            || sessionScope.roles.contains('ROLE_STAFF')}">
 					<li><a class="nav-link text-white"
 						href="${pageContext.request.contextPath}/admin/orders"><i
 							class="fas fa-receipt"></i> Đơn hàng</a></li>
 				</c:if>
+
+				<%-- ============ Người dùng: ADMIN + MANAGER ============ --%>
 				<c:if
 					test="${sessionScope.roles.contains('ROLE_ADMIN')
-                        || sessionScope.roles.contains('ROLE_MANAGER')}">
+            || sessionScope.roles.contains('ROLE_MANAGER')}">
 					<li><a class="nav-link text-white"
 						href="${pageContext.request.contextPath}/admin/users"><i
 							class="fas fa-users"></i> Người dùng</a></li>
 				</c:if>
+
 				<li><a class="nav-link text-white" target="_blank"
 					rel="noopener" href="${pageContext.request.contextPath}/"><i
 						class="fas fa-globe"></i> Xem trang web</a></li>
@@ -125,7 +173,8 @@
 		</aside>
 
 		<!-- Nội dung chính: Cho phép co giãn lấp đầy khoảng trống còn lại -->
-		<div class="ute-admin-main flex-grow-1" style="min-width: 0; overflow-x: hidden;">
+		<div class="ute-admin-main flex-grow-1"
+			style="min-width: 0; overflow-x: hidden;">
 			<header
 				class="ute-admin-topbar p-3 d-flex justify-content-between align-items-center sticky-top">
 				<h5 class="ute-admin-page-title mb-0">
@@ -291,6 +340,8 @@
     })();
 </script>
 	<sitemesh:write property="bodyScript" />
-<script src="${pageContext.request.contextPath}/static/js/site-loader.js" defer></script>
+	<script
+		src="${pageContext.request.contextPath}/static/js/site-loader.js"
+		defer></script>
 </body>
 </html>

@@ -38,12 +38,25 @@
             </div>
             <div class="col-auto">
                 <label class="form-label small mb-0" for="branchSel">Chi nhánh</label>
-                <select name="branchId" id="branchSel" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Tất cả chi nhánh</option>
-                    <c:forEach items="${branches}" var="b">
-                        <option value="${fn:escapeXml(b.id)}" ${branchId == b.id ? 'selected' : ''}>${fn:escapeXml(b.name)}</option>
-                    </c:forEach>
-                </select>
+                <c:choose>
+                    <c:when test="${isAdmin}">
+                        <select name="branchId" id="branchSel" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Tất cả chi nhánh</option>
+                            <c:forEach items="${branches}" var="b">
+                                <option value="${fn:escapeXml(b.id)}" ${branchId == b.id ? 'selected' : ''}>${fn:escapeXml(b.name)}</option>
+                            </c:forEach>
+                        </select>
+                    </c:when>
+                    <c:otherwise>
+                        <%-- Manager: cố định chi nhánh của mình, không cho đổi --%>
+                        <input type="hidden" name="branchId" value="${fn:escapeXml(branchId)}">
+                        <div class="form-control form-control-sm bg-light d-flex align-items-center"
+                             style="height:31px;min-height:31px;">
+                            <i class="fas fa-store text-muted me-1"></i>
+                            <span class="fw-semibold text-truncate">${fn:escapeXml(managerBranchName)}</span>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
             </div>
             <div class="col text-end">
                 <a class="btn btn-sm btn-outline-success"
@@ -233,7 +246,6 @@ function onRange(v) {
 
 document.addEventListener('DOMContentLoaded', function () {
     const vnd = v => Number(v).toLocaleString('vi-VN') + ' ₫';
-    // Bảng màu biểu đồ nổi bật nhưng vẫn đồng bộ nhận diện UTETra.
     const chartColors = {
         navy: '#243B53', blue: '#3B82F6', sky: '#38BDF8', teal: '#14B8A6',
         green: '#22A06B', coral: '#F06C52', amber: '#F4B942', violet: '#8B5CF6',
@@ -258,7 +270,6 @@ document.addEventListener('DOMContentLoaded', function () {
         options: { responsive: true, plugins: { tooltip: moneyTip }, scales: moneyScale }
     });
 
-    // Thứ tự màu tương ứng: chờ xác nhận, pha chế, đang giao, hoàn thành, đã hủy, giao thất bại.
     const statusColors = [chartColors.amber, chartColors.blue, chartColors.teal,
                           chartColors.green, chartColors.coral, chartColors.rose];
     new Chart(document.getElementById('statusChart'), {

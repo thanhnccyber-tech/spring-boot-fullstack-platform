@@ -3,12 +3,15 @@ package vn.utetra.controller.admin;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Order;
+import vn.utetra.entity.User;
 import vn.utetra.entity.Voucher;
 import vn.utetra.repository.OrderRepository;
 import vn.utetra.repository.UserRepository;
@@ -35,10 +38,8 @@ import java.util.Map;
 
 /**
  * Dashboard quản trị.
- *  - "Hợp lệ": đơn chưa hủy và chưa giao thất bại.
- *  - "Đã thu": đơn hợp lệ đã thanh toán online (PAID) hoặc đã hoàn thành (COD/tiền mặt).
- *  - "Dự kiến": toàn bộ đơn hợp lệ, gồm cả đơn chưa thu được tiền.
- * Mọi số liệu đều tính ở database, theo khoảng thời gian và chi nhánh đang chọn.
+ *  - ADMIN: xem toàn hệ thống hoặc lọc theo bất kỳ chi nhánh.
+ *  - MANAGER: chỉ xem dữ liệu của chi nhánh mình (branchId bị ép ở server).
  */
 @Controller
 @RequestMapping("/admin")
@@ -48,7 +49,6 @@ public class AdminDashboardController {
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("dd/MM");
     private static final int MAX_DAYS = 366;
 
-    /** Thứ tự và nhãn cố định cho biểu đồ trạng thái (màu cố định nằm ở dashboard.jsp). */
     private static final String[] STATUSES = {
             Order.STATUS_PENDING, Order.STATUS_PREPARING, Order.STATUS_DELIVERING,
             Order.STATUS_COMPLETED, Order.STATUS_CANCELLED, Order.STATUS_FAILED };
@@ -58,7 +58,6 @@ public class AdminDashboardController {
     @Autowired private VoucherRepository voucherRepo;
     @Autowired private BranchService branchService;
 
-    /** Khoảng thời gian đang xem. */
     private record Period(String range, LocalDate from, LocalDate to) {
         LocalDateTime start() { return from.atStartOfDay(); }
         LocalDateTime end() { return to.atTime(LocalTime.MAX); }
@@ -83,8 +82,6 @@ public class AdminDashboardController {
         }
     }
 
-    /* ---------- tiện ích đọc kết quả query ---------- */
-
     private static BigDecimal bd(Object o) {
         if (o == null) return BigDecimal.ZERO;
         if (o instanceof BigDecimal b) return b;
@@ -93,7 +90,6 @@ public class AdminDashboardController {
 
     private static long lng(Object o) { return o == null ? 0L : ((Number) o).longValue(); }
 
-    /** [tổng tiền, số đơn] từ query tổng hợp không GROUP BY. */
     private static Object[] firstRow(List<Object[]> rows) {
         return rows == null || rows.isEmpty() ? new Object[] { null, 0L } : rows.get(0);
     }
@@ -133,7 +129,6 @@ public class AdminDashboardController {
         return m;
     }
 
-    /** Doanh thu theo từng ngày trong khoảng, đủ mọi ngày (ngày không có đơn = 0). */
     private static List<Long> perDay(List<Object[]> rows, Period p) {
         Map<String, Long> m = new HashMap<>();
         for (Object[] r : rows) m.put(r[0].toString(), bd(r[1]).longValue());
@@ -153,18 +148,51 @@ public class AdminDashboardController {
         return out;
     }
 
+    /**
+     * Trả về branchId hiệu lực cho request:
+     *  - ADMIN: dùng branchId client gửi (null = toàn hệ thống).
+     *  - MANAGER: ép = chi nhánh của mình. Nếu chưa được gán chi nhánh thì trả về -1
+     *    (không có chi nhánh nào khớp → dữ liệu rỗng, an toàn).
+     *
+     * Lưu ý: dùng findByEmailWithBranch để load sẵn branch (LEFT JOIN FETCH u.branch),
+     * tránh LazyInitializationException khi spring.jpa.open-in-view=false.
+     */
+    private Long effectiveBranchId(Authentication auth, Long requested) {
+        User me = userRepo.findByEmailWithBranch(auth.getName()).orElseThrow();
+        if (me.isAdmin()) return requested;
+        if (me.getBranch() == null) return -1L;
+        return me.getBranch().getId();
+    }
+
+    private boolean isAdmin(Authentication auth) {
+        // isAdmin() chỉ đọc user.roles (FetchType.EAGER) nên không cần fetch branch;
+        // vẫn dùng findByEmailWithBranch để đồng bộ cách truy vấn.
+        return userRepo.findByEmailWithBranch(auth.getName()).map(User::isAdmin).orElse(false);
+    }
+
     @GetMapping({"", "/dashboard"})
     public String dashboard(@RequestParam(required = false) String range,
                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                             @RequestParam(required = false) Long branchId,
-                            Model model) {
+                            Authentication auth,
+                            Model model,
+                            RedirectAttributes ra) {
+        // Ép chi nhánh cho Manager trước khi làm bất kỳ truy vấn nào.
+        branchId = effectiveBranchId(auth, branchId);
+        boolean admin = isAdmin(auth);
+
+        if (!admin && branchId != null && branchId == -1L) {
+            ra.addFlashAttribute("error",
+                    "Tài khoản Manager chưa được gán chi nhánh. Vui lòng liên hệ Admin.");
+            return "redirect:/admin/orders";
+        }
+
         Period p = resolve(range, from, to);
         LocalDateTime f = p.start(), t = p.end();
         LocalDate today = LocalDate.now(VN);
         LocalDateTime now = LocalDateTime.now(VN);
 
-        // ===== Hôm nay (luôn hiện, không phụ thuộc bộ lọc thời gian; vẫn theo chi nhánh) =====
         LocalDateTime t0 = today.atStartOfDay(), t1 = today.atTime(LocalTime.MAX);
         long todayOrders = 0;
         for (Object[] r : orderRepo.statusCountBetween(t0, t1, branchId)) todayOrders += lng(r[1]);
@@ -173,7 +201,6 @@ public class AdminDashboardController {
         model.addAttribute("todayExpected", bd(todayLive[0]));
         model.addAttribute("todayCollected", collected(t0, t1, branchId));
 
-        // ===== Khoảng thời gian đang xem =====
         Map<String, Long> statusCount = new LinkedHashMap<>();
         for (String s : STATUSES) statusCount.put(s, 0L);
         long totalOrders = 0;
@@ -190,13 +217,11 @@ public class AdminDashboardController {
         BigDecimal avg = liveCount == 0 ? BigDecimal.ZERO : expected.divide(BigDecimal.valueOf(liveCount), 0, RoundingMode.HALF_UP);
         double cancelRate = totalOrders == 0 ? 0 : statusCount.get(Order.STATUS_CANCELLED) * 100.0 / totalOrders;
 
-        // So với kỳ liền trước có cùng độ dài
         long len = p.days();
         BigDecimal prev = collected(f.minusDays(len), f.minusNanos(1), branchId);
         Double periodGrowth = prev.signum() == 0 ? null
                 : collected.subtract(prev).multiply(BigDecimal.valueOf(100)).divide(prev, 1, RoundingMode.HALF_UP).doubleValue();
 
-        // Tháng này (từ đầu tháng đến nay) so với cả tháng trước
         YearMonth ym = YearMonth.from(today);
         BigDecimal thisMonth = collected(ym.atDay(1).atStartOfDay(), t1, branchId);
         BigDecimal lastMonth = collected(ym.minusMonths(1).atDay(1).atStartOfDay(),
@@ -223,14 +248,12 @@ public class AdminDashboardController {
         model.addAttribute("statusLabels", statusLabels);
         model.addAttribute("statusData", new ArrayList<>(statusCount.values()));
 
-        // ===== Biểu đồ theo ngày =====
         List<String> labelsDay = new ArrayList<>();
         for (LocalDate d = p.from(); !d.isAfter(p.to()); d = d.plusDays(1)) labelsDay.add(d.format(DAY));
         model.addAttribute("labelsDay", labelsDay);
         model.addAttribute("dataDayCollected", perDay(orderRepo.collectedByDay(f, t, branchId), p));
         model.addAttribute("dataDayExpected", perDay(orderRepo.liveByDay(f, t, branchId), p));
 
-        // ===== Biểu đồ 12 tháng =====
         YearMonth firstMonth = ym.minusMonths(11);
         LocalDateTime mf = firstMonth.atDay(1).atStartOfDay();
         LocalDateTime mt = ym.atEndOfMonth().atTime(LocalTime.MAX);
@@ -243,7 +266,6 @@ public class AdminDashboardController {
         model.addAttribute("data12Collected", perMonth(orderRepo.collectedByMonth(mf, mt, branchId), firstMonth));
         model.addAttribute("data12Expected", perMonth(orderRepo.liveByMonth(mf, mt, branchId), firstMonth));
 
-        // ===== Theo giờ trong ngày =====
         long[] hourOrders = new long[24];
         long[] hourRevenue = new long[24];
         for (Object[] r : orderRepo.liveByHour(f, t, branchId)) {
@@ -257,7 +279,6 @@ public class AdminDashboardController {
         model.addAttribute("hourOrders", hOrders);
         model.addAttribute("hourRevenue", hRev);
 
-        // ===== Theo phương thức thanh toán =====
         List<Map<String, Object>> payments = new ArrayList<>();
         for (Object[] r : orderRepo.liveByPaymentMethod(f, t, branchId)) {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -273,11 +294,9 @@ public class AdminDashboardController {
         model.addAttribute("payLabels", payLabels);
         model.addAttribute("payTotals", payTotals);
 
-        // ===== Top =====
         model.addAttribute("topProducts", orderRepo.topProductsBetween(f, t, branchId));
         model.addAttribute("topToppings", orderRepo.topToppingsBetween(f, t, branchId));
 
-        // ===== Cảnh báo =====
         List<Map<String, String>> alerts = new ArrayList<>();
         long pendingNow = orderRepo.countPending(branchId);
         long staleOnline = orderRepo.countStaleOnlinePayments(now.minusMinutes(15), branchId);
@@ -296,29 +315,45 @@ public class AdminDashboardController {
         model.addAttribute("alerts", alerts);
         model.addAttribute("pendingNow", pendingNow);
 
-        // ===== Bộ lọc =====
         model.addAttribute("range", p.range());
         model.addAttribute("fromDate", p.from().toString());
         model.addAttribute("toDate", p.to().toString());
         model.addAttribute("branchId", branchId);
-        model.addAttribute("branches", branchService.all());
+        model.addAttribute("isAdmin", admin);
+
+        // Manager chỉ thấy 1 chi nhánh của mình trong dropdown.
+        // Dùng findByEmailWithBranch để load sẵn branch (LEFT JOIN FETCH u.branch),
+        // tránh LazyInitializationException khi spring.jpa.open-in-view=false.
+        if (admin) {
+            model.addAttribute("branches", branchService.all());
+            model.addAttribute("managerBranchName", null);
+        } else {
+            User me = userRepo.findByEmailWithBranch(auth.getName()).orElseThrow();
+            model.addAttribute("branches", me.getBranch() != null ? List.of(me.getBranch()) : List.of());
+            model.addAttribute("managerBranchName", me.getBranch() != null ? me.getBranch().getName() : null);
+        }
         return "admin/dashboard";
     }
 
-    /** Xuất báo cáo CSV (mở được bằng Excel, có BOM để hiển thị đúng tiếng Việt). */
     @GetMapping("/dashboard/export")
     public void export(@RequestParam(required = false) String range,
                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                        @RequestParam(required = false) Long branchId,
+                       Authentication auth,
                        HttpServletResponse response) throws IOException {
+        branchId = effectiveBranchId(auth, branchId);
+        if (branchId != null && branchId == -1L) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
         Period p = resolve(range, from, to);
         LocalDateTime f = p.start(), t = p.end();
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader("Content-Disposition",
                 "attachment; filename=\"bao-cao-" + p.from() + "_" + p.to() + ".csv\"");
         PrintWriter w = new PrintWriter(new java.io.OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8));
-        w.print('﻿');
+        w.print('\uFEFF');
 
         w.println("BÁO CÁO DOANH THU");
         w.println("Từ ngày," + p.from() + ",Đến ngày," + p.to());
@@ -354,7 +389,6 @@ public class AdminDashboardController {
         w.flush();
     }
 
-    /** Escape CSV, đồng thời chặn công thức Excel (=, +, -, @) ở đầu ô. */
     private static String csv(String s) {
         if (s == null) return "";
         String v = s;

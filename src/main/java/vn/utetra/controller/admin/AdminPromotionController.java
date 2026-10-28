@@ -1,6 +1,8 @@
 package vn.utetra.controller.admin;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +16,11 @@ import vn.utetra.service.PromotionService;
 
 import java.util.NoSuchElementException;
 
-/** Quản lý tin tức & khuyến mãi (chỉ ADMIN, xem SecurityConfig). */
+/**
+ * Quản lý tin tức & khuyến mãi.
+ * - ADMIN : CRUD đầy đủ.
+ * - MANAGER: chỉ xem danh sách (mutate bị chặn @PreAuthorize(ADMIN)).
+ */
 @Controller
 @RequestMapping("/admin/promotions")
 public class AdminPromotionController {
@@ -23,18 +29,25 @@ public class AdminPromotionController {
     @Autowired private CloudinaryService cloudinaryService;
     @Autowired private FileValidator fileValidator;
 
+    private static boolean isAdmin(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
     @GetMapping
-    public String list(@RequestParam(required = false) Long edit, Model model) {
+    public String list(@RequestParam(required = false) Long edit, Authentication auth, Model model) {
         Promotion form = new Promotion();
-        if (edit != null) {
+        if (edit != null && isAdmin(auth)) {
             try { form = promotionService.get(edit); } catch (NoSuchElementException ignored) { }
         }
         model.addAttribute("promotions", promotionService.all());
         model.addAttribute("form", form);
+        model.addAttribute("isAdmin", isAdmin(auth));
         return "admin/promotions";
     }
 
     @PostMapping("/save")
+    @PreAuthorize("hasRole('ADMIN')")
     public String save(@RequestParam(required = false) Long id,
                        @RequestParam String title,
                        @RequestParam(required = false) String summary,
@@ -60,6 +73,7 @@ public class AdminPromotionController {
     }
 
     @PostMapping("/toggle")
+    @PreAuthorize("hasRole('ADMIN')")
     public String toggle(@RequestParam Long id, RedirectAttributes ra) {
         promotionService.toggle(id);
         ra.addFlashAttribute("success", "Đã cập nhật hiển thị bài viết.");
@@ -67,6 +81,7 @@ public class AdminPromotionController {
     }
 
     @PostMapping("/delete")
+    @PreAuthorize("hasRole('ADMIN')")
     public String delete(@RequestParam Long id, RedirectAttributes ra) {
         promotionService.delete(id);
         ra.addFlashAttribute("success", "Đã xoá bài viết.");

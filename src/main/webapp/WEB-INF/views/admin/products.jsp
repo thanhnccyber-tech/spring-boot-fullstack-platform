@@ -21,9 +21,11 @@
         <i class="fas fa-box me-1"></i>
         Tổng cộng <b class="text-dark">${fn:escapeXml(pageData.totalElements)}</b> sản phẩm
     </div>
-    <a href="${pageContext.request.contextPath}/admin/products/new" class="btn btn-warning">
-        <i class="fas fa-plus me-1"></i> Thêm sản phẩm
-    </a>
+    <c:if test="${isAdmin}">
+        <a href="${pageContext.request.contextPath}/admin/products/new" class="btn btn-warning">
+            <i class="fas fa-plus me-1"></i> Thêm sản phẩm
+        </a>
+    </c:if>
 </div>
 
 <%-- ===================== BỘ LỌC ===================== --%>
@@ -135,15 +137,24 @@
                             <fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫
                         </td>
                         <td class="text-center">
-                            <form action="${pageContext.request.contextPath}/admin/products/toggle-active" method="post">
-                                <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
-                                <input type="hidden" name="returnUrl"
-                                       value="/admin/products?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">
-                                <button class="badge border-0 px-3 py-2 ${fn:escapeXml(p.active ? 'bg-success' : 'bg-secondary')}"
-                                        title="${fn:escapeXml(p.active ? 'Bấm để ẩn sản phẩm' : 'Bấm để hiện sản phẩm')}">
-                                    <i class="fas ${fn:escapeXml(p.active ? 'fa-eye' : 'fa-eye-slash')} me-1"></i>${fn:escapeXml(p.active ? 'Đang hiện' : 'Đã ẩn')}
-                                </button>
-                            </form>
+                            <c:choose>
+                                <c:when test="${isAdmin}">
+                                    <form action="${pageContext.request.contextPath}/admin/products/toggle-active" method="post">
+                                        <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
+                                        <input type="hidden" name="returnUrl"
+                                               value="/admin/products?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&categoryId=${fn:escapeXml(categoryId)}&active=${fn:escapeXml(activeFilter)}&minPrice=${fn:escapeXml(minPrice)}&maxPrice=${fn:escapeXml(maxPrice)}&sort=${fn:escapeXml(sort)}">
+                                        <button class="badge border-0 px-3 py-2 ${fn:escapeXml(p.active ? 'bg-success' : 'bg-secondary')}"
+                                                title="${fn:escapeXml(p.active ? 'Bấm để ẩn sản phẩm' : 'Bấm để hiện sản phẩm')}">
+                                            <i class="fas ${fn:escapeXml(p.active ? 'fa-eye' : 'fa-eye-slash')} me-1"></i>${fn:escapeXml(p.active ? 'Đang hiện' : 'Đã ẩn')}
+                                        </button>
+                                    </form>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge px-3 py-2 ${fn:escapeXml(p.active ? 'bg-success' : 'bg-secondary')}">
+                                        <i class="fas ${fn:escapeXml(p.active ? 'fa-eye' : 'fa-eye-slash')} me-1"></i>${fn:escapeXml(p.active ? 'Đang hiện' : 'Đã ẩn')}
+                                    </span>
+                                </c:otherwise>
+                            </c:choose>
                         </td>
                         <td class="text-center">
                             <form action="${pageContext.request.contextPath}/admin/products/toggle-stock" method="post">
@@ -157,19 +168,21 @@
                             </form>
                         </td>
                         <td class="text-end">
-                            <div class="d-inline-flex gap-1">
-                                <a href="${pageContext.request.contextPath}/admin/products/edit/${fn:escapeXml(p.id)}"
-                                   class="btn btn-sm btn-outline-primary" title="Sửa sản phẩm">
-                                    <i class="fas fa-pen"></i>
-                                </a>
-                                <form action="${pageContext.request.contextPath}/admin/products/delete"
-                                      method="post" onsubmit="return confirm('Xóa sản phẩm này?')">
-                                    <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
-                                    <button class="btn btn-sm btn-outline-danger" title="Xóa sản phẩm">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
+                            <c:if test="${isAdmin}">
+                                <div class="d-inline-flex gap-1">
+                                    <a href="${pageContext.request.contextPath}/admin/products/edit/${fn:escapeXml(p.id)}"
+                                       class="btn btn-sm btn-outline-primary" title="Sửa sản phẩm">
+                                        <i class="fas fa-pen"></i>
+                                    </a>
+                                    <form action="${pageContext.request.contextPath}/admin/products/delete"
+                                          method="post" onsubmit="return confirm('Xóa sản phẩm này?')">
+                                        <input type="hidden" name="id" value="${fn:escapeXml(p.id)}">
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa sản phẩm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </c:if>
                         </td>
                     </tr>
                 </c:forEach>

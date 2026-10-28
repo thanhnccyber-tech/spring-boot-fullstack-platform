@@ -20,9 +20,11 @@
         <i class="fas fa-ice-cream me-1"></i>
         Tổng cộng <b class="text-dark">${fn:escapeXml(pageData.totalElements)}</b> topping
     </div>
-    <a href="${pageContext.request.contextPath}/admin/toppings/new" class="btn btn-warning">
-        <i class="fas fa-plus me-1"></i> Thêm topping
-    </a>
+    <c:if test="${isAdmin}">
+        <a href="${pageContext.request.contextPath}/admin/toppings/new" class="btn btn-warning">
+            <i class="fas fa-plus me-1"></i> Thêm topping
+        </a>
+    </c:if>
 </div>
 
 <div class="card mb-3">
@@ -83,15 +85,24 @@
                             <fmt:formatNumber value="${t.price}" pattern="#,##0"/> ₫
                         </td>
                         <td class="text-center">
-                            <form action="${pageContext.request.contextPath}/admin/toppings/toggle-active" method="post">
-                                <input type="hidden" name="id" value="${fn:escapeXml(t.id)}">
-                                <input type="hidden" name="returnUrl"
-                                       value="/admin/toppings?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}&outOfStock=${fn:escapeXml(outOfStockFilter)}">
-                                <button class="badge border-0 px-3 py-2 ${t.active ? 'bg-success' : 'bg-secondary'}"
-                                        title="${t.active ? 'Bấm để ẩn' : 'Bấm để hiện'}">
-                                    <i class="fas ${t.active ? 'fa-eye' : 'fa-eye-slash'} me-1"></i>${t.active ? 'Đang hiện' : 'Đã ẩn'}
-                                </button>
-                            </form>
+                            <c:choose>
+                                <c:when test="${isAdmin}">
+                                    <form action="${pageContext.request.contextPath}/admin/toppings/toggle-active" method="post">
+                                        <input type="hidden" name="id" value="${fn:escapeXml(t.id)}">
+                                        <input type="hidden" name="returnUrl"
+                                               value="/admin/toppings?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}&outOfStock=${fn:escapeXml(outOfStockFilter)}">
+                                        <button class="badge border-0 px-3 py-2 ${t.active ? 'bg-success' : 'bg-secondary'}"
+                                                title="${t.active ? 'Bấm để ẩn' : 'Bấm để hiện'}">
+                                            <i class="fas ${t.active ? 'fa-eye' : 'fa-eye-slash'} me-1"></i>${t.active ? 'Đang hiện' : 'Đã ẩn'}
+                                        </button>
+                                    </form>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge px-3 py-2 ${t.active ? 'bg-success' : 'bg-secondary'}">
+                                        <i class="fas ${t.active ? 'fa-eye' : 'fa-eye-slash'} me-1"></i>${t.active ? 'Đang hiện' : 'Đã ẩn'}
+                                    </span>
+                                </c:otherwise>
+                            </c:choose>
                         </td>
                         <td class="text-center">
                             <form action="${pageContext.request.contextPath}/admin/toppings/toggle-stock" method="post">
@@ -105,19 +116,21 @@
                             </form>
                         </td>
                         <td class="text-end">
-                            <div class="d-inline-flex gap-1">
-                                <a href="${pageContext.request.contextPath}/admin/toppings/edit/${fn:escapeXml(t.id)}"
-                                   class="btn btn-sm btn-outline-primary" title="Sửa topping">
-                                    <i class="fas fa-pen"></i>
-                                </a>
-                                <form action="${pageContext.request.contextPath}/admin/toppings/delete" method="post"
-                                      onsubmit="return confirm('Xóa topping này?')">
-                                    <input type="hidden" name="id" value="${fn:escapeXml(t.id)}">
-                                    <button class="btn btn-sm btn-outline-danger" title="Xóa topping">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
+                            <c:if test="${isAdmin}">
+                                <div class="d-inline-flex gap-1">
+                                    <a href="${pageContext.request.contextPath}/admin/toppings/edit/${fn:escapeXml(t.id)}"
+                                       class="btn btn-sm btn-outline-primary" title="Sửa topping">
+                                        <i class="fas fa-pen"></i>
+                                    </a>
+                                    <form action="${pageContext.request.contextPath}/admin/toppings/delete" method="post"
+                                          onsubmit="return confirm('Xóa topping này?')">
+                                        <input type="hidden" name="id" value="${fn:escapeXml(t.id)}">
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa topping">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </c:if>
                         </td>
                     </tr>
                 </c:forEach>

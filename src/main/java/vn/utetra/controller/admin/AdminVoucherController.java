@@ -1,6 +1,8 @@
 package vn.utetra.controller.admin;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +21,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
 
-/** Quản lý mã giảm giá (chỉ ADMIN, xem SecurityConfig). */
+/**
+ * Quản lý mã giảm giá.
+ * - ADMIN : CRUD đầy đủ.
+ * - MANAGER: chỉ xem danh sách (mutate bị chặn @PreAuthorize(ADMIN)).
+ */
 @Controller
 @RequestMapping("/admin/vouchers")
 public class AdminVoucherController {
@@ -27,6 +33,11 @@ public class AdminVoucherController {
     @Autowired private VoucherService voucherService;
     @Autowired private UserRepository userRepository;
     @Autowired private NotificationRepository notificationRepository;
+
+    private static boolean isAdmin(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
 
     private void notifyCustomersAboutVoucher(Voucher voucher) {
         if (voucher == null || !Boolean.TRUE.equals(voucher.getActive())) return;
@@ -53,17 +64,19 @@ public class AdminVoucherController {
     }
 
     @GetMapping
-    public String list(@RequestParam(required = false) Long edit, Model model) {
+    public String list(@RequestParam(required = false) Long edit, Authentication auth, Model model) {
         Voucher form = new Voucher();
-        if (edit != null) {
+        if (edit != null && isAdmin(auth)) {
             try { form = voucherService.get(edit); } catch (NoSuchElementException ignored) { }
         }
         model.addAttribute("vouchers", voucherService.all());
         model.addAttribute("form", form);
+        model.addAttribute("isAdmin", isAdmin(auth));
         return "admin/vouchers";
     }
 
     @PostMapping("/save")
+    @PreAuthorize("hasRole('ADMIN')")
     public String save(@RequestParam(required = false) Long id,
                        @RequestParam String code,
                        @RequestParam String discountType,
@@ -92,6 +105,7 @@ public class AdminVoucherController {
     }
 
     @PostMapping("/toggle")
+    @PreAuthorize("hasRole('ADMIN')")
     public String toggle(@RequestParam Long id, RedirectAttributes ra) {
         Voucher before = voucherService.get(id);
         boolean wasActive = Boolean.TRUE.equals(before.getActive());
