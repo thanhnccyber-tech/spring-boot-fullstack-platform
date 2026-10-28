@@ -1003,3 +1003,42 @@ a:hover { color: var(--ute-blue-700); }
 .ute-all-notification-row a { color: #2563eb; text-decoration: none; font-size: .78rem; font-weight: 800; }
 .ute-all-notification-row a:hover { text-decoration: underline; }
 @media(max-width:575px){.ute-all-notifications-head{align-items:flex-start}.ute-all-notifications-head .btn{flex-shrink:0}.ute-all-notification-row{padding:14px;gap:10px}}
+
+/* ============================================================
+   Trang chi tiết đơn hàng (user/order-detail.jsp)
+   ============================================================ */
+.od-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; }
+.od-title { margin: 0 0 8px; font-weight: 800; letter-spacing: .2px; word-break: break-all; }
+.od-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; color: var(--ute-slate-500); font-size: .9rem; }
+.od-meta .badge { font-size: .82rem; }
+.od-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.od-card { background: #fff; border: 1px solid var(--ute-slate-200); border-radius: var(--ute-radius); padding: 22px 24px; box-shadow: var(--ute-shadow-sm); margin-bottom: 20px; }
+.od-card-title { display: flex; align-items: center; gap: 9px; margin: 0 0 16px; font-size: 1.02rem; font-weight: 800; color: var(--ute-slate-900); }
+.od-card-title > i { color: var(--ute-blue-fresh); }
+.od-count { margin-left: auto; font-size: .78rem; font-weight: 600; color: var(--ute-slate-500); background: var(--ute-slate-100); border-radius: 99px; padding: 3px 10px; }
+.od-progress-card { padding: 10px 24px 4px; }
+.od-progress-card .order-progress { margin: 8px 0 6px; }
+.od-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.od-info { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: var(--ute-slate-50); border: 1px solid var(--ute-slate-100); border-radius: var(--ute-radius-sm); }
+.od-info-wide { grid-column: 1 / -1; }
+.od-info > i { flex: 0 0 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #e0ecff; color: var(--ute-blue-fresh-hover); font-size: .9rem; }
+.od-info small { display: block; color: var(--ute-slate-500); font-size: .74rem; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 2px; }
+.od-info b { display: block; color: var(--ute-slate-900); font-weight: 700; font-size: .95rem; word-break: break-word; }
+.od-info span { display: block; color: var(--ute-slate-500); font-size: .85rem; }
+.od-info span.od-pay { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; padding: 2px 10px; border-radius: 99px; font-size: .78rem; font-weight: 700; }
+.od-pay.paid { background: #d1fae5; color: #047857; }
+.od-pay.unpaid { background: var(--ute-amber-soft); color: #92400e; }
+.od-table thead th { font-size: .76rem; text-transform: uppercase; letter-spacing: .4px; color: var(--ute-slate-500); border-bottom: 1px solid var(--ute-slate-200); font-weight: 700; white-space: nowrap; }
+.od-table tbody td { padding: 14px 8px; border-color: var(--ute-slate-100); }
+.od-table tbody tr:last-child td { border-bottom: 0; }
+.od-prod { display: flex; align-items: center; gap: 12px; min-width: 200px; }
+.od-prod img { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; flex: 0 0 56px; }
+.od-prod-name { font-weight: 700; color: var(--ute-slate-900); }
+.od-opts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.od-opts span { font-size: .72rem; font-weight: 600; color: var(--ute-slate-600); background: var(--ute-slate-100); border-radius: 99px; padding: 2px 9px; }
+.od-summary { position: sticky; top: 16px; }
+.od-summary .sum-row { padding: 10px 0; }
+.od-voucher { font-style: normal; font-size: .72rem; font-weight: 700; color: var(--ute-blue-fresh-hover); background: #e0ecff; border-radius: 6px; padding: 2px 7px; margin-left: 4px; }
+.od-total { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding: 14px 16px; background: #eff6ff; border-radius: var(--ute-radius-sm); }
+.od-points { margin-top: 12px; font-size: .85rem; font-weight: 600; color: #047857; background: #ecfdf5; border-radius: var(--ute-radius-sm); padding: 8px 12px; }
+@media (max-width: 767px) { .od-info-grid { grid-template-columns: 1fr; } .od-card { padding: 18px 16px; } .od-summary { position: static; } .od-actions { width: 100%; } .od-actions form, .od-actions .btn { flex: 1 1 auto; } .od-actions .btn { width: 100%; } }
