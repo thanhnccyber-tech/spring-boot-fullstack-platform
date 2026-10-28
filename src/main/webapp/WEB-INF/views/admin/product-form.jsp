@@ -185,6 +185,7 @@
         </div>
         <div class="col-md-4">
             <label>Ảnh (Cloudinary)</label>
+            <input type="hidden" name="imageUrl" value="${fn:escapeXml(product.imageUrl)}">
             <input type="file" name="imageFile" id="productImage"
                    class="form-control mb-2"
                    accept="image/jpeg,image/png,image/gif,image/webp">

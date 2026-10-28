@@ -3,11 +3,13 @@ package vn.utetra.controller.admin;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
 import vn.utetra.repository.OrderRepository;
+import vn.utetra.repository.UserRepository;
+import vn.utetra.repository.VoucherRepository;
+import vn.utetra.service.BranchService;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,52 +18,69 @@ import static org.mockito.Mockito.*;
 class AdminDashboardControllerTest {
 
     @Test
-    void dashboardBuildsTwelveMondayToSundayRevenueBuckets() throws Exception {
+    void dashboardBuildsTwelveMonthSeries() throws Exception {
         OrderRepository repository = mock(OrderRepository.class);
-        AdminDashboardController controller = new AdminDashboardController();
-        Field repositoryField = AdminDashboardController.class.getDeclaredField("orderRepo");
-        repositoryField.setAccessible(true);
-        repositoryField.set(controller, repository);
-        when(repository.findBetween(any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(List.of());
-        when(repository.countByStatus()).thenReturn(List.of());
-        when(repository.revenueByMonth(any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(List.of());
-        when(repository.topSellingProducts()).thenReturn(List.of());
-        when(repository.topSellingToppings()).thenReturn(List.of());
+        UserRepository userRepo = mock(UserRepository.class);
+        VoucherRepository voucherRepo = mock(VoucherRepository.class);
+        BranchService branchService = mock(BranchService.class);
 
-        LocalDate today = LocalDate.now();
-        LocalDate thisMonday = today.minusDays(today.getDayOfWeek().getValue() - 1L);
-        LocalDate firstMonday = thisMonday.minusWeeks(11);
-        LocalDate beforeRange = firstMonday.minusDays(1);
-        LocalDate firstTuesday = firstMonday.plusDays(1);
-        LocalDate nextMonday = thisMonday.plusWeeks(1);
-        List<Object[]> dailyRevenue = List.of(
-                new Object[]{firstMonday.toString(), new BigDecimal("100")},
-                new Object[]{firstTuesday.toString(), new BigDecimal("250")},
-                new Object[]{thisMonday.toString(), new BigDecimal("500")},
-                new Object[]{nextMonday.toString(), new BigDecimal("900")},
-                new Object[]{beforeRange.toString(), new BigDecimal("1000")});
-        when(repository.revenueByDay(any(), any())).thenReturn(dailyRevenue);
+        AdminDashboardController controller = new AdminDashboardController();
+        setField(controller, "orderRepo", repository);
+        setField(controller, "userRepo", userRepo);
+        setField(controller, "voucherRepo", voucherRepo);
+        setField(controller, "branchService", branchService);
+
+        when(repository.statusCountBetween(any(), any(), any())).thenReturn(List.of());
+        when(repository.liveTotals(any(), any(), any())).thenReturn(rows(new Object[]{new BigDecimal("5000"), 10L}));
+        when(repository.collectedTotals(any(), any(), any())).thenReturn(rows(new Object[]{new BigDecimal("3500"), 8L}));
+        when(repository.collectedByDay(any(), any(), any())).thenReturn(rows(
+                new Object[]{LocalDate.now().toString(), new BigDecimal("100")}
+        ));
+        when(repository.liveByDay(any(), any(), any())).thenReturn(rows(
+                new Object[]{LocalDate.now().toString(), new BigDecimal("120")}
+        ));
+        when(repository.collectedByMonth(any(), any(), any())).thenReturn(rows(
+                new Object[]{LocalDate.now().getYear(), LocalDate.now().getMonthValue(), new BigDecimal("1000")}
+        ));
+        when(repository.liveByMonth(any(), any(), any())).thenReturn(rows(
+                new Object[]{LocalDate.now().getYear(), LocalDate.now().getMonthValue(), new BigDecimal("1200")}
+        ));
+        when(repository.liveByHour(any(), any(), any())).thenReturn(List.of());
+        when(repository.liveByPaymentMethod(any(), any(), any())).thenReturn(List.of());
+        when(repository.topProductsBetween(any(), any(), any())).thenReturn(List.of());
+        when(repository.topToppingsBetween(any(), any(), any())).thenReturn(List.of());
+        when(repository.countPending(any())).thenReturn(0L);
+        when(repository.countStaleOnlinePayments(any(), any())).thenReturn(0L);
+        when(repository.countStaleUnconfirmed(any(), any())).thenReturn(0L);
+        when(userRepo.countNewBetween(any(), any())).thenReturn(0L);
+        when(voucherRepo.findExpiringOrNearlyUsedUp(any(), any(), anyInt())).thenReturn(List.of());
+        when(branchService.all()).thenReturn(List.of());
 
         ConcurrentModel model = new ConcurrentModel();
         controller.dashboard(null, null, null, null, model);
 
         @SuppressWarnings("unchecked")
-        List<String> labels = (List<String>) model.getAttribute("labels12Weeks");
+        List<String> labels = (List<String>) model.getAttribute("labels12");
         @SuppressWarnings("unchecked")
-        List<BigDecimal> revenue = (List<BigDecimal>) model.getAttribute("data12Weeks");
-        assertNotNull(labels);
-        assertNotNull(revenue);
-        assertEquals(12, labels.size());
-        assertEquals(12, revenue.size());
-        assertEquals(firstMonday.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM"))
-                + "–" + firstMonday.plusDays(6).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM")),
-                labels.get(0));
-        assertEquals(new BigDecimal("350"), revenue.get(0));
-        assertEquals(new BigDecimal("500"), revenue.get(11));
-        assertEquals(BigDecimal.ZERO, revenue.get(10));
+        List<Long> collected = (List<Long>) model.getAttribute("data12Collected");
+        @SuppressWarnings("unchecked")
+        List<Long> expected = (List<Long>) model.getAttribute("data12Expected");
 
-        verify(repository).revenueByDay(
-                firstMonday.atStartOfDay(),
-                thisMonday.plusDays(6).atTime(java.time.LocalTime.MAX));
+        assertNotNull(labels);
+        assertNotNull(collected);
+        assertNotNull(expected);
+        assertEquals(12, labels.size());
+        assertEquals(12, collected.size());
+        assertEquals(12, expected.size());
+    }
+
+    private static List<Object[]> rows(Object[]... values) {
+        return List.of(values);
+    }
+
+    private static void setField(Object target, String fieldName, Object value) throws Exception {
+        Field field = AdminDashboardController.class.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 }

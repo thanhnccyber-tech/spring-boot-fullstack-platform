@@ -82,6 +82,13 @@ public class ProductService {
                         boolean allowIce,
                         MultipartFile imageFile) {
 
+        if (product.getId() != null) {
+            Product existing = productRepo.findById(product.getId()).orElse(null);
+            if (existing != null && (product.getImageUrl() == null || product.getImageUrl().isBlank())) {
+                product.setImageUrl(existing.getImageUrl());
+            }
+        }
+
         if (imageFile != null && !imageFile.isEmpty()) {
             fileValidator.validateImage(imageFile);
         }
