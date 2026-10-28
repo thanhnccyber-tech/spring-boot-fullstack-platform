@@ -16,7 +16,7 @@
                 <div class="member-progress-heading">
                     <div>
                         <div class="member-eyebrow"><i class="fas fa-medal"></i> HỘI VIÊN UTETRA</div>
-                        <h5 id="memberRankTitle" class="mb-1">Hạng thành viên: <b class="member-rank-label rank-${fn:escapeXml(fn:toLowerCase(rank))}">${fn:escapeXml(rank)}</b></h5>
+                        <h5 id="memberRankTitle" class="mb-1" style="color: #fff;">Hạng thành viên: <b class="member-rank-label rank-${fn:escapeXml(fn:toLowerCase(rank))}">${fn:escapeXml(rank)}</b></h5>
                         <div class="member-progress-subtitle">Tích lũy qua các đơn hàng hoàn thành để nâng hạng</div>
                     </div>
                     <div class="member-total-points">

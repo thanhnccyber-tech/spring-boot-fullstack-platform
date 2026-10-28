@@ -15,7 +15,6 @@
     </div>
 </c:if>
 
-<%-- Quick filter theo trạng thái (dạng pill) --%>
 <c:set var="baseQ" value="kw=${fn:escapeXml(kw)}&fromDate=${fn:escapeXml(fromDate)}&toDate=${fn:escapeXml(toDate)}"/>
 <div class="d-flex flex-wrap gap-2 mb-3">
     <a href="${pageContext.request.contextPath}/admin/orders?${baseQ}"
@@ -50,9 +49,18 @@
        class="btn btn-sm ${statusFilter == 'CANCELLED' ? 'btn-danger' : 'btn-outline-danger'}">
         <i class="fas fa-ban me-1"></i> Đã hủy <span class="badge bg-light text-dark ms-1">${fn:escapeXml(statusCount['CANCELLED'] != null ? statusCount['CANCELLED'] : 0)}</span>
     </a>
+    <a href="${pageContext.request.contextPath}/admin/orders?status=COMPLAINED&${baseQ}"
+       class="btn btn-sm ${statusFilter == 'COMPLAINED' ? 'btn-warning' : 'btn-outline-warning'}">
+        <i class="fas fa-exclamation-triangle me-1"></i> Khiếu nại
+        <span class="badge bg-light text-dark ms-1">${fn:escapeXml(statusCount['COMPLAINED'] != null ? statusCount['COMPLAINED'] : 0)}</span>
+    </a>
+    <a href="${pageContext.request.contextPath}/admin/orders?status=REFUNDED&${baseQ}"
+       class="btn btn-sm ${statusFilter == 'REFUNDED' ? 'btn-dark' : 'btn-outline-dark'}">
+        <i class="fas fa-money-bill-wave me-1"></i> Hoàn tiền
+        <span class="badge bg-light text-dark ms-1">${fn:escapeXml(statusCount['REFUNDED'] != null ? statusCount['REFUNDED'] : 0)}</span>
+    </a>
 </div>
 
-<%-- Bộ lọc chi tiết --%>
 <div class="card mb-3">
     <div class="card-body py-3">
         <form method="get" class="row g-2 align-items-end">
@@ -100,7 +108,6 @@
             <tbody>
                 <c:forEach items="${pageData.content}" var="o">
                     <tr>
-                        <%-- 1. Mã đơn hàng trở thành Link để xem chi tiết --%>
                         <td>
                             <a href="${pageContext.request.contextPath}/admin/orders/detail/${fn:escapeXml(o.id)}"
                                class="fw-bold text-decoration-none" title="Xem chi tiết đơn hàng">
@@ -130,16 +137,16 @@
                                 <c:when test="${o.status == 'COMPLETED'}"><span class="badge bg-success px-2 py-1">Hoàn thành</span></c:when>
                                 <c:when test="${o.status == 'FAILED'}"><span class="badge bg-secondary px-2 py-1">Giao thất bại</span></c:when>
                                 <c:when test="${o.status == 'CANCELLED'}"><span class="badge bg-danger px-2 py-1">Đã hủy</span></c:when>
+                                <c:when test="${o.status == 'COMPLAINED'}"><span class="badge bg-warning text-dark px-2 py-1">Đang khiếu nại</span></c:when>
+                                <c:when test="${o.status == 'REFUNDED'}"><span class="badge bg-dark px-2 py-1">Đã hoàn tiền</span></c:when>
                                 <c:otherwise><span class="badge bg-light text-dark">${fn:escapeXml(o.status)}</span></c:otherwise>
                             </c:choose>
                         </td>
                         <td class="small text-muted">${fn:escapeXml(o.createdAtShort)}</td>
-                        
-                        <%-- 2. Cột Thao tác: 1 Nút chính + 1 Menu Dropdown --%>
+
                         <td class="text-end">
                             <div class="d-flex justify-content-end align-items-center gap-1">
-                                
-                                <%-- Nút Hành động chính (Primary Action) --%>
+
                                 <c:choose>
                                     <c:when test="${o.status == 'PENDING'}">
                                         <form action="${pageContext.request.contextPath}/admin/orders/quick-status" method="post" class="m-0">
@@ -183,7 +190,6 @@
                                     </c:when>
                                 </c:choose>
 
-                                <%-- Menu Dropdown cho các hành động phụ / nguy hiểm --%>
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Thêm thao tác">
                                         <i class="fas fa-ellipsis-v"></i>
@@ -194,8 +200,7 @@
                                                 <i class="fas fa-eye text-muted me-2"></i> Xem chi tiết
                                             </a>
                                         </li>
-                                        
-                                        <%-- Hủy đơn: Chỉ hiện khi Pending --%>
+
                                         <c:if test="${o.status == 'PENDING'}">
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
@@ -211,7 +216,6 @@
                                             </li>
                                         </c:if>
 
-                                        <%-- Báo giao thất bại: Chỉ hiện khi Đang giao --%>
                                         <c:if test="${o.status == 'DELIVERING'}">
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
@@ -228,7 +232,7 @@
                                         </c:if>
                                     </ul>
                                 </div>
-                                
+
                             </div>
                         </td>
                     </tr>
@@ -246,7 +250,6 @@
     </div>
 </div>
 
-<%-- Phân trang --%>
 <c:if test="${pageData.totalPages > 1}">
     <nav class="mt-3">
         <ul class="pagination justify-content-center mb-0">

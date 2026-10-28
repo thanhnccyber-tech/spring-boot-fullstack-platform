@@ -25,6 +25,8 @@ public class Order {
     public static final String STATUS_COMPLETED  = "COMPLETED";
     public static final String STATUS_CANCELLED  = "CANCELLED";
     public static final String STATUS_FAILED     = "FAILED";
+    public static final String STATUS_COMPLAINED = "COMPLAINED";
+    public static final String STATUS_REFUNDED   = "REFUNDED";
 
     public static final String METHOD_DELIVERY = "DELIVERY";
     public static final String METHOD_PICKUP   = "PICKUP";
@@ -47,7 +49,6 @@ public class Order {
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
-    /** Shipper được Admin/Manager phân công giao đơn */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shipper_id")
     private User shipper;
@@ -70,18 +71,15 @@ public class Order {
     @Column(columnDefinition = "TEXT")
     private String note;
 
-    /** DELIVERY (giao tận nơi) hoặc PICKUP (đến lấy tại cửa hàng) */
     @Column(name = "delivery_method", length = 10)
     private String deliveryMethod = METHOD_DELIVERY;
 
     @Column(length = 20)
     private String phone;
 
-    /** "ASAP" (càng sớm càng tốt) hoặc thời điểm khách hẹn (dd/MM/yyyy HH:mm) */
     @Column(name = "delivery_time", length = 40)
     private String deliveryTime;
 
-    /** Thông tin xuất hoá đơn VAT (nếu khách yêu cầu) */
     @Column(name = "vat_info", length = 500)
     private String vatInfo;
 
@@ -94,31 +92,53 @@ public class Order {
     @Column(name = "voucher_code", length = 30)
     private String voucherCode;
 
-    /** Điểm hội viên đã cộng cho đơn này (cộng 1 lần khi đơn hoàn thành) */
     @Column(name = "points_earned")
     private Integer pointsEarned;
 
-    /** Điểm hội viên khách đã dùng để trừ tiền cho đơn này, và số tiền được trừ */
     @Column(name = "points_used")
     private Integer pointsUsed;
 
     @Column(name = "points_discount", precision = 14, scale = 2)
     private BigDecimal pointsDiscount;
 
-    /** Khoảng cách (km) từ cửa hàng tới khách lúc đặt, dùng tính phí ship (có thể null) */
     @Column(name = "distance_km")
     private Double distanceKm;
 
-    /** Thanh toán online: thời điểm nhận tiền + mã giao dịch của cổng thanh toán */
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
     @Column(name = "payment_ref", length = 60)
     private String paymentRef;
 
-    /** Lý do giao thất bại (nếu có) */
     @Column(name = "failed_reason", length = 500)
     private String failedReason;
+
+    /* ===== Khiếu nại ===== */
+    @Column(name = "complaint_reason", length = 1000)
+    private String complaintReason;
+
+    @Column(name = "complaint_at")
+    private LocalDateTime complaintAt;
+
+    @Column(name = "complaint_resolved_at")
+    private LocalDateTime complaintResolvedAt;
+
+    /** Ảnh/video đính kèm khiếu nại (Cloudinary URL + MIME type) */
+    @Column(name = "complaint_media_url", length = 500)
+    private String complaintMediaUrl;
+
+    @Column(name = "complaint_media_type", length = 100)
+    private String complaintMediaType;
+
+    /* ===== Hoàn tiền ===== */
+    @Column(name = "refund_amount", precision = 14, scale = 2)
+    private BigDecimal refundAmount;
+
+    @Column(name = "refund_at")
+    private LocalDateTime refundAt;
+
+    @Column(name = "refund_note", length = 500)
+    private String refundNote;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -131,7 +151,6 @@ public class Order {
 
     public boolean isPickup() { return METHOD_PICKUP.equals(deliveryMethod); }
 
-    /** Tiền hàng (chưa tính phí ship, chưa trừ giảm giá) */
     public BigDecimal getSubtotalAmount() {
         BigDecimal t = totalAmount == null ? BigDecimal.ZERO : totalAmount;
         BigDecimal fee = shippingFee == null ? BigDecimal.ZERO : shippingFee;
@@ -140,7 +159,6 @@ public class Order {
         return t.subtract(fee).add(dis).add(pts);
     }
 
-    /** Nhãn tiếng Việt của trạng thái, hiển thị cho khách. */
     public String getStatusLabel() {
         if (status == null) return "";
         return switch (status) {
@@ -151,11 +169,12 @@ public class Order {
             case STATUS_COMPLETED  -> "Hoàn thành";
             case STATUS_CANCELLED  -> "Đã hủy";
             case STATUS_FAILED     -> "Giao thất bại";
+            case STATUS_COMPLAINED -> "Đang khiếu nại";
+            case STATUS_REFUNDED   -> "Đã hoàn tiền";
             default -> status;
         };
     }
 
-    /** Bước hiện tại trên thanh tiến trình: 1..4; 0 nếu đơn đã hủy / thất bại. */
     public int getProgressStep() {
         if (status == null) return 0;
         return switch (status) {
@@ -167,16 +186,19 @@ public class Order {
         };
     }
 
-    /** Khách chỉ tự hủy được khi cửa hàng chưa xác nhận và chưa thanh toán online. */
     public boolean isCancellable() {
         return STATUS_PENDING.equals(status) && !"PAID".equals(paymentStatus);
     }
 
-    /** Đơn chọn cổng online mà chưa thanh toán xong → cho phép thanh toán lại. */
     public boolean isAwaitingOnlinePayment() {
         return ("VNPAY".equals(paymentMethod) || "MOMO".equals(paymentMethod))
                 && !"PAID".equals(paymentStatus)
                 && STATUS_PENDING.equals(status);
+    }
+
+    /** Khách chỉ được khiếu nại đơn đã hoàn thành và chưa từng khiếu nại trước đó. */
+    public boolean isComplainable() {
+        return STATUS_COMPLETED.equals(status) && complaintAt == null;
     }
 
     public String getCreatedAtFormatted() {
@@ -187,5 +209,11 @@ public class Order {
     }
     public String getUpdatedAtFormatted() {
         return updatedAt == null ? "" : updatedAt.format(FMT_DATETIME);
+    }
+    public String getComplaintAtFormatted() {
+        return complaintAt == null ? "" : complaintAt.format(FMT_DATETIME);
+    }
+    public String getRefundAtFormatted() {
+        return refundAt == null ? "" : refundAt.format(FMT_DATETIME);
     }
 }

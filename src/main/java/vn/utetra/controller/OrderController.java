@@ -6,10 +6,12 @@ import org.slf4j.LoggerFactory;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.dto.CartItem;
 import vn.utetra.dto.OrderRequest;
@@ -66,7 +68,6 @@ public class OrderController {
         }
         BigDecimal subtotal = subtotalOf(cart);
 
-        // Ưu tiên lựa chọn khách đã chọn ở popup "Chọn phương thức nhận hàng" trên header
         String method = (String) session.getAttribute("RECV_METHOD");
         if (!Order.METHOD_PICKUP.equals(method)) method = Order.METHOD_DELIVERY;
         Long branchId = (Long) session.getAttribute("RECV_BRANCH");
@@ -76,7 +77,6 @@ public class OrderController {
         Double lat = (Double) session.getAttribute("RECV_LAT");
         Double lng = (Double) session.getAttribute("RECV_LNG");
         List<Branch> branches = branchService.active();
-        // Phí ship giao tận nơi theo từng cửa hàng (tính theo khoảng cách nếu biết vị trí khách)
         Map<Long, Long> branchFee = new LinkedHashMap<>();
         for (Branch b : branches) {
             branchFee.put(b.getId(), orderService.shippingFeeFor(Order.METHOD_DELIVERY, subtotal,
@@ -108,7 +108,6 @@ public class OrderController {
         return "user/checkout";
     }
 
-    /** Kiểm tra mã giảm giá (AJAX) trước khi đặt hàng. Số tiền thật vẫn được server tính lại lúc đặt. */
     @GetMapping("/voucher")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> checkVoucher(@RequestParam String code,
@@ -176,8 +175,6 @@ public class OrderController {
         session.removeAttribute("CART");
         persistentCartService.clear(o.getUser().getId());
         if ("VNPAY".equals(o.getPaymentMethod())) {
-            // Chuyển thẳng sang cổng VNPay trong response của POST /order/place,
-            // tránh thêm một request nội bộ /payment/vnpay/{id} ngay sau khi đặt hàng.
             try {
                 String ip = VnPayService.clientIp(servletRequest);
                 String paymentUrl = vnPayService.buildPaymentUrl(o, ip);
@@ -194,7 +191,6 @@ public class OrderController {
         return "redirect:/order/detail/" + o.getId();
     }
 
-    /** Khách tự hủy đơn khi cửa hàng chưa xác nhận. */
     @PostMapping("/cancel/{id}")
     public String cancel(@PathVariable Long id, Authentication auth, RedirectAttributes ra) {
         try {
@@ -206,7 +202,26 @@ public class OrderController {
         return "redirect:/order/detail/" + id;
     }
 
-    /** "Đặt lại": đưa các món của đơn cũ vào giỏ (giá hiện tại), rồi sang giỏ hàng để kiểm tra. */
+    /** Khách gửi khiếu nại cho đơn đã hoàn thành (kèm ảnh/video đính kèm nếu có). */
+    @PostMapping(value = "/complain/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public String complain(@PathVariable Long id,
+                           @RequestParam(required = false) String reason,
+                           @RequestParam(required = false) MultipartFile media,
+                           Authentication auth,
+                           RedirectAttributes ra) {
+        try {
+            orderService.fileComplaint(id, auth.getName(), reason, media);
+            ra.addFlashAttribute("success",
+                    "Đã gửi khiếu nại. Cửa hàng sẽ phản hồi trong thời gian sớm nhất.");
+        } catch (IllegalArgumentException | AccessDeniedException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Lỗi xử lý khiếu nại đơn {}", id, e);
+            ra.addFlashAttribute("error", "Không gửi được khiếu nại (lỗi tải tệp). Vui lòng thử lại sau.");
+        }
+        return "redirect:/order/detail/" + id;
+    }
+
     @PostMapping("/reorder/{id}")
     @SuppressWarnings("unchecked")
     public String reorder(@PathVariable Long id, HttpSession session, Authentication auth, RedirectAttributes ra) {
@@ -238,7 +253,6 @@ public class OrderController {
     @GetMapping("/detail/{id}")
     public String detail(@PathVariable Long id, Authentication auth, Model model) {
         Order order = orderService.get(id);
-        // Chống IDOR: khách chỉ được xem đơn của chính mình
         if (order.getUser() == null || !order.getUser().getEmail().equalsIgnoreCase(auth.getName())) {
             throw new AccessDeniedException("Không có quyền xem đơn hàng này");
         }

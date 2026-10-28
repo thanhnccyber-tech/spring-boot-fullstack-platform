@@ -17,6 +17,7 @@ import vn.utetra.repository.UserRepository;
 import vn.utetra.repository.DeliveryFailureRepository;
 import vn.utetra.service.OrderService;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -60,7 +61,6 @@ public class AdminOrderController {
         return "admin/orders";
     }
 
-    /** Đơn mới nhất cho khung chuông thông báo (Admin: mọi chi nhánh; Manager/Staff: chỉ chi nhánh của mình). */
     @GetMapping("/recent")
     @ResponseBody
     public java.util.List<Map<String, Object>> recent(Authentication auth) {
@@ -84,7 +84,6 @@ public class AdminOrderController {
         return out;
     }
 
-    /** Admin xem mọi chi nhánh; Manager/Staff chỉ đơn thuộc chi nhánh của mình (chống truy cập chéo chi nhánh). */
     private Order requireAccess(Long orderId, Authentication auth) {
         User me = userRepo.findByEmail(auth.getName()).orElseThrow();
         Order order = orderService.get(orderId);
@@ -153,6 +152,39 @@ public class AdminOrderController {
             ra.addFlashAttribute("success",
                     shipperId != null ? "Đã phân công shipper" : "Đã bỏ phân công shipper");
         } catch (Exception e) {
+            ra.addFlashAttribute("error", ErrorMessages.safe(e));
+        }
+        return "redirect:/admin/orders/detail/" + id;
+    }
+
+    /* ==================== KHIẾU NẠI & HOÀN TIỀN ==================== */
+
+    @PostMapping("/refund")
+    public String refund(@RequestParam Long id,
+                         @RequestParam(required = false) BigDecimal amount,
+                         @RequestParam(required = false) String note,
+                         Authentication auth,
+                         RedirectAttributes ra) {
+        requireAccess(id, auth);
+        try {
+            orderService.processRefund(id, amount, note);
+            ra.addFlashAttribute("success", "Đã xử lý hoàn tiền cho đơn hàng.");
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", ErrorMessages.safe(e));
+        }
+        return "redirect:/admin/orders/detail/" + id;
+    }
+
+    @PostMapping("/reject-complaint")
+    public String rejectComplaint(@RequestParam Long id,
+                                  @RequestParam(required = false) String note,
+                                  Authentication auth,
+                                  RedirectAttributes ra) {
+        requireAccess(id, auth);
+        try {
+            orderService.rejectComplaint(id, note);
+            ra.addFlashAttribute("success", "Đã từ chối khiếu nại, đơn trở về Hoàn thành.");
+        } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", ErrorMessages.safe(e));
         }
         return "redirect:/admin/orders/detail/" + id;

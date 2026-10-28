@@ -170,6 +170,8 @@ a:hover { color: var(--ute-blue-700); }
 .badge.status-completed { background: var(--ute-green); color: #fff; }
 .badge.status-cancelled,
 .badge.status-failed    { background: var(--ute-red); color: #fff; }
+.badge.status-complained { background: var(--ute-amber); color: #fff; }
+.badge.status-refunded   { background: var(--ute-slate-900); color: #fff; }
 
 /* ============================================================
    Alerts

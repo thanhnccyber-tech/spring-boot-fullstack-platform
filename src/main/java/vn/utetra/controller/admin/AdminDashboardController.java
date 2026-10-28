@@ -36,11 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Dashboard quản trị.
- *  - ADMIN: xem toàn hệ thống hoặc lọc theo bất kỳ chi nhánh.
- *  - MANAGER: chỉ xem dữ liệu của chi nhánh mình (branchId bị ép ở server).
- */
 @Controller
 @RequestMapping("/admin")
 public class AdminDashboardController {
@@ -51,7 +46,8 @@ public class AdminDashboardController {
 
     private static final String[] STATUSES = {
             Order.STATUS_PENDING, Order.STATUS_PREPARING, Order.STATUS_DELIVERING,
-            Order.STATUS_COMPLETED, Order.STATUS_CANCELLED, Order.STATUS_FAILED };
+            Order.STATUS_COMPLETED, Order.STATUS_CANCELLED, Order.STATUS_FAILED,
+            Order.STATUS_COMPLAINED, Order.STATUS_REFUNDED };
 
     @Autowired private OrderRepository orderRepo;
     @Autowired private UserRepository userRepo;
@@ -117,6 +113,8 @@ public class AdminDashboardController {
             case Order.STATUS_COMPLETED -> "Hoàn thành";
             case Order.STATUS_CANCELLED -> "Đã hủy";
             case Order.STATUS_FAILED -> "Giao thất bại";
+            case Order.STATUS_COMPLAINED -> "Đang khiếu nại";
+            case Order.STATUS_REFUNDED -> "Đã hoàn tiền";
             default -> s;
         };
     }
@@ -148,15 +146,6 @@ public class AdminDashboardController {
         return out;
     }
 
-    /**
-     * Trả về branchId hiệu lực cho request:
-     *  - ADMIN: dùng branchId client gửi (null = toàn hệ thống).
-     *  - MANAGER: ép = chi nhánh của mình. Nếu chưa được gán chi nhánh thì trả về -1
-     *    (không có chi nhánh nào khớp → dữ liệu rỗng, an toàn).
-     *
-     * Lưu ý: dùng findByEmailWithBranch để load sẵn branch (LEFT JOIN FETCH u.branch),
-     * tránh LazyInitializationException khi spring.jpa.open-in-view=false.
-     */
     private Long effectiveBranchId(Authentication auth, Long requested) {
         User me = userRepo.findByEmailWithBranch(auth.getName()).orElseThrow();
         if (me.isAdmin()) return requested;
@@ -165,8 +154,6 @@ public class AdminDashboardController {
     }
 
     private boolean isAdmin(Authentication auth) {
-        // isAdmin() chỉ đọc user.roles (FetchType.EAGER) nên không cần fetch branch;
-        // vẫn dùng findByEmailWithBranch để đồng bộ cách truy vấn.
         return userRepo.findByEmailWithBranch(auth.getName()).map(User::isAdmin).orElse(false);
     }
 
@@ -178,7 +165,6 @@ public class AdminDashboardController {
                             Authentication auth,
                             Model model,
                             RedirectAttributes ra) {
-        // Ép chi nhánh cho Manager trước khi làm bất kỳ truy vấn nào.
         branchId = effectiveBranchId(auth, branchId);
         boolean admin = isAdmin(auth);
 
@@ -321,9 +307,6 @@ public class AdminDashboardController {
         model.addAttribute("branchId", branchId);
         model.addAttribute("isAdmin", admin);
 
-        // Manager chỉ thấy 1 chi nhánh của mình trong dropdown.
-        // Dùng findByEmailWithBranch để load sẵn branch (LEFT JOIN FETCH u.branch),
-        // tránh LazyInitializationException khi spring.jpa.open-in-view=false.
         if (admin) {
             model.addAttribute("branches", branchService.all());
             model.addAttribute("managerBranchName", null);

@@ -15,6 +15,11 @@
         </div>
     </div>
     <div class="od-actions">
+        <c:if test="${order.complainable}">
+            <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#complaintModal">
+                <i class="fas fa-exclamation-triangle"></i> Khiếu nại đơn hàng
+            </button>
+        </c:if>
         <c:if test="${order.cancellable}">
             <form action="${ctx}/order/cancel/${fn:escapeXml(order.id)}" method="post" onsubmit="return confirm('Hủy đơn hàng này? Mã giảm giá và điểm đã dùng sẽ được hoàn lại.')">
                 <button class="btn btn-outline-danger"><i class="fas fa-ban"></i> Hủy đơn</button>
@@ -36,7 +41,7 @@
     </div>
 </div>
 
-<%-- Thanh tiến trình: tự cập nhật khi cửa hàng đổi trạng thái (WebSocket bên dưới) --%>
+<%-- Thanh tiến trình --%>
 <c:choose>
     <c:when test="${order.progressStep > 0}">
         <div class="od-card od-progress-card">
@@ -59,8 +64,48 @@
     </div>
 </c:if>
 
+<c:if test="${not empty order.complaintReason}">
+    <div class="alert alert-warning">
+        <b><i class="fas fa-exclamation-triangle"></i> Khiếu nại của bạn:</b>
+        ${fn:escapeXml(order.complaintReason)}
+        <c:if test="${not empty order.complaintAtFormatted}">
+            <div class="small text-muted mt-1">Gửi lúc ${fn:escapeXml(order.complaintAtFormatted)}</div>
+        </c:if>
+        <c:if test="${not empty order.complaintMediaUrl}">
+            <div class="mt-2">
+                <c:choose>
+                    <c:when test="${fn:startsWith(order.complaintMediaType, 'video/')}">
+                        <video controls preload="metadata" style="max-width: 100%; max-height: 360px; border-radius: 8px;">
+                            <source src="${fn:escapeXml(order.complaintMediaUrl)}"
+                                    type="${fn:escapeXml(order.complaintMediaType)}">
+                            Trình duyệt không hỗ trợ phát video.
+                        </video>
+                    </c:when>
+                    <c:otherwise>
+                        <img src="${fn:escapeXml(order.complaintMediaUrl)}"
+                             alt="Ảnh đính kèm khiếu nại" loading="lazy"
+                             style="max-width: 100%; max-height: 360px; object-fit: contain; border-radius: 8px;">
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </c:if>
+    </div>
+</c:if>
+
+<c:if test="${order.refundAmount != null}">
+    <div class="alert alert-success">
+        <b><i class="fas fa-money-bill-wave"></i> Đã hoàn tiền:</b>
+        <b><fmt:formatNumber value="${order.refundAmount}" pattern="#,##0"/> ₫</b>
+        <c:if test="${not empty order.refundAtFormatted}">
+            — lúc ${fn:escapeXml(order.refundAtFormatted)}
+        </c:if>
+        <c:if test="${not empty order.refundNote}">
+            <div class="small mt-1">Ghi chú: ${fn:escapeXml(order.refundNote)}</div>
+        </c:if>
+    </div>
+</c:if>
+
 <div class="row g-3 g-lg-4 align-items-start">
-    <%-- CỘT TRÁI: thông tin nhận hàng + thanh toán + danh sách món --%>
     <div class="col-lg-8">
         <div class="od-card">
             <h5 class="od-card-title"><i class="fas fa-circle-info"></i> Thông tin đơn hàng</h5>
@@ -102,7 +147,7 @@
                         <c:if test="${order.paymentMethod == 'VNPAY' or order.paymentMethod == 'MOMO'}">
                             <span class="od-pay ${order.paymentStatus == 'PAID' ? 'paid' : 'unpaid'}">
                                 <i class="fas ${order.paymentStatus == 'PAID' ? 'fa-circle-check' : 'fa-hourglass-half'}"></i>
-                                ${order.paymentStatus == 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                                ${order.paymentStatus == 'PAID' ? 'Đã thanh toán' : (order.paymentStatus == 'REFUNDED' ? 'Đã hoàn tiền' : 'Chưa thanh toán')}
                             </span>
                         </c:if></div>
                 </div>
@@ -154,7 +199,6 @@
         </div>
     </div>
 
-    <%-- CỘT PHẢI: tổng tiền (dính khi cuộn) --%>
     <div class="col-lg-4">
         <div class="od-card od-summary">
             <h5 class="od-card-title"><i class="fas fa-receipt"></i> Tóm tắt thanh toán</h5>
@@ -170,6 +214,43 @@
     </div>
 </div>
 
+<%-- Modal khiếu nại (hỗ trợ đính kèm ảnh/video) --%>
+<c:if test="${order.complainable}">
+<div class="modal fade" id="complaintModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form action="${ctx}/order/complain/${fn:escapeXml(order.id)}" method="post"
+          enctype="multipart/form-data" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-warning"></i> Gửi khiếu nại</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Lý do khiếu nại <span class="text-danger">*</span></label>
+        <textarea name="reason" class="form-control" rows="4"
+                  minlength="10" maxlength="1000" required
+                  placeholder="Ví dụ: thiếu món, sai món, chất lượng không đảm bảo, giao trễ..."></textarea>
+        <div class="form-text">Tối thiểu 10, tối đa 1000 ký tự.</div>
+
+        <label for="complaintMedia" class="form-label mt-3">
+            Ảnh hoặc video đính kèm <span class="text-muted fw-normal">(không bắt buộc)</span>
+        </label>
+        <input id="complaintMedia" type="file" name="media" class="form-control"
+               accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/x-msvideo">
+        <small class="text-muted d-block mt-1">
+            Ảnh JPG, PNG, GIF, WEBP tối đa <b>5 MB</b>; video MP4, WEBM hoặc AVI tối đa <b>10 MB</b>.
+        </small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button type="submit" class="btn btn-warning">
+            <i class="fas fa-paper-plane"></i> Gửi khiếu nại
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</c:if>
+
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script>
@@ -184,7 +265,6 @@
             stomp.subscribe('/topic/order-status/' + userId, function (msg) {
                 const data = JSON.parse(msg.body);
                 if (data.orderId == ${order.id}) {
-                    // Tải lại để thanh tiến trình và các nút phản ánh trạng thái mới
                     location.reload();
                 }
             });

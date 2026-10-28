@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import vn.utetra.dto.CartItem;
 import vn.utetra.dto.OrderRequest;
 import vn.utetra.entity.*;
@@ -43,41 +44,35 @@ public class OrderService {
     @Autowired private VnPayService vnPayService;
     @Autowired private MomoService momoService;
     @Autowired private CartService cartService;
+    @Autowired private FileValidator fileValidator;
+    @Autowired private CloudinaryService cloudinaryService;
 
-    /** Phí giao hàng cố định (đ). Đặt trong application.properties: shop.shipping-fee */
     @Value("${shop.shipping-fee:25000}")
     private long shippingFee;
 
-    /** Miễn phí giao hàng khi tiền hàng từ mức này trở lên; 0 = không áp dụng. */
     @Value("${shop.free-ship-from:0}")
     private long freeShipFrom;
 
-    /** Phí ship theo khoảng cách: quá {shipBaseKm} km thì mỗi km (làm tròn lên) cộng thêm {shipPerKm}đ; 0 = tắt. */
     @Value("${shop.ship-base-km:3}")
     private double shipBaseKm;
     @Value("${shop.ship-per-km:5000}")
     private long shipPerKm;
-    /** Trần phí ship (0 = không giới hạn). */
     @Value("${shop.ship-max-fee:60000}")
     private long shipMaxFee;
 
-    /** Giá trị 1 điểm khi dùng để trừ tiền (đ). */
     @Value("${shop.point-value:200}")
     private long pointValue;
 
-    /** 10.000đ chi tiêu = 1 điểm (đúng quy tắc hội viên mô tả ở trang Hội viên). */
     public static final long POINT_UNIT = 10000L;
 
     private static final Pattern PHONE = Pattern.compile("^(0|\\+84)[0-9]{9,10}$");
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]{1,64}@[^@\\s]{1,255}$");
     private static final DateTimeFormatter FMT_SLOT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    /** Phí ship cho một đơn: đến lấy = 0; giao hàng = phí cố định (hoặc 0 nếu đủ mức miễn phí). */
     public BigDecimal shippingFeeFor(String method, BigDecimal subtotal) {
         return shippingFeeFor(method, subtotal, null);
     }
 
-    /** Như trên, nhưng cộng thêm phí theo khoảng cách (km) khi biết toạ độ cửa hàng và khách. */
     public BigDecimal shippingFeeFor(String method, BigDecimal subtotal, Double km) {
         if (Order.METHOD_PICKUP.equals(method)) return BigDecimal.ZERO;
         if (freeShipFrom > 0 && subtotal != null && subtotal.compareTo(BigDecimal.valueOf(freeShipFrom)) >= 0)
@@ -90,7 +85,6 @@ public class OrderService {
         return BigDecimal.valueOf(fee);
     }
 
-    /** Khoảng cách (km) từ cửa hàng tới toạ độ khách; null nếu thiếu dữ liệu. */
     public Double distanceKm(Branch b, Double lat, Double lng) {
         if (b == null || !b.hasCoords() || !Geo.validLat(lat) || !Geo.validLon(lng)) return null;
         return Geo.km(b.getLatitude(), b.getLongitude(), lat, lng);
@@ -98,11 +92,6 @@ public class OrderService {
 
     public long getPointValue() { return pointValue; }
 
-    /**
-     * Điểm xét hạng là tổng điểm đã kiếm được, không phải số dư có thể đổi thưởng.
-     * Tự khôi phục cho tài khoản cũ từ lịch sử pointsEarned; dùng max để không làm
-     * mất tiến độ đã lưu và không để số điểm lịch sử thấp hơn số dư cũ.
-     */
     @Transactional
     public int lifetimePointsFor(User user) {
         if (user == null || user.getId() == null) return 0;
@@ -129,11 +118,11 @@ public class OrderService {
     private static final Set<String> PAYMENT_METHODS = Set.of("CASH", "BANK", "COD", "VNPAY", "MOMO");
     private static final Set<String> STATUSES = Set.of(
             Order.STATUS_PENDING, Order.STATUS_PREPARING, Order.STATUS_READY, Order.STATUS_DELIVERING,
-            Order.STATUS_COMPLETED, Order.STATUS_CANCELLED, Order.STATUS_FAILED);
+            Order.STATUS_COMPLETED, Order.STATUS_CANCELLED, Order.STATUS_FAILED,
+            Order.STATUS_COMPLAINED, Order.STATUS_REFUNDED);
     private static final int MAX_ITEMS = 30;
     private static final int MAX_QTY = 50;
 
-    /** Kiểm tra dữ liệu đặt hàng ở phía server (không tin dữ liệu từ form). */
     private void validateOrderRequest(OrderRequest req) {
         if (req == null || req.getItems() == null || req.getItems().isEmpty())
             throw new IllegalArgumentException("Giỏ hàng trống.");
@@ -161,7 +150,6 @@ public class OrderService {
 
         if (req.getPaymentMethod() == null || !PAYMENT_METHODS.contains(req.getPaymentMethod()))
             throw new IllegalArgumentException("Phương thức thanh toán không hợp lệ.");
-        // Tiền mặt chỉ khi đến lấy tại quầy; COD chỉ khi giao tận nơi
         if (Order.METHOD_PICKUP.equals(method) && "COD".equals(req.getPaymentMethod()))
             throw new IllegalArgumentException("Đơn đến lấy tại cửa hàng không dùng COD, vui lòng chọn cách thanh toán khác.");
         if (Order.METHOD_DELIVERY.equals(method) && "CASH".equals(req.getPaymentMethod()))
@@ -194,7 +182,6 @@ public class OrderService {
         req.setNote(note.isEmpty() ? null : note);
     }
 
-    /** "ASAP" hoặc giờ hẹn hợp lệ (từ 20 phút đến 3 ngày tới). Trả về chuỗi để lưu. */
     private String parseDeliveryTime(String raw) {
         if (raw == null || raw.isBlank() || "ASAP".equalsIgnoreCase(raw.trim())) return "ASAP";
         try {
@@ -273,7 +260,6 @@ public class OrderService {
         }
         orderDetailRepo.saveAll(details);
 
-        // Mã giảm giá + phí giao hàng: tính lại hoàn toàn ở server, không tin số tiền từ trình duyệt
         BigDecimal discount = BigDecimal.ZERO;
         if (req.getVoucherCode() != null && !req.getVoucherCode().isBlank()) {
             Voucher v = voucherService.validate(req.getVoucherCode(), total);
@@ -286,7 +272,6 @@ public class OrderService {
         BigDecimal fee = shippingFeeFor(req.getDeliveryMethod(), total, km);
         saved.setDistanceKm(km);
 
-        // Dùng điểm hội viên: chỉ trừ vào tiền hàng (không trừ phí ship), tối đa bằng số điểm đang có
         BigDecimal pointsDiscount = BigDecimal.ZERO;
         int requested = req.getUsePoints() == null ? 0 : Math.max(0, req.getUsePoints());
         if (requested > 0 && pointValue > 0) {
@@ -326,7 +311,6 @@ public class OrderService {
         return String.format("%,d", v == null ? 0L : v.longValue()).replace(',', '.') + "đ";
     }
 
-    /** Chạy sau khi giao dịch DB commit thành công (đơn bị rollback thì không gửi mail). */
     private static void afterCommit(Runnable r) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -371,15 +355,16 @@ public class OrderService {
             case Order.STATUS_COMPLETED  -> "Đơn hàng đã hoàn thành. Chúc bạn ngon miệng!";
             case Order.STATUS_CANCELLED  -> "Đơn hàng đã được hủy.";
             case Order.STATUS_FAILED     -> "Rất tiếc, đơn hàng chưa giao được. Vui lòng liên hệ cửa hàng.";
+            case Order.STATUS_COMPLAINED -> "Chúng tôi đã nhận khiếu nại của bạn và sẽ phản hồi trong thời gian sớm nhất.";
+            case Order.STATUS_REFUNDED   -> "Yêu cầu hoàn tiền đã được xử lý. Số tiền sẽ đến tài khoản của bạn trong 1–3 ngày làm việc.";
             default -> null;
         };
         if (intro == null) return;
         mailOrder(o, o.getUser(), null, "UTeTra - Đơn " + o.getOrderCode() + ": " + o.getStatusLabel(), intro);
     }
 
-    /* ==================== HỦY ĐƠN / ĐẶT LẠI ==================== */
+    /* ==================== HỦY ĐƠN / KHIẾU NẠI / HOÀN TIỀN / ĐẶT LẠI ==================== */
 
-    /** Khách tự hủy đơn khi cửa hàng chưa xác nhận. Hoàn lại mã giảm giá và điểm đã dùng. */
     @Transactional
     public Order cancelByCustomer(Long id, String email) {
         Order o = orderRepo.findById(id).orElseThrow();
@@ -392,9 +377,77 @@ public class OrderService {
         return o;
     }
 
+    /**
+     * Khách gửi khiếu nại cho đơn đã COMPLETED (chưa từng khiếu nại).
+     * @param media tệp đính kèm (ảnh ≤5MB hoặc video MP4/WEBM/AVI ≤10MB); có thể null
+     */
+    @Transactional
+    public Order fileComplaint(Long id, String email, String reason, MultipartFile media) {
+        Order o = orderRepo.findByIdWithUser(id).orElseThrow();
+        if (o.getUser() == null || !o.getUser().getEmail().equalsIgnoreCase(email))
+            throw new AccessDeniedException("Không có quyền thao tác đơn hàng này");
+        if (!Order.STATUS_COMPLETED.equals(o.getStatus()))
+            throw new IllegalArgumentException("Chỉ đơn đã hoàn thành mới có thể khiếu nại.");
+        if (o.getComplaintAt() != null)
+            throw new IllegalArgumentException("Đơn này đã được khiếu nại trước đó. Vui lòng gọi hotline nếu cần hỗ trợ thêm.");
+
+        String r = reason == null ? "" : reason.trim();
+        if (r.length() < 10)
+            throw new IllegalArgumentException("Vui lòng mô tả lý do khiếu nại (tối thiểu 10 ký tự).");
+        if (r.length() > 1000)
+            throw new IllegalArgumentException("Lý do khiếu nại tối đa 1000 ký tự.");
+
+        // Kiểm tra tệp trước khi đụng vào entity — sai định dạng/dung lượng thì không đổi dữ liệu
+        fileValidator.validateReviewMedia(media);
+
+        o.setComplaintReason(r);
+        o.setComplaintAt(LocalDateTime.now());
+        if (media != null && !media.isEmpty()) {
+            o.setComplaintMediaUrl(cloudinaryService.uploadReviewMedia(media, "complaints"));
+            o.setComplaintMediaType(media.getContentType());
+        }
+        applyStatus(o, Order.STATUS_COMPLAINED);
+        return o;
+    }
+
+    /** Admin/Manager chấp nhận khiếu nại và hoàn tiền (toàn phần hoặc một phần, ≤ tổng đơn). */
+    @Transactional
+    public Order processRefund(Long id, BigDecimal amount, String note) {
+        Order o = orderRepo.findByIdWithUser(id).orElseThrow();
+        if (!Order.STATUS_COMPLAINED.equals(o.getStatus()))
+            throw new IllegalArgumentException("Chỉ đơn đang khiếu nại mới có thể hoàn tiền.");
+        if (o.getTotalAmount() == null || o.getTotalAmount().signum() <= 0)
+            throw new IllegalArgumentException("Đơn hàng không có giá trị để hoàn tiền.");
+
+        BigDecimal refund = amount == null ? o.getTotalAmount() : amount;
+        if (refund.signum() <= 0)
+            throw new IllegalArgumentException("Số tiền hoàn phải lớn hơn 0.");
+        if (refund.compareTo(o.getTotalAmount()) > 0)
+            throw new IllegalArgumentException("Số tiền hoàn không được vượt quá tổng đơn hàng.");
+
+        o.setRefundAmount(refund);
+        o.setRefundAt(LocalDateTime.now());
+        o.setComplaintResolvedAt(LocalDateTime.now());
+        o.setRefundNote(note == null || note.isBlank() ? null : note.trim());
+        o.setPaymentStatus("REFUNDED");
+        applyStatus(o, Order.STATUS_REFUNDED);
+        return o;
+    }
+
+    /** Admin/Manager từ chối khiếu nại: đơn quay về COMPLETED, ghi lại lý do từ chối. */
+    @Transactional
+    public Order rejectComplaint(Long id, String note) {
+        Order o = orderRepo.findByIdWithUser(id).orElseThrow();
+        if (!Order.STATUS_COMPLAINED.equals(o.getStatus()))
+            throw new IllegalArgumentException("Chỉ đơn đang khiếu nại mới có thể từ chối.");
+        o.setComplaintResolvedAt(LocalDateTime.now());
+        o.setRefundNote(note == null || note.isBlank() ? null : note.trim());
+        applyStatus(o, Order.STATUS_COMPLETED);
+        return o;
+    }
+
     public record ReorderResult(List<CartItem> items, int skipped) { }
 
-    /** Dựng lại các món của đơn cũ (giá hiện tại); món hết/ngừng bán bị bỏ qua và được đếm. */
     @Transactional(readOnly = true)
     public ReorderResult reorderItems(Long id, String email) {
         Order o = orderRepo.findByIdWithDetails(id).orElseThrow();
@@ -413,7 +466,6 @@ public class OrderService {
 
     /* ==================== THANH TOÁN ONLINE ==================== */
 
-    /** Kết quả xử lý thông báo từ VNPay/MoMo: rspCode theo chuẩn IPN (00 ok, 01 không thấy đơn, 02 đã xác nhận, 04 sai số tiền). */
     public record PaymentResult(String rspCode, Order order, boolean success) { }
 
     @Transactional
@@ -424,6 +476,7 @@ public class OrderService {
         if (o.getTotalAmount() == null || o.getTotalAmount().longValue() * 100L != amountVnd)
             return new PaymentResult("04", o, false);
         if ("PAID".equals(o.getPaymentStatus())) return new PaymentResult("02", o, true);
+        if ("REFUNDED".equals(o.getPaymentStatus())) return new PaymentResult("02", o, true);
         if (success) {
             o.setPaymentStatus("PAID");
             o.setPaidAt(LocalDateTime.now());
@@ -443,6 +496,7 @@ public class OrderService {
         if (o.getTotalAmount() == null || o.getTotalAmount().longValue() != amountVnd)
             return new PaymentResult("04", o, false);
         if ("PAID".equals(o.getPaymentStatus())) return new PaymentResult("02", o, true);
+        if ("REFUNDED".equals(o.getPaymentStatus())) return new PaymentResult("02", o, true);
         if (success) {
             o.setPaymentStatus("PAID");
             o.setPaidAt(LocalDateTime.now());
@@ -455,7 +509,6 @@ public class OrderService {
         return new PaymentResult("00", o, success);
     }
 
-    /** Lấy đơn của chính khách (để tạo lại link thanh toán). */
     @Transactional(readOnly = true)
     public Order ownedOrder(Long id, String email) {
         Order o = orderRepo.findByIdWithUser(id)
@@ -528,17 +581,30 @@ public class OrderService {
         applyStatus(o, status);
     }
 
-    /** Đổi trạng thái + hoàn tài nguyên khi hủy + thông báo (web, realtime, email). */
     private void applyStatus(Order o, String status) {
         String old = o.getStatus();
+
         if (Order.STATUS_CANCELLED.equals(old) && !Order.STATUS_CANCELLED.equals(status))
             throw new IllegalArgumentException("Đơn đã hủy không thể mở lại, hãy để khách đặt đơn mới.");
+        if (Order.STATUS_REFUNDED.equals(old) && !Order.STATUS_REFUNDED.equals(status))
+            throw new IllegalArgumentException("Đơn đã hoàn tiền không thể đổi trạng thái.");
+
+        if (Order.STATUS_COMPLAINED.equals(status) && !Order.STATUS_COMPLETED.equals(old))
+            throw new IllegalArgumentException("Chỉ đơn đã hoàn thành mới có thể chuyển sang khiếu nại.");
+
+        if (Order.STATUS_REFUNDED.equals(status) && !Order.STATUS_COMPLAINED.equals(old))
+            throw new IllegalArgumentException("Chỉ đơn đang khiếu nại mới có thể hoàn tiền.");
+
         o.setStatus(status);
         o.setUpdatedAt(LocalDateTime.now());
         if (Order.STATUS_READY.equals(status)) o.setShipper(null);
+
         if (Order.STATUS_CANCELLED.equals(status) && !Order.STATUS_CANCELLED.equals(old)
                 && !Order.STATUS_COMPLETED.equals(old)) {
             releaseResources(o);
+        }
+        if (Order.STATUS_REFUNDED.equals(status) && !Order.STATUS_REFUNDED.equals(old)) {
+            revokePointsOnRefund(o);
         }
         awardPointsIfCompleted(o);
         orderRepo.save(o);
@@ -548,11 +614,21 @@ public class OrderService {
         if (!status.equals(old)) mailStatus(o, old);
     }
 
-    /** Đơn bị hủy: trả lại lượt dùng mã giảm giá và điểm hội viên đã dùng. */
     private void releaseResources(Order o) {
         if (o.getVoucherCode() != null) voucherService.release(o.getVoucherCode());
         if (o.getPointsUsed() != null && o.getPointsUsed() > 0 && o.getUser() != null)
             userRepo.addPoints(o.getUser().getId(), o.getPointsUsed());
+    }
+
+    private void revokePointsOnRefund(Order o) {
+        if (o.getPointsEarned() == null || o.getPointsEarned() <= 0 || o.getUser() == null) return;
+        User u = o.getUser();
+        int earned = o.getPointsEarned();
+        u.setLoyaltyPoints(Math.max(0, u.getPoints() - earned));
+        int lifetime = u.getLifetimePoints() == null ? 0 : u.getLifetimePoints();
+        u.setLifetimePoints(Math.max(0, lifetime - earned));
+        userRepo.save(u);
+        saveNotification(o, "Đã trừ " + earned + " điểm hội viên do đơn được hoàn tiền.");
     }
 
     @Transactional
@@ -597,14 +673,11 @@ public class OrderService {
         notiRepo.save(n);
     }
 
-    /** Cộng điểm hội viên 1 lần duy nhất khi đơn hoàn thành: mỗi 10.000đ tiền hàng (sau giảm giá) = 1 điểm, làm tròn xuống. */
     private void awardPointsIfCompleted(Order o) {
         if (!Order.STATUS_COMPLETED.equals(o.getStatus())) return;
         if (o.getPointsEarned() != null || o.getUser() == null) return;
 
         User u = o.getUser();
-        // Khởi tạo điểm xét hạng trước khi ghi pointsEarned của đơn hiện tại,
-        // để tổng lịch sử không đếm trùng chính đơn này.
         int lifetimeBefore = lifetimePointsFor(u);
 
         BigDecimal paidGoods = o.getTotalAmount() == null ? BigDecimal.ZERO : o.getTotalAmount();
@@ -612,7 +685,6 @@ public class OrderService {
         int pts = (int) Math.max(0, paidGoods.longValue() / POINT_UNIT);
         o.setPointsEarned(pts);
         if (pts > 0) {
-            // Số dư đổi thưởng tăng; điểm xét hạng cũng tăng nhưng không bị trừ khi đổi thưởng.
             u.setLoyaltyPoints(u.getPoints() + pts);
             u.setLifetimePoints(lifetimeBefore + pts);
             userRepo.save(u);

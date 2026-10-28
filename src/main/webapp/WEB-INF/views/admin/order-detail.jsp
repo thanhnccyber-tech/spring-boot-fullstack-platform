@@ -16,9 +16,8 @@
 </c:if>
 
 <div class="row g-4">
-    <%-- ================= CỘT TRÁI: THÔNG TIN ĐƠN HÀNG ================= --%>
+    <%-- ================= CỘT TRÁI ================= --%>
     <div class="col-lg-8">
-        <%-- Card 1: Thông tin tổng quan --%>
         <div class="card mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <span class="fw-bold"><i class="fas fa-receipt text-primary me-1"></i> Chi tiết đơn hàng</span>
@@ -30,11 +29,12 @@
                     <c:when test="${order.status == 'COMPLETED'}"><span class="badge bg-success px-3 py-2">Đã hoàn thành</span></c:when>
                     <c:when test="${order.status == 'FAILED'}"><span class="badge bg-secondary px-3 py-2">Giao thất bại</span></c:when>
                     <c:when test="${order.status == 'CANCELLED'}"><span class="badge bg-danger px-3 py-2">Đã hủy</span></c:when>
+                    <c:when test="${order.status == 'COMPLAINED'}"><span class="badge bg-warning text-dark px-3 py-2">Đang khiếu nại</span></c:when>
+                    <c:when test="${order.status == 'REFUNDED'}"><span class="badge bg-dark px-3 py-2">Đã hoàn tiền</span></c:when>
                 </c:choose>
             </div>
             <div class="card-body">
                 <div class="row g-4 mb-4">
-                    <%-- Cột trái: Khách & Giao hàng --%>
                     <div class="col-md-6 border-end-md">
                         <h6 class="text-muted small text-uppercase fw-bold mb-3">Thông tin khách hàng</h6>
                         <div class="mb-2">
@@ -65,7 +65,6 @@
                         </c:if>
                     </div>
 
-                    <%-- Cột phải: Thanh toán & Chi nhánh --%>
                     <div class="col-md-6">
                         <h6 class="text-muted small text-uppercase fw-bold mb-3">Thông tin thanh toán</h6>
                         <div class="mb-2">
@@ -92,7 +91,6 @@
                     </div>
                 </div>
 
-                <%-- Khối tính tiền --%>
                 <div class="bg-light rounded p-3 mt-3">
                     <div class="row align-items-center">
                         <div class="col-md-6">
@@ -128,7 +126,94 @@
             </div>
         </div>
 
-        <%-- Card 2: Danh sách món --%>
+        <%-- Card khiếu nại / hoàn tiền --%>
+        <c:if test="${order.status == 'COMPLAINED'}">
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-white fw-bold text-warning">
+                <i class="fas fa-exclamation-triangle me-1"></i> Xử lý khiếu nại
+            </div>
+            <div class="card-body">
+                <div class="mb-3 p-3 bg-light rounded">
+                    <div class="small text-muted mb-1">Lý do khách khiếu nại:</div>
+                    <div>${fn:escapeXml(order.complaintReason)}</div>
+                    <c:if test="${not empty order.complaintAtFormatted}">
+                        <div class="small text-muted mt-1">Gửi lúc ${fn:escapeXml(order.complaintAtFormatted)}</div>
+                    </c:if>
+                    <c:if test="${not empty order.complaintMediaUrl}">
+                        <div class="mt-3">
+                            <div class="small text-muted mb-1">Tệp đính kèm:</div>
+                            <c:choose>
+                                <c:when test="${fn:startsWith(order.complaintMediaType, 'video/')}">
+                                    <video controls preload="metadata" style="max-width: 100%; max-height: 360px; border-radius: 8px;">
+                                        <source src="${fn:escapeXml(order.complaintMediaUrl)}"
+                                                type="${fn:escapeXml(order.complaintMediaType)}">
+                                        Trình duyệt không hỗ trợ phát video.
+                                    </video>
+                                </c:when>
+                                <c:otherwise>
+                                    <a href="${fn:escapeXml(order.complaintMediaUrl)}" target="_blank" rel="noopener">
+                                        <img src="${fn:escapeXml(order.complaintMediaUrl)}"
+                                             alt="Ảnh đính kèm khiếu nại" loading="lazy"
+                                             style="max-width: 100%; max-height: 360px; object-fit: contain; border-radius: 8px;">
+                                    </a>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </c:if>
+                </div>
+                <form action="${pageContext.request.contextPath}/admin/orders/refund" method="post" class="row g-2 align-items-end mb-3">
+                    <input type="hidden" name="id" value="${fn:escapeXml(order.id)}">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Số tiền hoàn (₫) *</label>
+                        <input type="number" name="amount" class="form-control" required
+                               min="0" step="1000" max="${fn:escapeXml(order.totalAmount)}"
+                               value="${fn:escapeXml(order.totalAmount)}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Ghi chú xử lý</label>
+                        <input type="text" name="note" class="form-control" maxlength="500"
+                               placeholder="VD: đã chuyển khoản hoàn tiền cho khách">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-success w-100 fw-bold"
+                                onclick="return confirm('Xác nhận hoàn tiền cho đơn này?')">
+                            <i class="fas fa-money-bill-wave"></i> Hoàn tiền
+                        </button>
+                    </div>
+                </form>
+                <hr>
+                <form action="${pageContext.request.contextPath}/admin/orders/reject-complaint" method="post" class="row g-2 align-items-end">
+                    <input type="hidden" name="id" value="${fn:escapeXml(order.id)}">
+                    <div class="col-md-10">
+                        <label class="form-label small fw-semibold">Lý do từ chối (khách sẽ thấy)</label>
+                        <input type="text" name="note" class="form-control" maxlength="500"
+                               placeholder="Giải thích lý do không hoàn tiền">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-danger w-100"
+                                onclick="return confirm('Từ chối khiếu nại và trả đơn về Hoàn thành?')">
+                            <i class="fas fa-times"></i> Từ chối
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        </c:if>
+
+        <c:if test="${order.refundAmount != null}">
+        <div class="alert alert-success mb-4">
+            <b><i class="fas fa-money-bill-wave"></i> Đã hoàn tiền:</b>
+            <b><fmt:formatNumber value="${order.refundAmount}" pattern="#,##0"/> ₫</b>
+            <c:if test="${not empty order.refundAtFormatted}">
+                — lúc ${fn:escapeXml(order.refundAtFormatted)}
+            </c:if>
+            <c:if test="${not empty order.refundNote}">
+                <div class="small mt-1">Ghi chú: ${fn:escapeXml(order.refundNote)}</div>
+            </c:if>
+        </div>
+        </c:if>
+
+        <%-- Danh sách món --%>
         <div class="card mb-4">
             <div class="card-header bg-white fw-bold"><i class="fas fa-box-open text-primary me-1"></i> Danh sách món</div>
             <div class="table-responsive">
@@ -169,7 +254,6 @@
             </div>
         </div>
 
-        <%-- Card 3: Lịch sử giao thất bại (nếu có) --%>
         <c:if test="${not empty deliveryFailures}">
             <div class="card mb-4 border-danger">
                 <div class="card-header bg-white text-danger fw-bold"><i class="fas fa-triangle-exclamation me-1"></i> Lịch sử giao thất bại</div>
@@ -190,36 +274,49 @@
         </c:if>
     </div>
 
-    <%-- ================= CỘT PHẢI: HÀNH ĐỘNG (SIDEBAR) ================= --%>
+    <%-- ================= CỘT PHẢI ================= --%>
     <div class="col-lg-4">
         <div class="sticky-top" style="top: 80px; z-index: 10;">
-            
-            <%-- Card Cập nhật trạng thái --%>
+
             <div class="card mb-4">
                 <div class="card-header bg-white fw-bold"><i class="fas fa-exchange-alt text-primary me-1"></i> Cập nhật trạng thái</div>
                 <div class="card-body">
-                    <form action="${pageContext.request.contextPath}/admin/orders/update-status" method="post">
-                        <input type="hidden" name="id" value="${fn:escapeXml(order.id)}">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Trạng thái mới</label>
-                            <select name="status" class="form-select">
-                                <option value="PENDING"    <c:if test="${order.status=='PENDING'}">selected</c:if>>Chờ xác nhận</option>
-                                <option value="PREPARING"  <c:if test="${order.status=='PREPARING'}">selected</c:if>>Đang pha chế</option>
-                                <option value="READY"      <c:if test="${order.status=='READY'}">selected</c:if>>Chờ giao lại</option>
-                                <option value="DELIVERING" <c:if test="${order.status=='DELIVERING'}">selected</c:if>>Đang giao</option>
-                                <option value="COMPLETED"  <c:if test="${order.status=='COMPLETED'}">selected</c:if>>Đã hoàn thành</option>
-                                <option value="FAILED"     <c:if test="${order.status=='FAILED'}">selected</c:if>>Giao thất bại</option>
-                                <option value="CANCELLED"  <c:if test="${order.status=='CANCELLED'}">selected</c:if>>Đã hủy</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-warning w-100 fw-bold">
-                            <i class="fas fa-save me-1"></i> Lưu trạng thái
-                        </button>
-                    </form>
+                    <c:choose>
+                        <c:when test="${order.status == 'COMPLAINED'}">
+                            <div class="alert alert-warning py-2 mb-2">
+                                <b>Đơn đang khiếu nại.</b><br>
+                                <span class="small">Vui lòng dùng <b>Hoàn tiền</b> hoặc <b>Từ chối</b> ở card "Xử lý khiếu nại".</span>
+                            </div>
+                        </c:when>
+                        <c:when test="${order.status == 'REFUNDED'}">
+                            <div class="alert alert-dark py-2 mb-2">
+                                <b>Đơn đã hoàn tiền — không thể đổi trạng thái.</b>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <form action="${pageContext.request.contextPath}/admin/orders/update-status" method="post">
+                                <input type="hidden" name="id" value="${fn:escapeXml(order.id)}">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">Trạng thái mới</label>
+                                    <select name="status" class="form-select">
+                                        <option value="PENDING"    <c:if test="${order.status=='PENDING'}">selected</c:if>>Chờ xác nhận</option>
+                                        <option value="PREPARING"  <c:if test="${order.status=='PREPARING'}">selected</c:if>>Đang pha chế</option>
+                                        <option value="READY"      <c:if test="${order.status=='READY'}">selected</c:if>>Chờ giao lại</option>
+                                        <option value="DELIVERING" <c:if test="${order.status=='DELIVERING'}">selected</c:if>>Đang giao</option>
+                                        <option value="COMPLETED"  <c:if test="${order.status=='COMPLETED'}">selected</c:if>>Đã hoàn thành</option>
+                                        <option value="FAILED"     <c:if test="${order.status=='FAILED'}">selected</c:if>>Giao thất bại</option>
+                                        <option value="CANCELLED"  <c:if test="${order.status=='CANCELLED'}">selected</c:if>>Đã hủy</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-warning w-100 fw-bold">
+                                    <i class="fas fa-save me-1"></i> Lưu trạng thái
+                                </button>
+                            </form>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
             </div>
 
-            <%-- Card Phân công shipper --%>
             <c:if test="${!order.pickup}">
                 <div class="card mb-4">
                     <div class="card-header bg-white fw-bold"><i class="fas fa-motorcycle text-primary me-1"></i> Phân công giao hàng</div>
@@ -231,7 +328,7 @@
                                 <div class="small">${fn:escapeXml(order.shipper.phone != null ? order.shipper.phone : 'Chưa có SĐT')}</div>
                             </div>
                         </c:if>
-                        
+
                         <form action="${pageContext.request.contextPath}/admin/orders/assign-shipper" method="post">
                             <input type="hidden" name="id" value="${fn:escapeXml(order.id)}">
                             <div class="mb-3">
@@ -260,7 +357,6 @@
     </div>
 </div>
 
-<%-- Custom CSS để viền dọc phân cách 2 cột thông tin trên màn hình lớn --%>
 <style>
 @media (min-width: 768px) {
     .border-end-md { border-right: 1px solid #dee2e6; }

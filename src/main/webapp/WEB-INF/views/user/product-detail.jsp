@@ -256,12 +256,13 @@
 						for="star1" title="1 sao"><i class="fas fa-star"></i></label>
 				</div>
 				<label for="reviewComment" class="form-label fw-semibold">Chia
-					sẻ cảm nhận <span class="text-muted fw-normal">(không bắt
-						buộc)</span>
+					sẻ cảm nhận <span class="text-muted fw-normal">(tối thiểu
+						50, tối đa 1000 ký tự)</span>
 				</label>
 				<textarea id="reviewComment" name="comment"
-					class="form-control mb-2" rows="3"
-					placeholder="Bạn cảm thấy thế nào về sản phẩm? Hãy chia sẻ nếu bạn muốn."><c:out
+					class="form-control mb-2" rows="3" required minlength="50"
+					maxlength="1000"
+					placeholder="Bạn cảm thấy thế nào về sản phẩm? Hãy chia sẻ ít nhất 50 ký tự."><c:out
 						value="${myReview.comment}" /></textarea>
 				<label for="reviewMedia" class="form-label">Ảnh hoặc video
 					(không bắt buộc)</label> <input id="reviewMedia" type="file" name="media"
