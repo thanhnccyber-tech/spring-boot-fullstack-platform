@@ -15,12 +15,8 @@ import vn.utetra.service.ProductService;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-/**
- * Giỏ hàng lưu trong phiên (HttpSession) nên khách CHƯA đăng nhập vẫn thêm món được;
- * khi đăng nhập, phiên được giữ nguyên (chỉ đổi id) nên giỏ tự "gộp" sang tài khoản.
- * Bước thanh toán (/order/**) mới bắt buộc đăng nhập.
- */
 @Controller
 @RequestMapping("/cart")
 public class CartController {
@@ -47,6 +43,11 @@ public class CartController {
 		return id instanceof Long value ? value : null;
 	}
 
+	private static Long branchIdFromSession(HttpSession session) {
+		Object b = session.getAttribute("RECV_BRANCH");
+		return b instanceof Long value ? value : null;
+	}
+
 	private List<CartItem> currentCart(HttpSession session) {
 		Long userId = userId(session);
 		if (userId == null) return sessionCart(session);
@@ -66,6 +67,13 @@ public class CartController {
 		BigDecimal total = cart.stream().map(CartItem::getSubtotal).reduce(BigDecimal.ZERO, BigDecimal::add);
 		model.addAttribute("cart", cart);
 		model.addAttribute("total", total);
+
+		// Cảnh báo món / topping đã hết tại chi nhánh đang chọn
+		Long branchId = branchIdFromSession(session);
+		Map<Integer, String> cartWarnings = cartService.checkCartAgainstBranch(cart, branchId);
+		model.addAttribute("cartWarnings", cartWarnings);
+		model.addAttribute("hasCartWarnings", !cartWarnings.isEmpty());
+		model.addAttribute("selectedBranchId", branchId);
 		return "user/cart";
 	}
 
@@ -78,7 +86,8 @@ public class CartController {
 		Product p = productService.get(productId);
 		try {
 			List<CartItem> cart = currentCart(session);
-			CartItem newItem = cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds);
+			Long branchId = branchIdFromSession(session);
+			CartItem newItem = cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds, branchId);
 			if (!CartService.addOrMerge(cart, newItem)) {
 				ra.addFlashAttribute("error", "Giỏ hàng tối đa " + CartService.MAX_CART_ITEMS + " món.");
 				return "redirect:/cart";
@@ -92,7 +101,6 @@ public class CartController {
 		return "redirect:/cart";
 	}
 
-	/** Trang sửa lựa chọn (size / đường / đá / topping / số lượng) của một món đã có trong giỏ. */
 	@GetMapping("/edit")
 	public String editPage(@RequestParam int index, HttpSession session, Model model, RedirectAttributes ra) {
 		List<CartItem> cart = currentCart(session);
@@ -125,9 +133,9 @@ public class CartController {
 		if (index < 0 || index >= cart.size()) return "redirect:/cart";
 		try {
 			Product p = productService.get(cart.get(index).getProductId());
-			CartItem edited = cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds);
+			Long branchId = branchIdFromSession(session);
+			CartItem edited = cartService.build(p, quantity, sizeId, sugarId, iceId, toppingIds, branchId);
 			cart.set(index, edited);
-			// Sửa xong mà trùng với một dòng khác thì gộp lại thành một dòng
 			for (int j = 0; j < cart.size(); j++) {
 				if (j != index && CartService.sameLine(cart.get(j), edited)) {
 					cart.get(j).setQuantity(CartService.clampQty(cart.get(j).getQuantity() + edited.getQuantity()));
@@ -146,7 +154,6 @@ public class CartController {
 		return "redirect:" + SafeRedirect.localPath(back, "/cart");
 	}
 
-	/** Xoá món (POST để không bị link từ trang khác tự xoá giỏ). back = trang quay lại (chỉ đường dẫn nội bộ). */
 	@PostMapping("/remove")
 	public String remove(@RequestParam int index,
 			@RequestParam(required = false) String back, HttpSession session) {
@@ -163,7 +170,7 @@ public class CartController {
 		List<CartItem> cart = currentCart(session);
 		if (index >= 0 && index < cart.size()) {
 			if (quantity < 1) {
-				cart.remove(index); // bấm "−" khi còn 1 ly = bỏ món
+				cart.remove(index);
 			} else {
 				cart.get(index).setQuantity(CartService.clampQty(quantity));
 			}

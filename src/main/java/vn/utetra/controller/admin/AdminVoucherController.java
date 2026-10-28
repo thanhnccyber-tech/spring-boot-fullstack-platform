@@ -41,7 +41,7 @@ public class AdminVoucherController {
                 : "giảm " + String.format("%,d", voucher.getDiscountValue().longValue()).replace(',', '.') + "đ";
         String target = voucher.isShippingVoucher() ? " phí vận chuyển" : " đơn hàng";
 
-        String content = "UTeTra vừa phát hành mã " + voucher.getCode() + " (" + discount + target + "). ";
+        String content = "UTETra vừa phát hành mã " + voucher.getCode() + " (" + discount + target + "). ";
         if (voucher.getDescription() != null && !voucher.getDescription().isBlank()) content += voucher.getDescription().trim() + " ";
         if (voucher.getMinOrderAmount() != null && voucher.getMinOrderAmount().signum() > 0)
             content += "Đơn tối thiểu " + String.format("%,d", voucher.getMinOrderAmount().longValue()).replace(',', '.') + "đ. ";

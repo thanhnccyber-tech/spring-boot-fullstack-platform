@@ -73,7 +73,7 @@ public class UserService {
         vn.utetra.entity.Notification n = new vn.utetra.entity.Notification();
         n.setUserId(u.getId());
         n.setTitle("Kích hoạt Thành viên thành công");
-        n.setContent("Bạn đã trở thành Thành viên UTeTra. Mua hàng để tích điểm (10.000đ = 1 điểm) và nhận ưu đãi dành riêng cho hội viên.");
+        n.setContent("Bạn đã trở thành Thành viên UTETra. Mua hàng để tích điểm (10.000đ = 1 điểm) và nhận ưu đãi dành riêng cho hội viên.");
         n.setType("MEMBER");
         notiRepo.save(n);
     }
@@ -96,7 +96,7 @@ public class UserService {
         vn.utetra.entity.Notification n = new vn.utetra.entity.Notification();
         n.setUserId(u.getId());
         n.setTitle("Kích hoạt Thành viên thành công");
-        n.setContent("Bạn đã trở thành Thành viên UTeTra. Mua hàng để tích điểm (10.000đ = 1 điểm) và nhận ưu đãi dành riêng cho hội viên.");
+        n.setContent("Bạn đã trở thành Thành viên UTETra. Mua hàng để tích điểm (10.000đ = 1 điểm) và nhận ưu đãi dành riêng cho hội viên.");
         n.setType("MEMBER");
         notiRepo.save(n);
     }

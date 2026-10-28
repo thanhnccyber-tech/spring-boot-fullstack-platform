@@ -5,7 +5,17 @@
 <title>Giỏ hàng</title>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
-<h3 class="mb-3">🛒 Giỏ hàng của bạn</h3>
+<h3 class="mb-3"> Giỏ hàng của bạn</h3>
+
+<c:if test="${hasCartWarnings}">
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <b>Một số món trong giỏ đã hết hàng tại chi nhánh đã chọn.</b>
+        Vui lòng xoá món đó, hoặc
+        <button type="button" class="btn btn-link p-0 align-baseline" data-bs-toggle="modal" data-bs-target="#receiveModal">chọn chi nhánh khác</button>
+        trước khi thanh toán.
+    </div>
+</c:if>
 
 <c:if test="${empty cart}">
     <div class="empty-state">
@@ -21,6 +31,7 @@
     <div class="col-lg-8">
         <div class="checkout-box">
             <c:forEach items="${cart}" var="item" varStatus="st">
+                <c:set var="lineWarning" value="${cartWarnings[st.index]}"/>
                 <div class="cart-line">
                     <c:if test="${not empty item.imageUrl}"><img src="${fn:escapeXml(item.thumbUrl)}" loading="lazy" alt=""></c:if>
                     <div class="flex-grow-1">
@@ -31,6 +42,11 @@
                             · Đá: ${fn:escapeXml(item.iceName != null ? item.iceName : '—')}
                             <c:if test="${not empty item.toppingNames}"><br>Topping: <c:forEach items="${item.toppingNames}" var="tn" varStatus="ts">${fn:escapeXml(tn)}<c:if test="${!ts.last}">, </c:if></c:forEach></c:if>
                         </div>
+                        <c:if test="${not empty lineWarning}">
+                            <div class="alert alert-warning py-1 px-2 mt-2 mb-0 small">
+                                <i class="fas fa-circle-exclamation"></i> ${fn:escapeXml(lineWarning)}
+                            </div>
+                        </c:if>
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <span><fmt:formatNumber value="${item.unitPrice}" pattern="#,##0"/> ₫ × ${fn:escapeXml(item.quantity)} =
                                 <b class="text-success"><fmt:formatNumber value="${item.subtotal}" pattern="#,##0"/> ₫</b></span>

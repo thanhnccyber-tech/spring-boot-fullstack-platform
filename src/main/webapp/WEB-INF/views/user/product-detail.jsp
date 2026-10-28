@@ -29,9 +29,14 @@
 	<div class="pd-info">
 		<div class="pd-title-row">
 			<h1 class="pd-title">${fn:escapeXml(product.name)}
-				<c:if test="${product.outOfStock}">
-					<span class="badge bg-danger align-middle">Hết hàng</span>
-				</c:if>
+				<c:choose>
+					<c:when test="${product.outOfStock}">
+						<span class="badge bg-danger align-middle">Hết hàng</span>
+					</c:when>
+					<c:when test="${productOOSAtBranch}">
+						<span class="badge bg-warning text-dark align-middle">Hết tại chi nhánh</span>
+					</c:when>
+				</c:choose>
 			</h1>
 			<c:if test="${not empty sessionScope.userId}">
 				<form
@@ -51,50 +56,55 @@
 
 		<a href="#reviews" class="pd-rating"> <span class="text-warning">
 				<c:forEach begin="1" end="5" var="i">
-					<i
-						class="${fn:escapeXml(i <= ratingSummary.rounded ? 'fas' : 'far')} fa-star"></i>
+					<i class="${fn:escapeXml(i <= ratingSummary.rounded ? 'fas' : 'far')} fa-star"></i>
 				</c:forEach>
 		</span> <span class="text-muted small"> <c:choose>
 					<c:when test="${ratingSummary.count > 0}">
-						<fmt:formatNumber value="${ratingSummary.average}"
-							maxFractionDigits="1" />/5 · ${fn:escapeXml(ratingSummary.count)} đánh giá
+						<fmt:formatNumber value="${ratingSummary.average}" maxFractionDigits="1"/> /5 · ${fn:escapeXml(ratingSummary.count)} đánh giá
                     </c:when>
 					<c:otherwise>Chưa có đánh giá</c:otherwise>
 				</c:choose>
 		</span>
 		</a>
 
-		<c:if test="${product.outOfStock}">
-			<div class="alert alert-warning mt-3 mb-0">
-				<i class="fas fa-exclamation-triangle"></i> Sản phẩm hiện đang <b>tạm
-					hết hàng</b>. Vui lòng quay lại sau hoặc chọn sản phẩm khác.
-			</div>
-		</c:if>
+		<%-- ===== Cảnh báo tồn kho ===== --%>
+		<c:choose>
+			<c:when test="${product.outOfStock}">
+				<div class="alert alert-warning mt-3 mb-0">
+					<i class="fas fa-exclamation-triangle"></i> Sản phẩm hiện đang <b>tạm hết hàng</b>. Vui lòng quay lại sau hoặc chọn sản phẩm khác.
+				</div>
+			</c:when>
+			<c:when test="${productOOSAtBranch}">
+				<div class="alert alert-warning mt-3 mb-0">
+					<i class="fas fa-exclamation-triangle"></i> Sản phẩm hiện <b>hết hàng tại chi nhánh đã chọn</b>
+					<c:if test="${not empty currentBranchName}">(<b>${fn:escapeXml(currentBranchName)}</b>)</c:if>.
+					Bạn có thể
+					<button type="button" class="btn btn-link p-0 align-baseline" data-bs-toggle="modal" data-bs-target="#receiveModal">chọn chi nhánh khác</button>
+					hoặc quay lại sau.
+				</div>
+			</c:when>
+		</c:choose>
 
-		<form action="${pageContext.request.contextPath}/cart/add"
-			method="post" class="pd-form">
-			<input type="hidden" name="productId"
-				value="${fn:escapeXml(product.id)}">
+		<form action="${pageContext.request.contextPath}/cart/add" method="post" class="pd-form">
+			<input type="hidden" name="productId" value="${fn:escapeXml(product.id)}">
 
-			<%-- Giá + số lượng cùng một hàng --%>
 			<div class="pd-price-row">
 				<div class="pd-price">
-					<fmt:formatNumber value="${product.basePrice}" pattern="#,##0" />
-					₫
+					<fmt:formatNumber value="${product.basePrice}" pattern="#,##0" /> ₫
 				</div>
 				<div class="pd-qty" role="group" aria-label="Số lượng">
 					<button type="button" class="pd-qty-btn" data-qty="-1"
 						aria-label="Giảm"
-						<c:if test="${product.outOfStock}">disabled</c:if>>
+						<c:if test="${productOOSAtBranch}">disabled</c:if>>
 						<i class="fas fa-minus"></i>
 					</button>
 					<input type="number" name="quantity"
 						value="${productDetailQuantity}" min="1" max="50"
 						aria-label="Số lượng"
-						<c:if test="${product.outOfStock}">disabled</c:if>>
+						<c:if test="${productOOSAtBranch}">disabled</c:if>>
 					<button type="button" class="pd-qty-btn" data-qty="1"
 						aria-label="Tăng"
-						<c:if test="${product.outOfStock}">disabled</c:if>>
+						<c:if test="${productOOSAtBranch}">disabled</c:if>>
 						<i class="fas fa-plus"></i>
 					</button>
 				</div>
@@ -110,10 +120,9 @@
 								data-price="${fn:escapeXml(s.extraPrice)}"
 								<c:if test="${(product.defaultSize != null && product.defaultSize.id == s.id)
                                                   || (product.defaultSize == null && st.first)}">checked</c:if>
-								<c:if test="${product.outOfStock}">disabled</c:if>> <span>
+								<c:if test="${productOOSAtBranch}">disabled</c:if>> <span>
 									<b>${fn:escapeXml(s.name)}</b> <small><c:choose>
-											<c:when test="${s.extraPrice > 0}">+<fmt:formatNumber
-													value="${s.extraPrice}" pattern="#,##0" /> ₫</c:when>
+											<c:when test="${s.extraPrice > 0}">+<fmt:formatNumber value="${s.extraPrice}" pattern="#,##0" /> ₫</c:when>
 											<c:otherwise>0 ₫</c:otherwise>
 										</c:choose></small>
 							</span>
@@ -132,7 +141,7 @@
 								name="sugarId" value="${fn:escapeXml(s.id)}"
 								<c:if test="${(product.defaultSugar != null && product.defaultSugar.id == s.id)
                                                   || (product.defaultSugar == null && s.percent == 50)}">checked</c:if>
-								<c:if test="${product.outOfStock}">disabled</c:if>> <span>${fn:escapeXml(s.name)}</span>
+								<c:if test="${productOOSAtBranch}">disabled</c:if>> <span>${fn:escapeXml(s.name)}</span>
 							</label>
 						</c:forEach>
 					</div>
@@ -148,7 +157,7 @@
 								value="${fn:escapeXml(s.id)}"
 								<c:if test="${(product.defaultIce != null && product.defaultIce.id == s.id)
                                                   || (product.defaultIce == null && s.percent == 50)}">checked</c:if>
-								<c:if test="${product.outOfStock}">disabled</c:if>> <span>${fn:escapeXml(s.name)}</span>
+								<c:if test="${productOOSAtBranch}">disabled</c:if>> <span>${fn:escapeXml(s.name)}</span>
 							</label>
 						</c:forEach>
 					</div>
@@ -160,14 +169,20 @@
 					<div class="pd-group-title">Topping</div>
 					<div class="pd-options">
 						<c:forEach items="${toppings}" var="t">
-							<label class="pd-chip"> <input type="checkbox"
-								name="toppingIds" value="${fn:escapeXml(t.id)}"
-								data-price="${fn:escapeXml(t.price)}"
-								<c:if test="${product.outOfStock}">disabled</c:if>> <span>${fn:escapeXml(t.name)}
-									<small>+<fmt:formatNumber value="${t.price}"
-											pattern="#,##0" /> ₫
-								</small>
-							</span>
+							<c:set var="topBranchOOS" value="${not empty branchOOSToppingIds and branchOOSToppingIds.contains(t.id)}"/>
+							<label class="pd-chip ${topBranchOOS ? 'pd-chip-branch-oos' : ''}"
+							       <c:if test="${topBranchOOS}">title="Topping đã hết hàng tại chi nhánh đã chọn"</c:if>>
+								<input type="checkbox" name="toppingIds" value="${fn:escapeXml(t.id)}"
+									data-price="${fn:escapeXml(t.price)}"
+									<c:if test="${productOOSAtBranch or topBranchOOS}">disabled</c:if>>
+								<span>${fn:escapeXml(t.name)}
+									<small>
+										<c:choose>
+											<c:when test="${topBranchOOS}">Hết tại CN</c:when>
+											<c:otherwise>+<fmt:formatNumber value="${t.price}" pattern="#,##0"/> ₫</c:otherwise>
+										</c:choose>
+									</small>
+								</span>
 							</label>
 						</c:forEach>
 					</div>
@@ -175,16 +190,18 @@
 			</c:if>
 
 			<c:choose>
-				<c:when test="${product.outOfStock}">
+				<c:when test="${productOOSAtBranch}">
 					<button type="button" class="pd-add" disabled>
-						<i class="fas fa-times-circle"></i> Sản phẩm đã hết hàng
+						<i class="fas fa-times-circle"></i>
+						<c:choose>
+							<c:when test="${product.outOfStock}">Sản phẩm đã hết hàng</c:when>
+							<c:otherwise>Hết hàng tại chi nhánh đã chọn</c:otherwise>
+						</c:choose>
 					</button>
 				</c:when>
 				<c:otherwise>
 					<button class="pd-add">
-						<i class="fas fa-cart-plus"></i> Thêm vào giỏ hàng : <span
-							id="liveTotal"><fmt:formatNumber
-								value="${product.basePrice}" pattern="#,##0" /> ₫</span>
+						<i class="fas fa-cart-plus"></i> Thêm vào giỏ hàng : <span id="liveTotal"><fmt:formatNumber value="${product.basePrice}" pattern="#,##0"/> ₫</span>
 					</button>
 				</c:otherwise>
 			</c:choose>
@@ -196,6 +213,12 @@
 	</div>
 </div>
 
+<style>
+/* Topping đã hết tại chi nhánh: gạch ngang + mờ */
+.pd-chip.pd-chip-branch-oos > span { opacity: .55; text-decoration: line-through; }
+.pd-chip.pd-chip-branch-oos { cursor: not-allowed; }
+.pd-chip.pd-chip-branch-oos > span small { color: #b91c1c; text-decoration: none; display: inline-block; }
+</style>
 
 <%-- ===================== ĐÁNH GIÁ & BÌNH LUẬN ===================== --%>
 <hr class="my-5">
@@ -203,8 +226,7 @@
 	<h4 class="mb-3">
 		<i class="fas fa-star text-warning"></i> Đánh giá &amp; bình luận
 		<c:if test="${ratingSummary.count > 0}">
-			<small class="text-muted fs-6"> — <fmt:formatNumber
-					value="${ratingSummary.average}" maxFractionDigits="1" />/5
+			<small class="text-muted fs-6"> — <fmt:formatNumber value="${ratingSummary.average}" maxFractionDigits="1" />/5
 				(${fn:escapeXml(ratingSummary.count)} đánh giá)
 			</small>
 		</c:if>
@@ -220,56 +242,41 @@
 	<c:choose>
 		<c:when test="${not loggedIn}">
 			<div class="alert alert-light border">
-				<a href="${pageContext.request.contextPath}/login">Đăng nhập</a> để
-				đánh giá sản phẩm này.
+				<a href="${pageContext.request.contextPath}/login">Đăng nhập</a> để đánh giá sản phẩm này.
 			</div>
 		</c:when>
 		<c:when test="${not canReview}">
-			<div class="alert alert-light border">Bạn cần đặt và nhận sản
-				phẩm này trước khi đánh giá.</div>
+			<div class="alert alert-light border">Bạn cần đặt và nhận sản phẩm này trước khi đánh giá.</div>
 		</c:when>
 		<c:otherwise>
-			<form
-				action="${pageContext.request.contextPath}/review/${fn:escapeXml(product.id)}"
+			<form action="${pageContext.request.contextPath}/review/${fn:escapeXml(product.id)}"
 				method="post" enctype="multipart/form-data"
 				class="card card-body shadow-sm mb-4">
-				<label class="form-label fw-bold"> <c:choose>
+				<label class="form-label fw-bold">
+					<c:choose>
 						<c:when test="${not empty myReview}">Cập nhật đánh giá của bạn</c:when>
 						<c:otherwise>Đánh giá của bạn</c:otherwise>
 					</c:choose>
 				</label>
 				<div class="star-input mb-2">
 					<input type="radio" id="star5" name="rating" value="5" required
-						<c:if test="${myReview.rating == 5}">checked</c:if>> <label
-						for="star5" title="5 sao"><i class="fas fa-star"></i></label> <input
-						type="radio" id="star4" name="rating" value="4" required
-						<c:if test="${myReview.rating == 4}">checked</c:if>> <label
-						for="star4" title="4 sao"><i class="fas fa-star"></i></label> <input
-						type="radio" id="star3" name="rating" value="3" required
-						<c:if test="${myReview.rating == 3}">checked</c:if>> <label
-						for="star3" title="3 sao"><i class="fas fa-star"></i></label> <input
-						type="radio" id="star2" name="rating" value="2" required
-						<c:if test="${myReview.rating == 2}">checked</c:if>> <label
-						for="star2" title="2 sao"><i class="fas fa-star"></i></label> <input
-						type="radio" id="star1" name="rating" value="1" required
-						<c:if test="${myReview.rating == 1}">checked</c:if>> <label
-						for="star1" title="1 sao"><i class="fas fa-star"></i></label>
+						<c:if test="${myReview.rating == 5}">checked</c:if>> <label for="star5" title="5 sao"><i class="fas fa-star"></i></label>
+					<input type="radio" id="star4" name="rating" value="4" required
+						<c:if test="${myReview.rating == 4}">checked</c:if>> <label for="star4" title="4 sao"><i class="fas fa-star"></i></label>
+					<input type="radio" id="star3" name="rating" value="3" required
+						<c:if test="${myReview.rating == 3}">checked</c:if>> <label for="star3" title="3 sao"><i class="fas fa-star"></i></label>
+					<input type="radio" id="star2" name="rating" value="2" required
+						<c:if test="${myReview.rating == 2}">checked</c:if>> <label for="star2" title="2 sao"><i class="fas fa-star"></i></label>
+					<input type="radio" id="star1" name="rating" value="1" required
+						<c:if test="${myReview.rating == 1}">checked</c:if>> <label for="star1" title="1 sao"><i class="fas fa-star"></i></label>
 				</div>
-				<label for="reviewComment" class="form-label fw-semibold">Chia
-					sẻ cảm nhận <span class="text-muted fw-normal">(tối thiểu
-						50, tối đa 1000 ký tự)</span>
-				</label>
-				<textarea id="reviewComment" name="comment"
-					class="form-control mb-2" rows="3" required minlength="50"
-					maxlength="1000"
-					placeholder="Bạn cảm thấy thế nào về sản phẩm? Hãy chia sẻ ít nhất 50 ký tự."><c:out
-						value="${myReview.comment}" /></textarea>
-				<label for="reviewMedia" class="form-label">Ảnh hoặc video
-					(không bắt buộc)</label> <input id="reviewMedia" type="file" name="media"
-					class="form-control mb-2"
+				<label for="reviewComment" class="form-label fw-semibold">Chia sẻ cảm nhận <span class="text-muted fw-normal">(tối thiểu 50, tối đa 1000 ký tự)</span></label>
+				<textarea id="reviewComment" name="comment" class="form-control mb-2" rows="3" required minlength="50"
+					maxlength="1000" placeholder="Bạn cảm thấy thế nào về sản phẩm? Hãy chia sẻ ít nhất 50 ký tự."><c:out value="${myReview.comment}" /></textarea>
+				<label for="reviewMedia" class="form-label">Ảnh hoặc video (không bắt buộc)</label>
+				<input id="reviewMedia" type="file" name="media" class="form-control mb-2"
 					accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/x-msvideo">
-				<small class="text-muted d-block mb-2">Ảnh tối đa 5 MB;
-					video MP4, WEBM hoặc AVI tối đa 10 MB.</small>
+				<small class="text-muted d-block mb-2">Ảnh tối đa 5 MB; video MP4, WEBM hoặc AVI tối đa 10 MB.</small>
 				<div>
 					<button class="btn btn-warning">
 						<i class="fas fa-paper-plane"></i>
@@ -293,12 +300,9 @@
 			<div class="flex-grow-1">
 				<div class="d-flex justify-content-between">
 					<div>
-						<strong><c:out
-								value="${empty r.user.fullName ? 'Khách hàng' : r.user.fullName}" /></strong>
-						<span class="text-warning ms-2"> <c:forEach begin="1"
-								end="5" var="i">
-								<i
-									class="${fn:escapeXml(i <= r.rating ? 'fas' : 'far')} fa-star"></i>
+						<strong><c:out value="${empty r.user.fullName ? 'Khách hàng' : r.user.fullName}" /></strong>
+						<span class="text-warning ms-2"> <c:forEach begin="1" end="5" var="i">
+								<i class="${fn:escapeXml(i <= r.rating ? 'fas' : 'far')} fa-star"></i>
 							</c:forEach>
 						</span>
 					</div>
@@ -307,39 +311,27 @@
 					</small>
 				</div>
 				<c:if test="${not empty r.comment}">
-					<div class="review-text mt-1">
-						<c:out value="${r.comment}" />
-					</div>
+					<div class="review-text mt-1"><c:out value="${r.comment}" /></div>
 				</c:if>
 				<c:if test="${not empty r.mediaUrl}">
 					<c:choose>
-						<c:when
-							test="${not empty r.mediaType and fn:startsWith(r.mediaType, 'video/')}">
-							<video class="mt-2" controls preload="metadata"
-								style="max-width: 100%; max-height: 360px;">
-								<source src="${fn:escapeXml(r.mediaUrl)}"
-									type="${fn:escapeXml(r.mediaType)}">
+						<c:when test="${not empty r.mediaType and fn:startsWith(r.mediaType, 'video/')}">
+							<video class="mt-2" controls preload="metadata" style="max-width: 100%; max-height: 360px;">
+								<source src="${fn:escapeXml(r.mediaUrl)}" type="${fn:escapeXml(r.mediaType)}">
 								Trình duyệt không hỗ trợ phát video.
 							</video>
 						</c:when>
 						<c:otherwise>
-							<img class="mt-2" src="${fn:escapeXml(r.mediaUrl)}"
-								alt="Ảnh đính kèm đánh giá" loading="lazy"
+							<img class="mt-2" src="${fn:escapeXml(r.mediaUrl)}" alt="Ảnh đính kèm đánh giá" loading="lazy"
 								style="max-width: 100%; max-height: 360px; object-fit: contain;">
 						</c:otherwise>
 					</c:choose>
 				</c:if>
-				<c:if
-					test="${loggedIn and (r.user.id == currentUserId or isAdminUser)}">
-					<form
-						action="${pageContext.request.contextPath}/review/${fn:escapeXml(r.id)}/delete"
-						method="post" class="mt-1"
-						onsubmit="return confirm('Xoá đánh giá này?');">
-						<input type="hidden" name="productId"
-							value="${fn:escapeXml(product.id)}">
-						<button class="btn btn-link btn-sm text-danger p-0">
-							<i class="fas fa-trash"></i> Xoá
-						</button>
+				<c:if test="${loggedIn and (r.user.id == currentUserId or isAdminUser)}">
+					<form action="${pageContext.request.contextPath}/review/${fn:escapeXml(r.id)}/delete"
+						method="post" class="mt-1" onsubmit="return confirm('Xoá đánh giá này?');">
+						<input type="hidden" name="productId" value="${fn:escapeXml(product.id)}">
+						<button class="btn btn-link btn-sm text-danger p-0"><i class="fas fa-trash"></i> Xoá</button>
 					</form>
 				</c:if>
 			</div>
@@ -350,15 +342,9 @@
 <%-- ===================== SẢN PHẨM ĐÃ XEM GẦN ĐÂY ===================== --%>
 <c:if test="${not empty recentlyViewed}">
 	<section class="mt-5">
-		<div
-			class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-			<h4 class="mb-0">
-				<i class="fas fa-clock-rotate-left"
-					style="color: var(--ute-blue-fresh)"></i> Sản phẩm đã xem gần đây
-			</h4>
-			<a href="${pageContext.request.contextPath}/products/recently-viewed"
-				class="small fw-bold"> Xem tất cả <i class="fas fa-arrow-right"></i>
-			</a>
+		<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+			<h4 class="mb-0"><i class="fas fa-clock-rotate-left" style="color: var(--ute-blue-fresh)"></i> Sản phẩm đã xem gần đây</h4>
+			<a href="${pageContext.request.contextPath}/products/recently-viewed" class="small fw-bold"> Xem tất cả <i class="fas fa-arrow-right"></i></a>
 		</div>
 		<div class="row g-3">
 			<c:forEach items="${recentlyViewed}" var="rv">
@@ -376,34 +362,26 @@
 		var base = parseFloat('${product.basePrice}') || 0;
 		var out = document.getElementById('liveTotal');
 		var form = document.querySelector('form[action$="/cart/add"]');
-		if (!out || !form)
-			return;
-		function fmt(n) {
-			return Math.round(n).toLocaleString('vi-VN') + ' ₫';
-		}
+		if (!out || !form) return;
+		function fmt(n) { return Math.round(n).toLocaleString('vi-VN') + ' ₫'; }
 		function recalc() {
 			var unit = base;
 			var size = form.querySelector('input[name="sizeId"]:checked');
-			if (size)
-				unit += parseFloat(size.dataset.price) || 0;
-			form.querySelectorAll('input[name="toppingIds"]:checked').forEach(
-					function(t) {
-						unit += parseFloat(t.dataset.price) || 0;
-					});
-			var qty = parseInt(
-					form.querySelector('input[name="quantity"]').value, 10) || 1;
+			if (size) unit += parseFloat(size.dataset.price) || 0;
+			form.querySelectorAll('input[name="toppingIds"]:checked').forEach(function(t) {
+				unit += parseFloat(t.dataset.price) || 0;
+			});
+			var qty = parseInt(form.querySelector('input[name="quantity"]').value, 10) || 1;
 			out.textContent = fmt(unit * Math.max(qty, 1));
 		}
-		form.querySelectorAll('.pd-qty-btn').forEach(
-				function(b) {
-					b.addEventListener('click', function() {
-						var q = form.querySelector('input[name="quantity"]');
-						var v = (parseInt(q.value, 10) || 1)
-								+ parseInt(b.dataset.qty, 10);
-						q.value = Math.min(50, Math.max(1, v));
-						recalc();
-					});
-				});
+		form.querySelectorAll('.pd-qty-btn').forEach(function(b) {
+			b.addEventListener('click', function() {
+				var q = form.querySelector('input[name="quantity"]');
+				var v = (parseInt(q.value, 10) || 1) + parseInt(b.dataset.qty, 10);
+				q.value = Math.min(50, Math.max(1, v));
+				recalc();
+			});
+		});
 		form.addEventListener('change', recalc);
 		form.addEventListener('input', recalc);
 		recalc();

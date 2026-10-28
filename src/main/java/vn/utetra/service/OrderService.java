@@ -27,6 +27,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -46,6 +47,8 @@ public class OrderService {
     @Autowired private CartService cartService;
     @Autowired private FileValidator fileValidator;
     @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private BranchProductStockRepository branchProductStockRepo;
+    @Autowired private BranchToppingStockRepository branchToppingStockRepo;
 
     @Value("${shop.shipping-fee:25000}")
     private long shippingFee;
@@ -234,6 +237,15 @@ public class OrderService {
                     .orElseThrow(() -> new IllegalArgumentException("Có sản phẩm trong giỏ không còn tồn tại."));
             if (!Boolean.TRUE.equals(p.getActive()) || Boolean.TRUE.equals(p.getOutOfStock()))
                 throw new IllegalArgumentException("Sản phẩm \"" + p.getName() + "\" hiện không còn bán.");
+            // Tồn kho riêng của chi nhánh đã chọn
+            boolean branchOOS = branchProductStockRepo
+                    .findByBranchIdAndProductId(branch.getId(), p.getId())
+                    .map(BranchProductStock::getOutOfStock)
+                    .orElse(false);
+            if (branchOOS)
+                throw new IllegalArgumentException("Sản phẩm \"" + p.getName()
+                        + "\" hiện đang hết hàng tại chi nhánh đã chọn.");
+
             if (ci.getQuantity() == null || ci.getQuantity() < 1 || ci.getQuantity() > MAX_QTY)
                 throw new IllegalArgumentException("Số lượng mỗi món phải từ 1 đến " + MAX_QTY + ".");
             OrderDetail od = new OrderDetail();
@@ -249,6 +261,18 @@ public class OrderService {
 
             if (ci.getToppingIds() != null && !ci.getToppingIds().isEmpty()) {
                 Set<Topping> tops = new LinkedHashSet<>(toppingRepo.findAllById(ci.getToppingIds()));
+                // Tồn kho topping theo chi nhánh đã chọn
+                Set<Long> branchOOSTops = branchToppingStockRepo
+                        .findByBranchIdAndToppingIdIn(branch.getId(), ci.getToppingIds())
+                        .stream()
+                        .filter(s -> Boolean.TRUE.equals(s.getOutOfStock()))
+                        .map(BranchToppingStock::getToppingId)
+                        .collect(Collectors.toSet());
+                for (Topping t : tops) {
+                    if (branchOOSTops.contains(t.getId()))
+                        throw new IllegalArgumentException("Topping \"" + t.getName()
+                                + "\" đã hết hàng tại chi nhánh đã chọn.");
+                }
                 od.setToppings(tops);
                 unit = unit.add(tops.stream().map(Topping::getPrice)
                         .reduce(BigDecimal.ZERO, BigDecimal::add));
@@ -308,8 +332,8 @@ public class OrderService {
         noti.put("createdAt", saved.getCreatedAt().toString());
         messaging.convertAndSend("/topic/orders", noti);
 
-        mailOrder(saved, user, details, "UTeTra - Đã nhận đơn hàng " + saved.getOrderCode(),
-                "Cảm ơn bạn đã đặt hàng tại UTeTra! Chúng tôi đã nhận đơn và sẽ sớm xác nhận.");
+        mailOrder(saved, user, details, "UTETra - Đã nhận đơn hàng " + saved.getOrderCode(),
+                "Cảm ơn bạn đã đặt hàng tại UTETra! Chúng tôi đã nhận đơn và sẽ sớm xác nhận.");
 
         return saved;
     }
@@ -352,7 +376,7 @@ public class OrderService {
             sb.append("\nDùng điểm: -").append(money(o.getPointsDiscount()));
         sb.append("\nTổng thanh toán: ").append(money(o.getTotalAmount()))
           .append("\nThanh toán: ").append(o.getPaymentMethod())
-          .append("\n\nBạn có thể theo dõi tiến trình đơn trong mục Đơn hàng của tôi.\n— UTeTra");
+          .append("\n\nBạn có thể theo dõi tiến trình đơn trong mục Đơn hàng của tôi.\n— UTETra");
         final String to = user.getEmail(), body = sb.toString();
         afterCommit(() -> mailService.sendQuietly(to, subject, body));
     }
@@ -371,7 +395,7 @@ public class OrderService {
             default -> null;
         };
         if (intro == null) return;
-        mailOrder(o, o.getUser(), null, "UTeTra - Đơn " + o.getOrderCode() + ": " + o.getStatusLabel(), intro);
+        mailOrder(o, o.getUser(), null, "UTETra - Đơn " + o.getOrderCode() + ": " + o.getStatusLabel(), intro);
     }
 
     /* ==================== HỦY ĐƠN / KHIẾU NẠI / HOÀN TIỀN / ĐẶT LẠI ==================== */
@@ -684,8 +708,6 @@ public class OrderService {
         User u = o.getUser();
         int lifetimeBefore = lifetimePointsFor(u);
 
-        // Tiền hàng thực trả = tổng - phí ship + giảm phí ship
-        // (không phụ thuộc vào hình thức voucher đã dùng)
         BigDecimal paidGoods = o.getTotalAmount() == null ? BigDecimal.ZERO : o.getTotalAmount();
         if (o.getShippingFee() != null) paidGoods = paidGoods.subtract(o.getShippingFee());
         if (o.getShippingDiscountAmount() != null) paidGoods = paidGoods.add(o.getShippingDiscountAmount());

@@ -2,14 +2,21 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<%-- Thẻ sản phẩm dùng chung (trang chủ, danh sách, đã xem). Cần request attribute: cardProduct; tuỳ chọn: ratings, favIds --%>
+<%-- Thẻ sản phẩm dùng chung. Request attributes:
+     cardProduct          — sản phẩm
+     ratings              — Map<Long, RatingSummary> (tuỳ chọn)
+     favIds               — Set<Long> (tuỳ chọn)
+     effectiveProductOOS  — Map<Long, Boolean> (tuỳ chọn) các món hết tại chi nhánh đã chọn
+--%>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <c:set var="p" value="${cardProduct}"/>
 <c:set var="rs" value="${ratings[p.id]}"/>
 <c:set var="isFav" value="${not empty favIds and favIds.contains(p.id)}"/>
 
-<%-- Xác định URL hiện tại để quay lại sau khi toggle yêu thích.
-     Ưu tiên forward attributes (khi include từ trang khác), fallback về request hiện tại. --%>
+<%-- "Hết tại chi nhánh" ưu tiên hiển thị khác biệt so với "Hết hàng toàn hệ thống" --%>
+<c:set var="branchOOS" value="${not empty effectiveProductOOS and effectiveProductOOS[p.id] == true}"/>
+<c:set var="effectiveOOS" value="${p.outOfStock or branchOOS}"/>
+
 <c:set var="furi" value="${not empty requestScope['jakarta.servlet.forward.request_uri']
                             ? requestScope['jakarta.servlet.forward.request_uri']
                             : pageContext.request.requestURI}"/>
@@ -36,8 +43,14 @@
             <a class="fav-btn" href="${fn:escapeXml(favLogin)}" title="Đăng nhập để lưu món yêu thích" aria-label="Yêu thích"><i class="far fa-heart"></i></a>
         </c:otherwise>
     </c:choose>
-    <c:if test="${p.outOfStock}">
-        <span class="badge bg-danger position-absolute top-0 start-0 m-2"><i class="fas fa-times-circle"></i> Hết hàng</span>
+    <c:if test="${effectiveOOS}">
+        <span class="badge bg-danger position-absolute top-0 start-0 m-2">
+            <i class="fas fa-times-circle"></i>
+            <c:choose>
+                <c:when test="${p.outOfStock}">Hết hàng</c:when>
+                <c:otherwise>Hết tại chi nhánh</c:otherwise>
+            </c:choose>
+        </span>
     </c:if>
     <div class="card-body d-flex flex-column">
         <h6 class="card-title mb-1" style="font-size:.95rem">${fn:escapeXml(p.name)}</h6>
@@ -53,8 +66,15 @@
             </span>
         </div>
         <p class="fw-bold mb-2" style="color:var(--ute-blue-700);font-size:1.05rem"><fmt:formatNumber value="${p.basePrice}" pattern="#,##0"/> ₫</p>
-        <a href="${ctx}/product/${fn:escapeXml(p.id)}" class="btn btn-warning btn-sm w-100 mt-auto fw-bold">
-            <i class="fas fa-cart-plus"></i> Đặt mua
+        <a href="${ctx}/product/${fn:escapeXml(p.id)}"
+           class="btn btn-warning btn-sm w-100 mt-auto fw-bold ${effectiveOOS ? 'disabled' : ''}"
+           <c:if test="${effectiveOOS}">aria-disabled="true" tabindex="-1"</c:if>>
+            <i class="fas fa-cart-plus"></i>
+            <c:choose>
+                <c:when test="${p.outOfStock}">Hết hàng</c:when>
+                <c:when test="${branchOOS}">Xem chi tiết</c:when>
+                <c:otherwise>Đặt mua</c:otherwise>
+            </c:choose>
         </a>
     </div>
 </div>

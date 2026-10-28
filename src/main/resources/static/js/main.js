@@ -12,12 +12,17 @@
     /* ----- Popup "Chọn phương thức nhận hàng" ----- */
     var form = document.getElementById('receiveForm');
     if (form) {
-        var methodInput = document.getElementById('receiveMethod');
-        var addressBox = document.getElementById('recvAddressBox');
+        var methodInput  = document.getElementById('receiveMethod');
+        var addressBox   = document.getElementById('recvAddressBox');
         var addressInput = document.getElementById('recvAddress');
-        var branchLabel = document.getElementById('recvBranchLabel');
-        var tabs = form.querySelectorAll('[data-recv]');
-        var msg = document.getElementById('recvLocateMsg');
+        var branchLabel  = document.getElementById('recvBranchLabel');
+        var tabs         = form.querySelectorAll('[data-recv]');
+        var msg          = document.getElementById('recvLocateMsg');
+        var latInput     = document.getElementById('receiveLat');
+        var lngInput     = document.getElementById('receiveLng');
+        var mapBox       = document.getElementById('recvMapBox');
+        var mapEl        = document.getElementById('recvMap');
+        var pickMapBtn   = document.getElementById('recvPickMap');
 
         function setMethod(m) {
             methodInput.value = m;
@@ -33,43 +38,156 @@
         setMethod(methodInput.value === 'PICKUP' ? 'PICKUP' : 'DELIVERY');
 
         // Sau khi chọn xong, quay lại đúng trang đang xem
-        document.getElementById('receiveReturn').value = location.pathname + location.search;
+        var returnEl = document.getElementById('receiveReturn');
+        if (returnEl) returnEl.value = location.pathname + location.search;
 
-        // "Vị trí hiện tại": chỉ chạy khi khách bấm; địa chỉ điền vào ô vẫn sửa được
+        /* ---------- Leaflet map picker ---------- */
+        var mapInstance = null;
+        var marker      = null;
+
+        function fmtCoord(v) { return Number(v).toFixed(6); }
+
+        function setCoords(lat, lng) {
+            if (latInput) latInput.value = fmtCoord(lat);
+            if (lngInput) lngInput.value = fmtCoord(lng);
+        }
+
+        function pushMarker(lat, lng) {
+            if (!mapInstance) return;
+            if (!marker) {
+                marker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
+                marker.on('dragend', function (e) {
+                    var p = e.target.getLatLng();
+                    setCoords(p.lat, p.lng);
+                    lookup(p.lat, p.lng);
+                });
+            } else {
+                marker.setLatLng([lat, lng]);
+            }
+        }
+
+        function lookup(lat, lng) {
+            if (msg) msg.textContent = 'Đang tìm địa chỉ...';
+
+            var addressPromise = fetch(
+                'https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=vi'
+                + '&zoom=18&addressdetails=1&lat=' + encodeURIComponent(lat)
+                + '&lon=' + encodeURIComponent(lng))
+                .then(function (r) { return r.json(); })
+                .then(function (d) { return (d && d.display_name) ? d.display_name : null; })
+                .catch(function () { return null; });
+
+            var branchPromise = fetch(
+                ctxPath() + '/receive/nearest?lat=' + encodeURIComponent(lat)
+                + '&lng=' + encodeURIComponent(lng),
+                { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .catch(function () { return null; });
+
+            Promise.all([addressPromise, branchPromise]).then(function (out) {
+                var address = out[0], nearest = out[1];
+                if (address && addressInput) addressInput.value = address.substring(0, 500);
+                if (nearest && nearest.found) {
+                    var radio = form.querySelector('input[name="branchId"][value="' + nearest.id + '"]');
+                    if (radio) radio.checked = true;
+                    if (msg) msg.textContent = '✓ ' + nearest.name + ' (~' + nearest.km + ' km).'
+                                             + (address ? ' Địa chỉ đã điền.' : '');
+                } else if (msg) {
+                    msg.textContent = address ? '✓ Đã điền địa chỉ theo vị trí đã chọn.'
+                                              : 'Không xác định được địa chỉ, vui lòng nhập tay.';
+                }
+            });
+        }
+
+        function openMap(lat, lng) {
+            if (!mapBox || !mapEl) return;
+            mapBox.style.display = 'block';
+            if (typeof L === 'undefined') {
+                if (msg) msg.textContent = 'Không tải được bản đồ. Vui lòng thử lại.';
+                return;
+            }
+            var latNum = (lat != null && isFinite(lat)) ? Number(lat) : null;
+            var lngNum = (lng != null && isFinite(lng)) ? Number(lng) : null;
+
+            if (!mapInstance) {
+                var center = (latNum != null && lngNum != null) ? [latNum, lngNum] : [10.0452, 105.7469];
+                var zoom = (latNum != null) ? 16 : 11;
+                mapInstance = L.map(mapEl, { zoomControl: true }).setView(center, zoom);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+                }).addTo(mapInstance);
+                mapInstance.on('click', function (e) {
+                    setCoords(e.latlng.lat, e.latlng.lng);
+                    pushMarker(e.latlng.lat, e.latlng.lng);
+                    lookup(e.latlng.lat, e.latlng.lng);
+                });
+            } else {
+                setTimeout(function () { mapInstance.invalidateSize(); }, 120);
+                if (latNum != null && lngNum != null) mapInstance.setView([latNum, lngNum], 16);
+            }
+            if (latNum != null && lngNum != null) pushMarker(latNum, lngNum);
+        }
+
+        /* ---------- Nút "Vị trí hiện tại" ---------- */
         var locate = document.getElementById('recvLocate');
         if (locate) {
             locate.addEventListener('click', function () {
-                if (!navigator.geolocation) { msg.textContent = 'Trình duyệt không hỗ trợ định vị.'; return; }
-                msg.textContent = 'Đang lấy vị trí...';
+                if (!navigator.geolocation) {
+                    if (msg) msg.textContent = 'Trình duyệt không hỗ trợ định vị.';
+                    return;
+                }
+                if (msg) msg.textContent = 'Đang lấy vị trí chính xác (GPS)...';
+
                 navigator.geolocation.getCurrentPosition(function (pos) {
-                    var lat = pos.coords.latitude, lon = pos.coords.longitude;
-                    document.getElementById('receiveLat').value = lat;
-                    document.getElementById('receiveLng').value = lon;
-                    // Gợi ý cửa hàng gần nhất (chỉ xét cửa hàng đã có toạ độ)
-                    fetch(ctxPath() + '/receive/nearest?lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lon),
-                          { credentials: 'same-origin' })
-                        .then(function (r) { return r.json(); })
-                        .then(function (n) {
-                            if (!n || !n.found) return;
-                            var radio = form.querySelector('input[name="branchId"][value="' + n.id + '"]');
-                            if (radio) {
-                                radio.checked = true;
-                                msg.textContent = 'Cửa hàng gần bạn nhất: ' + n.name + ' (~' + n.km + ' km) đã được chọn sẵn.';
-                            }
-                        }).catch(function () { });
-                    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=vi&lat='
-                        + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon))
-                        .then(function (r) { return r.json(); })
-                        .then(function (d) {
-                            if (d && d.display_name) {
-                                addressInput.value = d.display_name.substring(0, 500);
-                                msg.textContent = 'Đã điền địa chỉ theo vị trí của bạn, hãy kiểm tra lại nhé.';
-                            } else { msg.textContent = 'Không xác định được địa chỉ, vui lòng nhập tay.'; }
-                        })
-                        .catch(function () { msg.textContent = 'Không lấy được địa chỉ, vui lòng nhập tay.'; });
-                }, function () {
-                    msg.textContent = 'Bạn chưa cho phép định vị, vui lòng nhập địa chỉ.';
-                }, { timeout: 8000 });
+                    var lat = pos.coords.latitude, lng = pos.coords.longitude, acc = pos.coords.accuracy;
+                    setCoords(lat, lng);
+                    if (msg) {
+                        var txt = (acc < 200) ? ' (±' + Math.round(acc) + ' m)'
+                                : (acc < 2000 ? ' (±' + (acc / 1000).toFixed(1) + ' km)'
+                                              : ' (±' + Math.round(acc / 1000) + ' km)');
+                        msg.textContent = 'Đã lấy vị trí' + txt + ', đang tìm địa chỉ...';
+                    }
+                    if (mapInstance) { mapInstance.setView([lat, lng], 16); pushMarker(lat, lng); }
+                    lookup(lat, lng);
+                }, function (err) {
+                    if (err.code === err.TIMEOUT || err.code === err.POSITION_UNAVAILABLE) {
+                        // Fallback: độ chính xác thấp (chấp nhận IP/WiFi)
+                        navigator.geolocation.getCurrentPosition(function (pos) {
+                            var lat = pos.coords.latitude, lng = pos.coords.longitude;
+                            setCoords(lat, lng);
+                            if (msg) msg.textContent = 'Vị trí có thể chưa chính xác. Hãy kiểm tra lại hoặc chọn trên bản đồ.';
+                            if (mapInstance) { mapInstance.setView([lat, lng], 16); pushMarker(lat, lng); }
+                            lookup(lat, lng);
+                        }, function () {
+                            if (msg) msg.textContent = 'Không lấy được vị trí. Hãy chọn trên bản đồ hoặc nhập địa chỉ.';
+                            openMap(null, null);
+                        }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 });
+                    } else if (err.code === err.PERMISSION_DENIED) {
+                        if (msg) msg.textContent = 'Bạn chưa cho phép định vị. Hãy chọn trên bản đồ hoặc nhập địa chỉ.';
+                    } else {
+                        if (msg) msg.textContent = 'Không lấy được vị trí. Vui lòng nhập địa chỉ.';
+                    }
+                }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+            });
+        }
+
+        /* ---------- Nút "Chọn trên bản đồ" ---------- */
+        if (pickMapBtn) {
+            pickMapBtn.addEventListener('click', function () {
+                if (mapBox.style.display === 'block') { mapBox.style.display = 'none'; return; }
+                openMap(
+                    parseFloat(latInput && latInput.value),
+                    parseFloat(lngInput && lngInput.value)
+                );
+            });
+        }
+
+        /* ---------- Bootstrap Modal: tính lại kích thước bản đồ ---------- */
+        var modalEl = document.getElementById('receiveModal');
+        if (modalEl) {
+            modalEl.addEventListener('shown.bs.modal', function () {
+                if (mapInstance) setTimeout(function () { mapInstance.invalidateSize(); }, 120);
             });
         }
     }
@@ -81,9 +199,9 @@
     }
 
     /* ----- Tìm kiếm sản phẩm: lịch sử, từ khóa phổ biến và gợi ý trực tiếp ----- */
-    var sForm = document.querySelector('.header-search');
+    var sForm  = document.querySelector('.header-search');
     var sInput = document.querySelector('.header-search input[name="kw"]');
-    var sBox = document.getElementById('searchSuggest');
+    var sBox   = document.getElementById('searchSuggest');
     var sClear = document.getElementById('searchInputClear');
     if (sForm && sInput && sBox) {
         var timer = null, seq = 0;
@@ -185,7 +303,7 @@
             var heading = el('div', 'suggest-heading suggest-results-heading', 'Sản phẩm phù hợp');
             sBox.appendChild(heading);
             if (!list || !list.length) {
-                sBox.appendChild(el('div', 'suggest-no-results', 'Chưa tìm thấy món phù hợp với “' + term + '”.'));
+                sBox.appendChild(el('div', 'suggest-no-results', 'Chưa tìm thấy món phù hợp với "' + term + '".'));
                 var all = el('a', 'suggest-all-results', 'Tìm tất cả sản phẩm');
                 all.href = ctxPath() + '/products?kw=' + encodeURIComponent(term);
                 sBox.appendChild(all);
@@ -210,7 +328,7 @@
                 a.addEventListener('click', function () { saveRecent(term); });
                 sBox.appendChild(a);
             });
-            var allLink = el('a', 'suggest-all-results', 'Xem tất cả kết quả cho “' + term + '”');
+            var allLink = el('a', 'suggest-all-results', 'Xem tất cả kết quả cho "' + term + '"');
             allLink.href = ctxPath() + '/products?kw=' + encodeURIComponent(term);
             sBox.appendChild(allLink);
             setOpen(true);
@@ -311,10 +429,10 @@
 /* ----- Bảng thông báo dạng drawer: Tin tức / Đơn hàng ----- */
 (function () {
     'use strict';
-    var bell = document.getElementById('notificationBell');
-    var drawer = document.getElementById('notificationDrawer');
+    var bell     = document.getElementById('notificationBell');
+    var drawer   = document.getElementById('notificationDrawer');
     var backdrop = document.getElementById('notificationBackdrop');
-    var close = document.getElementById('notificationClose');
+    var close    = document.getElementById('notificationClose');
     if (!bell || !drawer || !backdrop) return;
     var ctx = document.body.getAttribute('data-ctx') || '';
     if (window.location.pathname.replace(/\/+$/, '').endsWith('/notifications')) {

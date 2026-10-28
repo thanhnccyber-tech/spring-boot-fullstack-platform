@@ -10,13 +10,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.utetra.entity.Topping;
+import vn.utetra.entity.User;
+import vn.utetra.repository.UserRepository;
 import vn.utetra.service.ToppingService;
 
-/**
- * Quản lý topping.
- * - ADMIN : toàn quyền CRUD.
- * - MANAGER: chỉ xem danh sách + toggle "Hết hàng".
- */
+import java.util.List;
+
 @Controller
 @RequestMapping("/admin/toppings")
 public class AdminToppingController {
@@ -24,6 +23,7 @@ public class AdminToppingController {
     private static final int PAGE_SIZE = 10;
 
     @Autowired private ToppingService toppingService;
+    @Autowired private UserRepository userRepo;
 
     private static boolean isAdmin(Authentication auth) {
         return auth.getAuthorities().stream()
@@ -54,6 +54,18 @@ public class AdminToppingController {
         model.addAttribute("activeFilter", active);
         model.addAttribute("outOfStockFilter", outOfStock);
         model.addAttribute("isAdmin", isAdmin(auth));
+
+        // Bổ sung: cho Manager thấy trạng thái tồn kho riêng của chi nhánh
+        User me = userRepo.findByEmailWithBranch(auth.getName()).orElseThrow();
+        if (!me.isAdmin() && me.getBranch() != null) {
+            List<Long> ids = pageData.getContent().stream().map(Topping::getId).toList();
+            model.addAttribute("branchStockMap",
+                    toppingService.branchStockMap(me.getBranch().getId(), ids));
+            model.addAttribute("managerBranchName", me.getBranch().getName());
+        } else {
+            model.addAttribute("branchStockMap", java.util.Map.of());
+            model.addAttribute("managerBranchName", null);
+        }
         return "admin/toppings";
     }
 
@@ -111,13 +123,23 @@ public class AdminToppingController {
         return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/toppings");
     }
 
-    /** Manager + Admin đều được gọi: báo "Hết hàng" / "Còn hàng". */
+    /** Admin đổi trạng thái toàn hệ thống; Manager chỉ đổi tại chi nhánh của mình. */
     @PostMapping("/toggle-stock")
     public String toggleStock(@RequestParam Long id,
                               @RequestParam(required = false) String returnUrl,
+                              Authentication auth,
                               RedirectAttributes ra) {
-        toppingService.toggleOutOfStock(id);
-        ra.addFlashAttribute("success", "Đã cập nhật trạng thái tồn kho.");
+        User me = userRepo.findByEmailWithBranch(auth.getName()).orElseThrow();
+        if (me.isAdmin()) {
+            toppingService.toggleOutOfStock(id);
+            ra.addFlashAttribute("success", "Đã cập nhật trạng thái tồn kho toàn hệ thống");
+        } else if (me.getBranch() != null) {
+            toppingService.toggleOutOfStockForBranch(id, me.getBranch().getId());
+            ra.addFlashAttribute("success",
+                    "Đã cập nhật tồn kho tại chi nhánh " + me.getBranch().getName());
+        } else {
+            ra.addFlashAttribute("error", "Tài khoản Manager chưa được gán chi nhánh.");
+        }
         return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/toppings");
     }
 

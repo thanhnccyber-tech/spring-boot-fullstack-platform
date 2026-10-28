@@ -16,6 +16,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap&subset=vietnamese,latin,latin-ext" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/brand-theme.css">
     <sitemesh:write property="head"/>
@@ -212,8 +216,24 @@
               <input type="text" class="form-control" name="address" id="recvAddress" maxlength="500"
                      placeholder="Vui lòng nhập địa chỉ" value="${fn:escapeXml(sessionScope.RECV_ADDR)}">
             </div>
-            <button type="button" class="btn btn-link px-0 mt-1" id="recvLocate" style="text-decoration:none;font-size:.85rem;color:var(--ute-blue-600)"><i class="fas fa-crosshairs"></i> Vị trí hiện tại của tôi</button>
-            <div class="small text-muted" id="recvLocateMsg"></div>
+
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              <button type="button" class="btn btn-sm btn-outline-primary" id="recvLocate">
+                <i class="fas fa-crosshairs"></i> Vị trí hiện tại
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-primary" id="recvPickMap">
+                <i class="fas fa-map-location-dot"></i> Chọn trên bản đồ
+              </button>
+            </div>
+
+            <div class="small text-muted mt-1" id="recvLocateMsg"></div>
+
+            <div id="recvMapBox" style="display:none; margin-top:8px;">
+              <div id="recvMap" style="height:300px; border-radius:8px; overflow:hidden;"></div>
+              <small class="text-muted d-block mt-1">
+                <i class="fas fa-info-circle"></i> Nhấn vào bản đồ để chọn vị trí chính xác, hoặc kéo ghim.
+              </small>
+            </div>
           </div>
           <label class="form-label small text-muted mb-1" id="recvBranchLabel">Cửa hàng phục vụ</label>
           <div class="list-group branch-list">

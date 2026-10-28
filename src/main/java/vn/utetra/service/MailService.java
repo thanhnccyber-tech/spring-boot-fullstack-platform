@@ -39,12 +39,12 @@ public class MailService {
     }
 
     public void sendOtp(String to, String code) {
-        String subject = "UTeTra - Mã xác thực OTP";
+        String subject = "UTETra - Mã xác thực OTP";
         String body = "Xin chào!\n\n"
                 + "Mã OTP của bạn là: " + code + "\n"
                 + "Mã có hiệu lực trong 5 phút.\n\n"
                 + "Vui lòng không chia sẻ mã này cho bất kỳ ai.\n"
-                + "— UTeTra Team";
+                + "— UTETra Team";
         send(to, subject, body);
     }
 }
