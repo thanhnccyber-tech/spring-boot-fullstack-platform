@@ -38,8 +38,9 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label small fw-semibold mb-1">Phụ thu (đ) *</label>
+                <fmt:formatNumber value="${form.extraPrice != null ? form.extraPrice : 0}" maxFractionDigits="0" groupingUsed="false" var="extraPriceFmt"/>
                 <input name="extraPrice" type="number" min="0" step="1000" class="form-control" required
-                       value="${fn:escapeXml(form.extraPrice != null ? form.extraPrice : 0)}">
+                       value="${extraPriceFmt}">
             </div>
             <div class="col-md-2">
                 <label class="form-label small fw-semibold mb-1">Thứ tự</label>

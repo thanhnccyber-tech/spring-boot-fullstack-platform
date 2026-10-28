@@ -54,13 +54,15 @@
                     <label class="form-label small fw-semibold mb-1">Nội dung</label>
                     <textarea name="content" rows="4" class="form-control">${fn:escapeXml(form.content)}</textarea>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label small fw-semibold mb-1">Ảnh (đường dẫn)</label>
-                    <input name="imageUrl" class="form-control" value="${fn:escapeXml(form.imageUrl)}" placeholder="https://...">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label small fw-semibold mb-1">hoặc tải ảnh lên</label>
+                <div class="col-12">
+                    <label class="form-label small fw-semibold mb-1">Tải ảnh lên</label>
                     <input type="file" name="imageFile" accept="image/*" class="form-control">
+                    <small class="text-muted d-block mt-1">JPG, PNG, GIF, WEBP. Tối đa 5 MB.</small>
+                    <c:if test="${form.id != null and not empty form.imageUrl}">
+                        <small class="text-muted d-block">
+                            Đang có ảnh — chọn tệp mới để thay thế, hoặc để trống để giữ nguyên ảnh hiện tại.
+                        </small>
+                    </c:if>
                 </div>
                 <div class="col-12 d-flex align-items-center gap-3 pt-2 border-top">
                     <div class="form-check">

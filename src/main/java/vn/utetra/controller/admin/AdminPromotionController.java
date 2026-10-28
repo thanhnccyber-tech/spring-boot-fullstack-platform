@@ -52,18 +52,18 @@ public class AdminPromotionController {
                        @RequestParam String title,
                        @RequestParam(required = false) String summary,
                        @RequestParam(required = false) String content,
-                       @RequestParam(required = false) String imageUrl,
                        @RequestParam(required = false) String voucherCode,
                        @RequestParam(required = false) MultipartFile imageFile,
                        @RequestParam(defaultValue = "false") boolean active,
                        RedirectAttributes ra) {
         try {
-            String img = imageUrl;
+            Promotion p = id == null ? new Promotion() : promotionService.get(id);
+            // Giữ ảnh hiện tại khi sửa nếu admin không upload ảnh mới.
+            String img = p.getImageUrl();
             if (imageFile != null && !imageFile.isEmpty()) {
                 fileValidator.validateImage(imageFile);
                 img = cloudinaryService.upload(imageFile, "promotions");
             }
-            Promotion p = id == null ? new Promotion() : promotionService.get(id);
             promotionService.save(p, title, summary, content, img, voucherCode, active);
             ra.addFlashAttribute("success", id == null ? "Đã đăng bài mới." : "Đã cập nhật bài viết.");
         } catch (RuntimeException e) {

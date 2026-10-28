@@ -15,6 +15,22 @@
     </div>
 </c:if>
 
+<%-- Chuẩn bị các giá trị hiển thị trong input: bỏ đuôi .00 khi sửa mã đã có --%>
+<c:set var="discountValueFmt" value=""/>
+<c:set var="minOrderAmountFmt" value="0"/>
+<c:set var="maxDiscountAmountFmt" value=""/>
+<c:if test="${form.id != null}">
+    <c:if test="${form.discountValue != null}">
+        <fmt:formatNumber value="${form.discountValue}" maxFractionDigits="0" groupingUsed="false" var="discountValueFmt"/>
+    </c:if>
+    <c:if test="${form.minOrderAmount != null}">
+        <fmt:formatNumber value="${form.minOrderAmount}" maxFractionDigits="0" groupingUsed="false" var="minOrderAmountFmt"/>
+    </c:if>
+    <c:if test="${form.maxDiscountAmount != null}">
+        <fmt:formatNumber value="${form.maxDiscountAmount}" maxFractionDigits="0" groupingUsed="false" var="maxDiscountAmountFmt"/>
+    </c:if>
+</c:if>
+
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div class="text-muted">
         <i class="fas fa-ticket me-1"></i>
@@ -59,17 +75,17 @@
                 <div class="col-md-3">
                     <label class="form-label small fw-semibold mb-1">Giá trị giảm *</label>
                     <input name="discountValue" type="number" step="1" min="1" class="form-control" required
-                           value="${fn:escapeXml(form.id != null ? form.discountValue : '')}">
+                           value="${discountValueFmt}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-semibold mb-1">Đơn tối thiểu (đ)</label>
                     <input name="minOrderAmount" type="number" step="1" min="0" class="form-control"
-                           value="${fn:escapeXml(form.id != null ? form.minOrderAmount : 0)}">
+                           value="${minOrderAmountFmt}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-semibold mb-1">Giảm tối đa (chỉ loại %)</label>
                     <input name="maxDiscountAmount" type="number" step="1" min="0" class="form-control"
-                           value="${fn:escapeXml(form.maxDiscountAmount)}">
+                           value="${maxDiscountAmountFmt}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-semibold mb-1">Hết hạn</label>

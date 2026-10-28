@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <title>${fn:escapeXml(product.id != null ? 'Sửa' : 'Thêm')} sản phẩm</title>
 
 <c:if test="${error != null}">
@@ -41,7 +42,8 @@
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Giá cơ bản (VNĐ) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input name="basePrice" type="number" min="0" step="1000" value="${fn:escapeXml(product.basePrice)}" class="form-control" required>
+                                <fmt:formatNumber value="${product.basePrice}" maxFractionDigits="0" groupingUsed="false" var="basePriceFmt"/>
+                                <input name="basePrice" type="number" min="0" step="1000" value="${basePriceFmt}" class="form-control" required>
                                 <span class="input-group-text">₫</span>
                             </div>
                         </div>
@@ -77,7 +79,7 @@
                                         <input type="checkbox" name="sizeIds" value="${fn:escapeXml(s.id)}" class="form-check-input"
                                                id="sz${s.id}" <c:if test="${product.sizes != null && product.sizes.contains(s)}">checked</c:if>>
                                         <label class="form-check-label small" for="sz${s.id}">
-                                            ${fn:escapeXml(s.name)} <span class="text-muted">(+${fn:escapeXml(s.extraPrice)}đ)</span>
+                                            ${fn:escapeXml(s.name)} <span class="text-muted">(+<fmt:formatNumber value="${s.extraPrice}" pattern="#,##0"/>đ)</span>
                                         </label>
                                     </div>
                                 </c:forEach>

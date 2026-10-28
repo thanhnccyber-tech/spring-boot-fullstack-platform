@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <title>${fn:escapeXml(isNew ? 'Thêm' : 'Sửa')} topping</title>
 
 <c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
@@ -17,7 +18,8 @@
 
     <div class="mb-3">
         <label>Giá (VNĐ) <span class="text-danger">*</span></label>
-        <input type="number" name="price" value="${fn:escapeXml(topping.price)}"
+        <fmt:formatNumber value="${topping.price}" maxFractionDigits="0" groupingUsed="false" var="priceFmt"/>
+        <input type="number" name="price" value="${priceFmt}"
                class="form-control" min="1" max="10000000" step="1000" required>
         <small class="text-muted">Lớn hơn 0 và tối đa 10.000.000 ₫.</small>
     </div>
