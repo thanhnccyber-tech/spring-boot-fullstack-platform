@@ -112,22 +112,59 @@ public class OrderController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> checkVoucher(@RequestParam String code,
                                                             @RequestParam(defaultValue = "DELIVERY") String method,
+                                                            @RequestParam(required = false) Long branchId,
                                                             HttpSession session) {
         Map<String, Object> res = new LinkedHashMap<>();
         BigDecimal subtotal = subtotalOf(cartOf(session));
         try {
             Voucher v = voucherService.validate(code, subtotal);
-            BigDecimal discount = voucherService.discountOf(v, subtotal);
-            BigDecimal fee = orderService.shippingFeeFor(method, subtotal);
+
+            // Phí ship tính theo chi nhánh + toạ độ khách (nếu có) — khớp với bước đặt hàng thật
+            Double lat = (Double) session.getAttribute("RECV_LAT");
+            Double lng = (Double) session.getAttribute("RECV_LNG");
+            BigDecimal fee;
+            if (Order.METHOD_PICKUP.equals(method)) {
+                fee = BigDecimal.ZERO;
+            } else {
+                Branch b = null;
+                if (branchId != null) {
+                    try { b = branchService.get(branchId); } catch (Exception ignored) { }
+                }
+                Double km = b != null ? orderService.distanceKm(b, lat, lng) : null;
+                fee = orderService.shippingFeeFor(Order.METHOD_DELIVERY, subtotal, km);
+            }
+
+            BigDecimal discount = BigDecimal.ZERO;
+            BigDecimal shippingDiscount = BigDecimal.ZERO;
+            if (v.isShippingVoucher()) {
+                shippingDiscount = voucherService.shippingDiscountOf(v, fee);
+            } else {
+                discount = voucherService.discountOf(v, subtotal);
+            }
+
             res.put("valid", true);
             res.put("code", v.getCode());
             res.put("discount", discount);
-            res.put("total", subtotal.subtract(discount).add(fee));
-            res.put("message", "Đã áp dụng mã " + v.getCode() + ": giảm "
-                    + String.format("%,d", discount.longValue()).replace(',', '.') + "đ");
+            res.put("shippingDiscount", shippingDiscount);
+            res.put("total", subtotal.subtract(discount).add(fee).subtract(shippingDiscount));
+
+            StringBuilder msg = new StringBuilder("Đã áp dụng mã ").append(v.getCode()).append(": ");
+            if (shippingDiscount.signum() > 0) {
+                msg.append("giảm ").append(String.format("%,d", shippingDiscount.longValue()).replace(',', '.'))
+                   .append("đ phí ship");
+            } else if (discount.signum() > 0) {
+                msg.append("giảm ").append(String.format("%,d", discount.longValue()).replace(',', '.'))
+                   .append("đ");
+            } else if (v.isShippingVoucher() && fee.signum() == 0) {
+                msg.append("mã giảm phí ship — đơn đến lấy tại cửa hàng không có phí ship nên chưa áp dụng được.");
+            } else {
+                msg.append("không có giá trị giảm.");
+            }
+            res.put("message", msg.toString());
         } catch (IllegalArgumentException e) {
             res.put("valid", false);
             res.put("discount", 0);
+            res.put("shippingDiscount", 0);
             res.put("message", e.getMessage());
         }
         return ResponseEntity.ok(res);
@@ -202,7 +239,6 @@ public class OrderController {
         return "redirect:/order/detail/" + id;
     }
 
-    /** Khách gửi khiếu nại cho đơn đã hoàn thành (kèm ảnh/video đính kèm nếu có). */
     @PostMapping(value = "/complain/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String complain(@PathVariable Long id,
                            @RequestParam(required = false) String reason,

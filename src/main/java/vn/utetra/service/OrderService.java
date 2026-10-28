@@ -260,17 +260,24 @@ public class OrderService {
         }
         orderDetailRepo.saveAll(details);
 
-        BigDecimal discount = BigDecimal.ZERO;
-        if (req.getVoucherCode() != null && !req.getVoucherCode().isBlank()) {
-            Voucher v = voucherService.validate(req.getVoucherCode(), total);
-            discount = voucherService.discountOf(v, total);
-            voucherService.consume(v);
-            saved.setVoucherCode(v.getCode());
-        }
+        // Tính phí ship trước để voucher loại SHIPPING dùng được
         Double km = Order.METHOD_DELIVERY.equals(req.getDeliveryMethod())
                 ? distanceKm(branch, req.getLat(), req.getLng()) : null;
         BigDecimal fee = shippingFeeFor(req.getDeliveryMethod(), total, km);
         saved.setDistanceKm(km);
+
+        BigDecimal discount = BigDecimal.ZERO;
+        BigDecimal shippingDiscount = BigDecimal.ZERO;
+        if (req.getVoucherCode() != null && !req.getVoucherCode().isBlank()) {
+            Voucher v = voucherService.validate(req.getVoucherCode(), total);
+            if (v.isShippingVoucher()) {
+                shippingDiscount = voucherService.shippingDiscountOf(v, fee);
+            } else {
+                discount = voucherService.discountOf(v, total);
+            }
+            voucherService.consume(v);
+            saved.setVoucherCode(v.getCode());
+        }
 
         BigDecimal pointsDiscount = BigDecimal.ZERO;
         int requested = req.getUsePoints() == null ? 0 : Math.max(0, req.getUsePoints());
@@ -288,7 +295,9 @@ public class OrderService {
 
         saved.setShippingFee(fee);
         saved.setDiscountAmount(discount);
-        saved.setTotalAmount(total.subtract(discount).subtract(pointsDiscount).add(fee));
+        saved.setShippingDiscountAmount(shippingDiscount);
+        saved.setTotalAmount(total.subtract(discount).subtract(pointsDiscount)
+                                  .add(fee).subtract(shippingDiscount));
         orderRepo.save(saved);
 
         Map<String, Object> noti = new HashMap<>();
@@ -335,6 +344,8 @@ public class OrderService {
         sb.append("\nNhận hàng: ").append(o.isPickup() ? "Đến lấy tại cửa hàng" : "Giao tận nơi");
         if (o.getShippingAddress() != null) sb.append(" - ").append(o.getShippingAddress());
         sb.append("\nPhí vận chuyển: ").append(money(o.getShippingFee()));
+        if (o.getShippingDiscountAmount() != null && o.getShippingDiscountAmount().signum() > 0)
+            sb.append("\nGiảm phí ship: -").append(money(o.getShippingDiscountAmount()));
         if (o.getDiscountAmount() != null && o.getDiscountAmount().signum() > 0)
             sb.append("\nGiảm giá: -").append(money(o.getDiscountAmount()));
         if (o.getPointsDiscount() != null && o.getPointsDiscount().signum() > 0)
@@ -377,10 +388,6 @@ public class OrderService {
         return o;
     }
 
-    /**
-     * Khách gửi khiếu nại cho đơn đã COMPLETED (chưa từng khiếu nại).
-     * @param media tệp đính kèm (ảnh ≤5MB hoặc video MP4/WEBM/AVI ≤10MB); có thể null
-     */
     @Transactional
     public Order fileComplaint(Long id, String email, String reason, MultipartFile media) {
         Order o = orderRepo.findByIdWithUser(id).orElseThrow();
@@ -397,7 +404,6 @@ public class OrderService {
         if (r.length() > 1000)
             throw new IllegalArgumentException("Lý do khiếu nại tối đa 1000 ký tự.");
 
-        // Kiểm tra tệp trước khi đụng vào entity — sai định dạng/dung lượng thì không đổi dữ liệu
         fileValidator.validateReviewMedia(media);
 
         o.setComplaintReason(r);
@@ -410,7 +416,6 @@ public class OrderService {
         return o;
     }
 
-    /** Admin/Manager chấp nhận khiếu nại và hoàn tiền (toàn phần hoặc một phần, ≤ tổng đơn). */
     @Transactional
     public Order processRefund(Long id, BigDecimal amount, String note) {
         Order o = orderRepo.findByIdWithUser(id).orElseThrow();
@@ -434,7 +439,6 @@ public class OrderService {
         return o;
     }
 
-    /** Admin/Manager từ chối khiếu nại: đơn quay về COMPLETED, ghi lại lý do từ chối. */
     @Transactional
     public Order rejectComplaint(Long id, String note) {
         Order o = orderRepo.findByIdWithUser(id).orElseThrow();
@@ -680,8 +684,11 @@ public class OrderService {
         User u = o.getUser();
         int lifetimeBefore = lifetimePointsFor(u);
 
+        // Tiền hàng thực trả = tổng - phí ship + giảm phí ship
+        // (không phụ thuộc vào hình thức voucher đã dùng)
         BigDecimal paidGoods = o.getTotalAmount() == null ? BigDecimal.ZERO : o.getTotalAmount();
         if (o.getShippingFee() != null) paidGoods = paidGoods.subtract(o.getShippingFee());
+        if (o.getShippingDiscountAmount() != null) paidGoods = paidGoods.add(o.getShippingDiscountAmount());
         int pts = (int) Math.max(0, paidGoods.longValue() / POINT_UNIT);
         o.setPointsEarned(pts);
         if (pts > 0) {

@@ -10,7 +10,6 @@
 
 <h3 class="mb-3">🧾 Thanh toán</h3>
 
-<%-- Form đặt hàng rỗng: các ô nhập ở cả 2 cột gắn vào đây bằng thuộc tính form="placeForm" --%>
 <form id="placeForm" action="${ctx}/order/place" method="post">
     <c:if test="${not empty recvLat and not empty recvLng}">
         <input type="hidden" name="lat" value="${fn:escapeXml(recvLat)}">
@@ -19,7 +18,7 @@
 </form>
 
 <div class="row g-4">
-    <!-- ================= CỘT TRÁI: thông tin nhận hàng ================= -->
+    <!-- ================= CỘT TRÁI ================= -->
     <div class="col-lg-7">
         <div class="checkout-box mb-3">
             <h5 class="mb-3"><i class="fas fa-location-dot"></i> Cách nhận hàng</h5>
@@ -101,7 +100,7 @@
         </div>
     </div>
 
-    <!-- ================= CỘT PHẢI: món đã chọn + thanh toán ================= -->
+    <!-- ================= CỘT PHẢI ================= -->
     <div class="col-lg-5">
         <div class="checkout-box mb-3">
             <h5 class="mb-2"><i class="fas fa-mug-hot"></i> Món đã chọn</h5>
@@ -156,6 +155,7 @@
             <div class="sum-row"><span>Tổng tiền tạm tính</span><span id="sSub"><fmt:formatNumber value="${subtotal}" pattern="#,##0"/> ₫</span></div>
             <div class="sum-row"><span>Phí vận chuyển</span><span id="sFee"></span></div>
             <div class="sum-row"><span>Mã giảm giá</span><span id="sDis">0 ₫</span></div>
+            <div class="sum-row" id="sShipDisRow" style="display:none"><span>Giảm phí vận chuyển</span><span id="sShipDis" class="text-success">0 ₫</span></div>
 
             <c:if test="${userPoints > 0 && pointValue > 0}">
                 <div class="form-check mt-2">
@@ -220,7 +220,7 @@
     var BRANCH_FEE = {<c:forEach items="${branchFee}" var="bf" varStatus="bs">'${bf.key}': ${bf.value}<c:if test="${!bs.last}">, </c:if></c:forEach>};
     var POINTS = ${userPoints != null ? userPoints : 0};
     var POINT_VALUE = ${pointValue != null ? pointValue : 0};
-    var discount = 0, pts = 0;
+    var discount = 0, shippingDiscount = 0, pts = 0;
     function money(n) { return Math.round(n).toLocaleString('vi-VN') + ' ₫'; }
     function $(id) { return document.getElementById(id); }
     function method() { return $('mPick').checked ? 'PICKUP' : 'DELIVERY'; }
@@ -233,7 +233,16 @@
         $('sFee').textContent = pickup ? 'Miễn phí (đến lấy)' : money(fee);
         $('sDis').textContent = discount > 0 ? '− ' + money(discount) : '0 ₫';
 
-        // Điểm hội viên: chỉ trừ vào tiền hàng, không vượt số điểm đang có
+        // Giảm phí ship không vượt quá phí hiện tại
+        var effShipDis = Math.min(shippingDiscount, fee);
+        if (effShipDis > 0) {
+            $('sShipDisRow').style.display = '';
+            $('sShipDis').textContent = '− ' + money(effShipDis);
+        } else {
+            $('sShipDisRow').style.display = 'none';
+            $('sShipDis').textContent = '0 ₫';
+        }
+
         var maxPts = POINT_VALUE > 0 ? Math.min(POINTS, Math.floor(Math.max(0, SUB - discount) / POINT_VALUE)) : 0;
         var chk = $('usePtsChk');
         if (chk) {
@@ -246,14 +255,12 @@
         if ($('usePoints')) $('usePoints').value = pts;
         $('sPtsRow').style.display = pts > 0 ? '' : 'none';
         $('sPts').textContent = '− ' + money(pts * POINT_VALUE);
-        $('sTotal').textContent = money(Math.max(0, SUB - discount - pts * POINT_VALUE) + fee);
+        $('sTotal').textContent = money(Math.max(0, SUB - discount - pts * POINT_VALUE) + fee - effShipDis);
 
-        // Giao hàng cần địa chỉ; đến lấy thì không
         $('addrBox').style.display = pickup ? 'none' : '';
         $('addr').required = !pickup;
         $('branchLabel').textContent = pickup ? 'Cửa hàng bạn sẽ đến lấy' : 'Cửa hàng phục vụ';
 
-        // COD chỉ khi giao tận nơi, tiền mặt chỉ khi đến lấy
         $('pCod').disabled = pickup;  $('payCodRow').style.display = pickup ? 'none' : '';
         $('pCash').disabled = !pickup; $('payCashRow').style.display = pickup ? '' : 'none';
         var cur = document.querySelector('input[name=paymentMethod]:checked');
@@ -270,13 +277,11 @@
         $('usePtsMax').addEventListener('click', function () { $('usePtsNum').value = $('usePtsNum').max; refresh(); });
     }
 
-    // Hoá đơn VAT
     $('vat').addEventListener('change', function () {
         $('vatBox').style.display = this.checked ? '' : 'none';
         $('vatBox').querySelectorAll('input').forEach(function (i) { i.required = $('vat').checked; });
     });
 
-    // Thời gian nhận hàng
     function pad(n) { return String(n).padStart(2, '0'); }
     function toLocalInput(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
     var slot = $('tSlot');
@@ -291,24 +296,24 @@
     });
     slot.addEventListener('input', function () { $('deliveryTime').value = slot.value; });
 
-    // Mã giảm giá (server kiểm tra; lúc đặt hàng server tính lại một lần nữa)
     $('voucherBtn').addEventListener('click', function () {
         var code = $('voucherInput').value.trim();
         var msg = $('voucherMsg');
         if (!code) { msg.className = 'small mb-2 text-danger'; msg.textContent = 'Vui lòng nhập mã giảm giá.'; return; }
-        fetch('${ctx}/order/voucher?code=' + encodeURIComponent(code) + '&method=' + method(), { credentials: 'same-origin' })
+        var branchIdParam = (method() === 'PICKUP' || !$('branchSel')) ? '' : ($('branchSel').value || '');
+        fetch('${ctx}/order/voucher?code=' + encodeURIComponent(code) + '&method=' + method() + '&branchId=' + encodeURIComponent(branchIdParam), { credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 msg.className = 'small mb-2 ' + (d.valid ? 'text-success' : 'text-danger');
                 msg.textContent = d.message;
                 discount = d.valid ? Number(d.discount) : 0;
+                shippingDiscount = d.valid ? Number(d.shippingDiscount || 0) : 0;
                 $('voucherCode').value = d.valid ? d.code : '';
                 refresh();
             })
             .catch(function () { msg.className = 'small mb-2 text-danger'; msg.textContent = 'Không kiểm tra được mã, thử lại sau.'; });
     });
 
-    // Chỉ cho bấm đặt hàng khi đã đồng ý điều khoản
     $('agree').addEventListener('change', function () { $('payBtn').disabled = !this.checked; });
 
     document.querySelectorAll('.pick-addr').forEach(function (b) {

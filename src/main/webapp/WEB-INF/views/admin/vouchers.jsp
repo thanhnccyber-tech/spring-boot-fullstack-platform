@@ -43,6 +43,13 @@
                            value="${fn:escapeXml(form.code)}" placeholder="VD: WELCOME10">
                 </div>
                 <div class="col-md-3">
+                    <label class="form-label small fw-semibold mb-1">Áp dụng cho</label>
+                    <select name="applyTo" class="form-select">
+                        <option value="ORDER"    <c:if test="${empty form.applyTo || form.applyTo == 'ORDER'}">selected</c:if>>Tiền hàng</option>
+                        <option value="SHIPPING" <c:if test="${form.applyTo == 'SHIPPING'}">selected</c:if>>Phí vận chuyển</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label class="form-label small fw-semibold mb-1">Loại giảm</label>
                     <select name="discountType" class="form-select">
                         <option value="AMOUNT"  <c:if test="${form.discountType == 'AMOUNT'}">selected</c:if>>Số tiền cố định (đ)</option>
@@ -74,7 +81,7 @@
                     <input name="usageLimit" type="number" min="1" class="form-control"
                            placeholder="Không giới hạn" value="${fn:escapeXml(form.usageLimit)}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-12">
                     <label class="form-label small fw-semibold mb-1">Mô tả</label>
                     <input name="description" class="form-control" maxlength="255"
                            value="${fn:escapeXml(form.description)}">
@@ -132,6 +139,9 @@
                                     <span class="badge bg-primary"><fmt:formatNumber value="${v.discountValue}" pattern="#,##0"/>đ</span>
                                 </c:otherwise>
                             </c:choose>
+                            <c:if test="${v.shippingVoucher}">
+                                <div class="small text-muted"><i class="fas fa-truck-fast"></i> phí ship</div>
+                            </c:if>
                         </td>
                         <td class="text-end"><fmt:formatNumber value="${v.minOrderAmount}" pattern="#,##0"/>đ</td>
                         <td class="text-center">
