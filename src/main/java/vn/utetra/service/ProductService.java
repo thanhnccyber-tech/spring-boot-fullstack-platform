@@ -28,13 +28,32 @@ public class ProductService {
     public List<Product> featured() { return productRepo.findByFeaturedTrueAndActiveTrue(); }
     public List<Product> newArrivals() { return productRepo.findByIsNewTrueAndActiveTrue(); }
 
+    /**
+     * Tìm kiếm cho trang khách.
+     * Hỗ trợ sắp xếp: newest (mặc định), bestSeller, topRated, mostFavorite,
+     * priceAsc, priceDesc, nameAsc, nameDesc.
+     */
     public Page<Product> search(String kw, Long catId, BigDecimal min, BigDecimal max,
                                 int page, int size, String sort) {
-        Sort sortBy = resolveSort(sort);
-        return productRepo.search(
-                (kw == null || kw.isBlank()) ? null : kw.trim(),
-                catId, min, max,
-                PageRequest.of(page, size, sortBy));
+        String kwP = (kw == null || kw.isBlank()) ? null : kw.trim();
+        int safePage = Math.max(page, 0);
+        int safeSize = size <= 0 ? 20 : size;
+        String s = sort == null ? "newest" : sort;
+
+        switch (s) {
+            case "bestSeller":
+                return productRepo.searchBestSeller(kwP, catId, min, max,
+                        PageRequest.of(safePage, safeSize));
+            case "topRated":
+                return productRepo.searchTopRated(kwP, catId, min, max,
+                        PageRequest.of(safePage, safeSize));
+            case "mostFavorite":
+                return productRepo.searchMostFavorite(kwP, catId, min, max,
+                        PageRequest.of(safePage, safeSize));
+            default:
+                return productRepo.search(kwP, catId, min, max,
+                        PageRequest.of(safePage, safeSize, resolveSort(s)));
+        }
     }
 
     public Page<Product> searchForAdmin(String kw, Long catId, Boolean active,
@@ -47,12 +66,14 @@ public class ProductService {
                 PageRequest.of(Math.max(page, 0), size, sortBy));
     }
 
+    /** Sắp xếp cho các cột chuẩn (dùng Sort) — luôn có id làm tiebreaker để phân trang ổn định. */
     private Sort resolveSort(String sort) {
-        if ("priceAsc".equals(sort))  return Sort.by("basePrice").ascending();
-        if ("priceDesc".equals(sort)) return Sort.by("basePrice").descending();
-        if ("nameAsc".equals(sort))   return Sort.by("name").ascending();
-        if ("nameDesc".equals(sort))  return Sort.by("name").descending();
-        return Sort.by("createdAt").descending();
+        Sort tie = Sort.by("id").descending();
+        if ("priceAsc".equals(sort))  return Sort.by("basePrice").ascending().and(tie);
+        if ("priceDesc".equals(sort)) return Sort.by("basePrice").descending().and(tie);
+        if ("nameAsc".equals(sort))   return Sort.by("name").ascending().and(tie);
+        if ("nameDesc".equals(sort))  return Sort.by("name").descending().and(tie);
+        return Sort.by("createdAt").descending().and(tie);
     }
 
     public Product get(Long id) {

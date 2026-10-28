@@ -74,7 +74,7 @@ public class HomeController {
                            @RequestParam(required = false) BigDecimal minPrice,
                            @RequestParam(required = false) BigDecimal maxPrice,
                            @RequestParam(defaultValue = "0") int page,
-                           @RequestParam(defaultValue = "12") int size,
+                           @RequestParam(defaultValue = "20") int size,
                            @RequestParam(defaultValue = "newest") String sort,
                            Model model) {
         Page<Product> p = productService.search(kw, categoryId, minPrice, maxPrice, page, size, sort);
