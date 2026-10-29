@@ -87,6 +87,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     session.setAttribute("userId",   user.get().getId());
                     session.setAttribute("fullName", user.get().getFullName());
                     session.setAttribute("email",    user.get().getEmail());
+                    session.setAttribute("avatarUrl", user.get().getAvatarUrl());
                     session.setAttribute("roles",    authorities.stream().map(SimpleGrantedAuthority::getAuthority).toList());
                 }
             }

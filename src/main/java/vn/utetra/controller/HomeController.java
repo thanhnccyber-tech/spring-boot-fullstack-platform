@@ -42,6 +42,7 @@ public class HomeController {
     @Autowired private vn.utetra.repository.FavoriteRepository favoriteRepo;
     @Autowired private BranchService branchService;
     @Autowired private vn.utetra.repository.ProductRepository productRepo;
+    @Autowired private CartService cartService;
 
     /** Chi nhánh khách đã chọn trong popup "Cách nhận hàng" (null nếu chưa chọn). */
     private static Long branchIdOf(HttpSession session) {
@@ -226,7 +227,9 @@ public class HomeController {
         }
         model.addAttribute("currentBranchName", currentBranchName);
 
-        List<Topping> toppings = toppingService.activeInStock();
+        // Dùng toppingsForDisplay để GIỮ LẠI topping đang tạm hết hàng toàn hệ thống
+        // (hiện nhãn "Hết hàng" + disable), đồng bộ với Manager "Hết tại CN".
+        List<Topping> toppings = cartService.toppingsForDisplay(p);
         model.addAttribute("toppings", toppings);
         Set<Long> branchOOSToppingIds = toppingService.branchOOSIds(branchId,
                 toppings.stream().map(Topping::getId).toList());

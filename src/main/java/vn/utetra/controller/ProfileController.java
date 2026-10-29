@@ -1,12 +1,12 @@
 package vn.utetra.controller;
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import vn.utetra.entity.RoleName;
 import vn.utetra.entity.User;
 import vn.utetra.security.ErrorMessages;
 import vn.utetra.service.CloudinaryService;
@@ -36,6 +36,7 @@ public class ProfileController {
                          @RequestParam(required = false) String phone,
                          @RequestParam(required = false) String address,
                          @RequestParam(required = false) MultipartFile avatar,
+                         HttpSession session,
                          Model model) {
         try {
             if (avatar != null && !avatar.isEmpty()) {
@@ -47,6 +48,11 @@ public class ProfileController {
             }
             userService.updateProfile(auth.getName(), fullName, phone, address, url);
             User u = userService.findByEmail(auth.getName()).orElseThrow();
+            // Cập nhật session để header + menu trái hiển thị tên/avatar mới ngay lập tức
+            if (session != null) {
+                session.setAttribute("fullName", u.getFullName());
+                session.setAttribute("avatarUrl", u.getAvatarUrl());
+            }
             model.addAttribute("user", u);
             model.addAttribute("success", "Cập nhật thành công!");
             return "user/profile";

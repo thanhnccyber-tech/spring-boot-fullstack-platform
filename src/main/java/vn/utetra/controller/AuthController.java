@@ -153,6 +153,7 @@ public class AuthController {
         session.setAttribute("userId",   u.getId());
         session.setAttribute("fullName", u.getFullName());
         session.setAttribute("email",    u.getEmail());
+        session.setAttribute("avatarUrl", u.getAvatarUrl());
         session.setAttribute("roles",    roles);
 
         if (roles.contains(RoleName.ADMIN))   return "redirect:/admin/dashboard";

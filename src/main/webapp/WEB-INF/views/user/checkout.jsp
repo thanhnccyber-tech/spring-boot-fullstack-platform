@@ -8,7 +8,7 @@
 <fmt:formatNumber value="${subtotal}" pattern="0" var="subRaw"/>
 <fmt:formatNumber value="${shipFeeDelivery}" pattern="0" var="feeRaw"/>
 
-<h3 class="mb-3">🧾 Thanh toán</h3>
+<h3 class="mb-3"> Thanh toán</h3>
 
 <form id="placeForm" action="${ctx}/order/place" method="post">
     <c:if test="${not empty recvLat and not empty recvLng}">

@@ -91,6 +91,22 @@ public class AdminCategoryController {
         }
     }
 
+    @PostMapping("/move-up/{id}")
+    public String moveUp(@PathVariable Long id,
+                         @RequestParam(required = false) String returnUrl,
+                         RedirectAttributes ra) {
+        categoryService.move(id, -1);
+        return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/categories");
+    }
+
+    @PostMapping("/move-down/{id}")
+    public String moveDown(@PathVariable Long id,
+                           @RequestParam(required = false) String returnUrl,
+                           RedirectAttributes ra) {
+        categoryService.move(id, 1);
+        return "redirect:" + SafeRedirect.localPath(returnUrl, "/admin/categories");
+    }
+
     @PostMapping("/toggle-active")
     public String toggleActive(@RequestParam Long id,
                                @RequestParam(required = false) String returnUrl,

@@ -63,11 +63,11 @@
                     <th class="text-center" style="width:110px">Sản phẩm</th>
                     <th class="text-center" style="width:90px">Thứ tự</th>
                     <th class="text-center" style="width:130px">Trạng thái</th>
-                    <th class="text-end" style="width:140px">Thao tác</th>
+                    <th class="text-end" style="width:210px">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
-                <c:forEach items="${pageData.content}" var="c">
+                <c:forEach items="${pageData.content}" var="c" varStatus="st">
                     <tr>
                         <td>
                             <c:choose>
@@ -105,7 +105,25 @@
                             </form>
                         </td>
                         <td class="text-end">
-                            <div class="d-inline-flex gap-1">
+                            <div class="d-inline-flex gap-1 align-items-center">
+                                <form action="${pageContext.request.contextPath}/admin/categories/move-up/${fn:escapeXml(c.id)}"
+                                      method="post" class="m-0">
+                                    <input type="hidden" name="returnUrl"
+                                           value="/admin/categories?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}">
+                                    <button class="btn btn-sm btn-outline-secondary" title="Di chuyển lên"
+                                            ${st.first ? 'disabled' : ''}>
+                                        <i class="fas fa-arrow-up"></i>
+                                    </button>
+                                </form>
+                                <form action="${pageContext.request.contextPath}/admin/categories/move-down/${fn:escapeXml(c.id)}"
+                                      method="post" class="m-0">
+                                    <input type="hidden" name="returnUrl"
+                                           value="/admin/categories?page=${fn:escapeXml(pageData.number)}&kw=${fn:escapeXml(kw)}&active=${fn:escapeXml(activeFilter)}">
+                                    <button class="btn btn-sm btn-outline-secondary" title="Di chuyển xuống"
+                                            ${st.last ? 'disabled' : ''}>
+                                        <i class="fas fa-arrow-down"></i>
+                                    </button>
+                                </form>
                                 <a href="${pageContext.request.contextPath}/admin/categories/edit/${fn:escapeXml(c.id)}"
                                    class="btn btn-sm btn-outline-primary" title="Sửa danh mục">
                                     <i class="fas fa-pen"></i>

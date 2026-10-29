@@ -7,6 +7,10 @@
 <%-- Giữ sort khi đổi danh mục --%>
 <c:set var="sortQuery" value="${not empty sort and sort != 'newest' ? '&sort='.concat(sort) : ''}"/>
 
+<%-- Nút "Xóa bộ lọc": chỉ hiện khi có ít nhất 1 bộ lọc thực sự (kw / danh mục / giá) --%>
+<c:set var="hasFilters" value="${not empty kw or not empty categoryId or not empty minPrice or not empty maxPrice}"/>
+<c:set var="clearUrl" value="${pageContext.request.contextPath}/products${not empty sort and sort != 'newest' ? '?sort='.concat(sort) : ''}"/>
+
 <div class="d-flex flex-wrap gap-2 mb-3">
     <a href="${pageContext.request.contextPath}/products${sortQuery}"
        class="btn btn-sm ${fn:escapeXml(empty categoryId ? 'btn-dark' : 'btn-outline-dark')}">Tất cả</a>
@@ -30,7 +34,7 @@
     </div>
     <div class="col-md-2"><input type="number" name="minPrice" value="${fn:escapeXml(minPrice)}" class="form-control" placeholder="Giá từ"></div>
     <div class="col-md-2"><input type="number" name="maxPrice" value="${fn:escapeXml(maxPrice)}" class="form-control" placeholder="Giá đến"></div>
-    <div class="col-md-3">
+    <div class="${hasFilters ? 'col-md-2' : 'col-md-3'}">
         <select name="sort" class="form-select">
             <option value="newest"       <c:if test="${sort == 'newest'}">selected</c:if>>Mới nhất</option>
             <option value="bestSeller"   <c:if test="${sort == 'bestSeller'}">selected</c:if>>Bán chạy nhất</option>
@@ -42,8 +46,14 @@
             <option value="nameDesc"     <c:if test="${sort == 'nameDesc'}">selected</c:if>>Tên Z → A</option>
         </select>
     </div>
-    <div class="col-md-1">
-        <button class="btn btn-warning w-100">Lọc</button>
+    <div class="${hasFilters ? 'col-md-2' : 'col-md-1'} d-flex gap-1">
+        <button class="btn btn-warning flex-grow-1">Lọc</button>
+        <c:if test="${hasFilters}">
+            <a href="${fn:escapeXml(clearUrl)}" class="btn btn-outline-secondary"
+               title="Xóa bộ lọc" aria-label="Xóa bộ lọc">
+                <i class="fas fa-times"></i>
+            </a>
+        </c:if>
     </div>
 </form>
 

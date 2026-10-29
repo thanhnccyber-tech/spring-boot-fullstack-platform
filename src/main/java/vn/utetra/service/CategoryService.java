@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.utetra.entity.Category;
 import vn.utetra.repository.CategoryRepository;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,12 +50,40 @@ public class CategoryService {
         if (c.getDescription() != null && c.getDescription().length() > 2000)
             throw new IllegalArgumentException("Mô tả tối đa 2000 ký tự.");
 
-        if (c.getSortOrder() == null) c.setSortOrder(0);
-        if (c.getSortOrder() < 0)
-            throw new IllegalArgumentException("Thứ tự phải ≥ 0.");
+        // sortOrder không còn nhập tay: tạo mới → cuối danh sách, sửa → giữ nguyên thứ tự cũ
+        if (c.getId() == null) {
+            List<Category> all = repo.findAllByOrderBySortOrderAscIdAsc();
+            int max = all.stream()
+                    .mapToInt(x -> x.getSortOrder() == null ? 0 : x.getSortOrder())
+                    .max().orElse(-1);
+            c.setSortOrder(max + 1);
+        } else {
+            Category existing = repo.findById(c.getId()).orElseThrow();
+            c.setSortOrder(existing.getSortOrder() == null ? 0 : existing.getSortOrder());
+        }
         if (c.getActive() == null) c.setActive(true);
 
         return repo.save(c);
+    }
+
+    /**
+     * Di chuyển danh mục lên (direction = -1) hoặc xuống (direction = 1) một bậc,
+     * sau đó đánh lại sortOrder = 0,1,2,... cho toàn bộ danh sách để không bao giờ bị trùng.
+     */
+    @Transactional
+    public void move(Long id, int direction) {
+        List<Category> all = repo.findAllByOrderBySortOrderAscIdAsc();
+        int index = -1;
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i).getId().equals(id)) { index = i; break; }
+        }
+        if (index < 0) return;
+        int target = index + direction;
+        if (target < 0 || target >= all.size()) return;
+
+        Collections.swap(all, index, target);
+        for (int i = 0; i < all.size(); i++) all.get(i).setSortOrder(i);
+        repo.saveAll(all);
     }
 
     @Transactional

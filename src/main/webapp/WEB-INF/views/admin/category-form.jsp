@@ -20,14 +20,9 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-8">
+                        <div class="col-12">
                             <label class="form-label small fw-semibold">Tên danh mục <span class="text-danger">*</span></label>
                             <input type="text" name="name" value="${fn:escapeXml(category.name)}" class="form-control" maxlength="100" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold">Thứ tự hiển thị</label>
-                            <input type="number" name="sortOrder" value="${fn:escapeXml(category.sortOrder)}" class="form-control" min="0">
-                            <small class="text-muted">Số nhỏ hiển thị trước.</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label small fw-semibold">Mô tả</label>

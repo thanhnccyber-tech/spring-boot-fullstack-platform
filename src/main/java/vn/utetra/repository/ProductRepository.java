@@ -162,12 +162,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByIdWithDetails(@Param("id") Long id);
 
     @Query("SELECT DISTINCT p FROM Product p " +
-           "LEFT JOIN FETCH p.sizes " +
-           "LEFT JOIN FETCH p.sugars " +
-           "LEFT JOIN FETCH p.ices " +
-           "LEFT JOIN FETCH p.defaultSize " +
-           "LEFT JOIN FETCH p.defaultSugar " +
-           "LEFT JOIN FETCH p.defaultIce " +
-           "WHERE p.id = :id")
+            "LEFT JOIN FETCH p.toppings " +
+            "LEFT JOIN FETCH p.sizes " +
+            "LEFT JOIN FETCH p.sugars " +
+            "LEFT JOIN FETCH p.ices " +
+            "LEFT JOIN FETCH p.defaultSize " +
+            "LEFT JOIN FETCH p.defaultSugar " +
+            "LEFT JOIN FETCH p.defaultIce " +
+            "WHERE p.id = :id")
     Optional<Product> findByIdWithDefaults(@Param("id") Long id);
 }

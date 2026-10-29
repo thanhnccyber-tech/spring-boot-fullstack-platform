@@ -43,6 +43,18 @@ public class AdminSizeController {
         }
     }
 
+    @PostMapping("/move-up/{id}")
+    public String moveUp(@PathVariable Long id, RedirectAttributes ra) {
+        sizeService.move(id, -1);
+        return "redirect:/admin/sizes";
+    }
+
+    @PostMapping("/move-down/{id}")
+    public String moveDown(@PathVariable Long id, RedirectAttributes ra) {
+        sizeService.move(id, 1);
+        return "redirect:/admin/sizes";
+    }
+
     @GetMapping("/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         sizeService.lock(id);

@@ -43,6 +43,18 @@ public class AdminIceController {
         }
     }
 
+    @PostMapping("/move-up/{id}")
+    public String moveUp(@PathVariable Long id, RedirectAttributes ra) {
+        iceService.move(id, -1);
+        return "redirect:/admin/ices";
+    }
+
+    @PostMapping("/move-down/{id}")
+    public String moveDown(@PathVariable Long id, RedirectAttributes ra) {
+        iceService.move(id, 1);
+        return "redirect:/admin/ices";
+    }
+
     @GetMapping("/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         iceService.lock(id);

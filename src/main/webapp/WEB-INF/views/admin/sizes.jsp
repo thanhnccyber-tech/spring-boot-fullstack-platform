@@ -31,7 +31,7 @@
             <c:if test="${form.id != null}">
                 <input type="hidden" name="id" value="${fn:escapeXml(form.id)}">
             </c:if>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label small fw-semibold mb-1">Tên size *</label>
                 <input name="name" class="form-control" required maxlength="20"
                        value="${fn:escapeXml(form.name)}" placeholder="VD: M">
@@ -42,12 +42,7 @@
                 <input name="extraPrice" type="number" min="0" step="1000" class="form-control" required
                        value="${extraPriceFmt}">
             </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-semibold mb-1">Thứ tự</label>
-                <input name="sortOrder" type="number" min="0" class="form-control"
-                       value="${fn:escapeXml(form.sortOrder != null ? form.sortOrder : 0)}">
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-md-3 d-flex align-items-end">
                 <div class="form-check pb-2">
                     <input class="form-check-input" type="checkbox" name="active" value="true" id="szAct"
                            <c:if test="${form.id == null || form.active}">checked</c:if>>
@@ -78,11 +73,11 @@
                     <th class="text-end" style="width:160px">Phụ thu</th>
                     <th class="text-center" style="width:100px">Thứ tự</th>
                     <th class="text-center" style="width:140px">Trạng thái</th>
-                    <th class="text-end" style="width:140px">Thao tác</th>
+                    <th class="text-end" style="width:200px">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
-                <c:forEach items="${sizes}" var="s">
+                <c:forEach items="${sizes}" var="s" varStatus="st">
                     <tr class="${form.id == s.id ? 'table-warning' : ''}">
                         <td class="text-muted small">#${fn:escapeXml(s.id)}</td>
                         <td class="fw-semibold">${fn:escapeXml(s.name)}</td>
@@ -96,7 +91,21 @@
                             </span>
                         </td>
                         <td class="text-end">
-                            <div class="d-inline-flex gap-1">
+                            <div class="d-inline-flex gap-1 align-items-center">
+                                <form action="${pageContext.request.contextPath}/admin/sizes/move-up/${fn:escapeXml(s.id)}"
+                                      method="post" class="m-0">
+                                    <button class="btn btn-sm btn-outline-secondary" title="Di chuyển lên"
+                                            ${st.first ? 'disabled' : ''}>
+                                        <i class="fas fa-arrow-up"></i>
+                                    </button>
+                                </form>
+                                <form action="${pageContext.request.contextPath}/admin/sizes/move-down/${fn:escapeXml(s.id)}"
+                                      method="post" class="m-0">
+                                    <button class="btn btn-sm btn-outline-secondary" title="Di chuyển xuống"
+                                            ${st.last ? 'disabled' : ''}>
+                                        <i class="fas fa-arrow-down"></i>
+                                    </button>
+                                </form>
                                 <a href="${pageContext.request.contextPath}/admin/sizes?edit=${fn:escapeXml(s.id)}"
                                    class="btn btn-sm btn-outline-primary" title="Sửa size">
                                     <i class="fas fa-pen"></i>

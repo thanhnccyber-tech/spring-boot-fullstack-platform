@@ -254,4 +254,36 @@ public class CartService {
     }
 
     public List<Topping> toppings() { return toppingService.activeInStock(); }
+
+    /**
+     * Topping được phép chọn cho một sản phẩm: chỉ những topping Admin đã gán cho sản phẩm
+     * (Product.toppings) và đang bán / còn hàng.
+     * Dùng cho trang "Sửa món trong giỏ": topping đang tạm hết hàng toàn hệ thống
+     * không được hiển thị để user không chọn lại.
+     */
+    public List<Topping> toppingsFor(Product p) {
+        List<Topping> inStock = toppingService.activeInStock();
+        if (p == null || p.getToppings() == null || p.getToppings().isEmpty()) {
+            return inStock;
+        }
+        Set<Long> allowedIds = p.getToppings().stream()
+                .map(Topping::getId)
+                .collect(Collectors.toSet());
+        return inStock.stream()
+                .filter(t -> allowedIds.contains(t.getId()))
+                .toList();
+    }
+
+    public List<Topping> toppingsForDisplay(Product p) {
+        List<Topping> allActive = toppingService.active();
+        if (p == null || p.getToppings() == null || p.getToppings().isEmpty()) {
+            return allActive;
+        }
+        Set<Long> allowedIds = p.getToppings().stream()
+                .map(Topping::getId)
+                .collect(Collectors.toSet());
+        return allActive.stream()
+                .filter(t -> allowedIds.contains(t.getId()))
+                .toList();
+    }
 }

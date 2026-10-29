@@ -119,8 +119,8 @@ public class CartController {
 		model.addAttribute("sizes", Boolean.TRUE.equals(p.getAllowSize()) ? cartService.sizesFor(p) : List.of());
 		model.addAttribute("sugars", Boolean.TRUE.equals(p.getAllowSugar()) ? cartService.sugarsFor(p) : List.of());
 		model.addAttribute("ices", Boolean.TRUE.equals(p.getAllowIce()) ? cartService.icesFor(p) : List.of());
-		model.addAttribute("toppings", cartService.toppings());
-		return "user/cart-edit";
+        model.addAttribute("toppings", cartService.toppingsFor(p));
+        return "user/cart-edit";
 	}
 
 	@PostMapping("/edit")

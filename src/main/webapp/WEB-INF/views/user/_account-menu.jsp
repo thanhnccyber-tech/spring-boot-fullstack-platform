@@ -5,9 +5,17 @@
 <c:set var="act" value="${param.active}"/>
 <div class="checkout-box p-3">
     <div class="d-flex align-items-center gap-3 pb-3 mb-2 border-bottom">
-        <div style="width:44px;height:44px;border-radius:50%;background:var(--ute-gradient-soft);display:flex;align-items:center;justify-content:center">
-            <i class="fas fa-user" style="color:var(--ute-blue-600);font-size:1.1rem"></i>
-        </div>
+        <c:choose>
+            <c:when test="${not empty sessionScope.avatarUrl}">
+                <img src="${fn:escapeXml(sessionScope.avatarUrl)}" alt="Ảnh đại diện"
+                     style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--ute-blue-100);flex-shrink:0">
+            </c:when>
+            <c:otherwise>
+                <div style="width:44px;height:44px;border-radius:50%;background:var(--ute-gradient-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="fas fa-user" style="color:var(--ute-blue-600);font-size:1.1rem"></i>
+                </div>
+            </c:otherwise>
+        </c:choose>
         <div class="fw-bold" style="color:var(--ute-slate-900)">${fn:escapeXml(sessionScope.fullName)}</div>
     </div>
     <div class="list-group list-group-flush account-menu">

@@ -91,9 +91,30 @@
                     <c:if test="${notificationDrawer.unread > 0}"><span class="ute-notification-badge" id="notificationUnreadBadge">${fn:escapeXml(notificationDrawer.unread > 99 ? '99+' : notificationDrawer.unread)}</span></c:if>
                 </button>
                 <div class="dropdown">
-                    <a class="icon-btn" href="#" data-bs-toggle="dropdown" title="Tài khoản"><i class="fas fa-user-circle"></i></a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li class="dropdown-header">${fn:escapeXml(sessionScope.fullName)}</li>
+				    <a class="icon-btn" href="#" data-bs-toggle="dropdown" title="Tài khoản">
+				        <c:choose>
+				            <c:when test="${not empty sessionScope.avatarUrl}">
+				                <img src="${fn:escapeXml(sessionScope.avatarUrl)}" alt="Ảnh đại diện"
+				                     style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;border:1.5px solid var(--ute-blue-100)">
+				            </c:when>
+				            <c:otherwise>
+				                <i class="fas fa-user-circle"></i>
+				            </c:otherwise>
+				        </c:choose>
+				    </a>
+				    <ul class="dropdown-menu dropdown-menu-end">
+				        <li class="dropdown-header d-flex align-items-center gap-2">
+				            <c:choose>
+				                <c:when test="${not empty sessionScope.avatarUrl}">
+				                    <img src="${fn:escapeXml(sessionScope.avatarUrl)}" alt=""
+				                         style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">
+				                </c:when>
+				                <c:otherwise>
+				                    <i class="fas fa-user-circle" style="font-size:1.6rem"></i>
+				                </c:otherwise>
+				            </c:choose>
+				            <span>${fn:escapeXml(sessionScope.fullName)}</span>
+				        </li>
                         <li><a class="dropdown-item" href="${ctx}/profile"><i class="fas fa-id-badge"></i> Thông tin cá nhân</a></li>
                         <li><a class="dropdown-item" href="${ctx}/account/member"><i class="fas fa-id-card"></i> Khách hàng thành viên</a></li>
                         <li><a class="dropdown-item" href="${ctx}/account/vouchers"><i class="fas fa-ticket"></i> Ưu đãi của tôi</a></li>

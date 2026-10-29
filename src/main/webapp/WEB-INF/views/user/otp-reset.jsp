@@ -8,7 +8,7 @@
     <div class="col-md-5">
         <div class="card shadow">
             <div class="card-body p-4 text-center">
-                <h3>📧 Xác thực OTP</h3>
+                <h3> Xác thực OTP</h3>
                 <p class="text-muted">
                     Mã OTP đặt lại mật khẩu đã được gửi tới <b>${fn:escapeXml(email)}</b>.
                     Mã có hiệu lực trong 5 phút.

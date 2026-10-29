@@ -169,15 +169,18 @@
 					<div class="pd-group-title">Topping</div>
 					<div class="pd-options">
 						<c:forEach items="${toppings}" var="t">
+							<c:set var="topOOS" value="${t.outOfStock}"/>
 							<c:set var="topBranchOOS" value="${not empty branchOOSToppingIds and branchOOSToppingIds.contains(t.id)}"/>
-							<label class="pd-chip ${topBranchOOS ? 'pd-chip-branch-oos' : ''}"
-							       <c:if test="${topBranchOOS}">title="Topping đã hết hàng tại chi nhánh đã chọn"</c:if>>
+							<c:set var="topUnavailable" value="${topOOS or topBranchOOS}"/>
+							<label class="pd-chip ${topUnavailable ? 'pd-chip-branch-oos' : ''}"
+							       <c:if test="${topUnavailable}">title="${topOOS ? 'Topping đã hết hàng' : 'Topping đã hết hàng tại chi nhánh đã chọn'}"</c:if>>
 								<input type="checkbox" name="toppingIds" value="${fn:escapeXml(t.id)}"
 									data-price="${fn:escapeXml(t.price)}"
-									<c:if test="${productOOSAtBranch or topBranchOOS}">disabled</c:if>>
+									<c:if test="${productOOSAtBranch or topUnavailable}">disabled</c:if>>
 								<span>${fn:escapeXml(t.name)}
 									<small>
 										<c:choose>
+											<c:when test="${topOOS}">Hết hàng</c:when>
 											<c:when test="${topBranchOOS}">Hết tại CN</c:when>
 											<c:otherwise>+<fmt:formatNumber value="${t.price}" pattern="#,##0"/> ₫</c:otherwise>
 										</c:choose>
@@ -214,7 +217,7 @@
 </div>
 
 <style>
-/* Topping đã hết tại chi nhánh: gạch ngang + mờ */
+/* Topping đã hết tại chi nhánh / hết hàng toàn hệ thống: gạch ngang + mờ */
 .pd-chip.pd-chip-branch-oos > span { opacity: .55; text-decoration: line-through; }
 .pd-chip.pd-chip-branch-oos { cursor: not-allowed; }
 .pd-chip.pd-chip-branch-oos > span small { color: #b91c1c; text-decoration: none; display: inline-block; }

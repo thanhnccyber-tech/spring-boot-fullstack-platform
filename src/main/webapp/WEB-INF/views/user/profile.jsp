@@ -11,7 +11,6 @@
         <jsp:include page="/WEB-INF/views/user/_account-menu.jsp"><jsp:param name="active" value="profile"/></jsp:include>
     </div>
 
-    <!-- ===== Nội dung (bên phải) ===== -->
     <div class="col-lg-8 col-xl-9">
         <c:if test="${success != null}"><div class="alert alert-success">${fn:escapeXml(success)}</div></c:if>
         <c:if test="${error != null}"><div class="alert alert-danger">${fn:escapeXml(error)}</div></c:if>
@@ -44,13 +43,32 @@
                            value="${fn:escapeXml(not empty formAddress ? formAddress : user.address)}">
                     <div class="form-text">Địa chỉ này được tự điền khi bạn thanh toán.</div>
                 </div>
+
+                <%-- ===== ẢNH ĐẠI DIỆN: hiển thị avatar hiện tại + preview khi chọn ảnh mới ===== --%>
                 <div class="col-12">
                     <label class="form-label small mb-1">Ảnh đại diện</label>
-                    <input type="file" name="avatar" id="avatarInput"
-                           accept="image/jpeg,image/png,image/gif,image/webp" class="form-control">
-                    <small class="text-muted d-block mt-1">Chỉ chấp nhận JPG, PNG, GIF, WEBP. Tối đa 5 MB.</small>
-                    <small id="avatarError" class="text-danger d-none"></small>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <c:choose>
+                            <c:when test="${not empty user.avatarUrl}">
+                                <img id="avatarPreview" src="${fn:escapeXml(user.avatarUrl)}" alt="Ảnh đại diện"
+                                     style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--ute-blue-100);box-shadow:0 2px 8px rgba(16,42,67,.08);flex-shrink:0">
+                            </c:when>
+                            <c:otherwise>
+                                <div id="avatarPreview"
+                                     style="width:88px;height:88px;border-radius:50%;background:var(--ute-gradient-soft);display:flex;align-items:center;justify-content:center;border:3px solid var(--ute-blue-100);flex-shrink:0">
+                                    <i class="fas fa-user" style="color:var(--ute-blue-600);font-size:1.8rem"></i>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                        <div class="flex-grow-1">
+                            <input type="file" name="avatar" id="avatarInput"
+                                   accept="image/jpeg,image/png,image/gif,image/webp" class="form-control">
+                            <small class="text-muted d-block mt-1">Chỉ chấp nhận JPG, PNG, GIF, WEBP. Tối đa 5 MB.</small>
+                            <small id="avatarError" class="text-danger d-none"></small>
+                        </div>
+                    </div>
                 </div>
+
                 <div class="col-12"><button class="btn btn-warning px-4 fw-bold">Cập nhật</button></div>
             </form>
         </div>
@@ -88,6 +106,20 @@
         errorEl.textContent = '';
         errorEl.classList.add('d-none');
     }
+    function setPreviewSrc(src) {
+        const preview = document.getElementById('avatarPreview');
+        if (!preview) return;
+        if (preview.tagName === 'IMG') {
+            preview.src = src;
+        } else {
+            const img = document.createElement('img');
+            img.id = 'avatarPreview';
+            img.src = src;
+            img.alt = 'Ảnh đại diện';
+            img.style.cssText = 'width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--ute-blue-100);box-shadow:0 2px 8px rgba(16,42,67,.08);flex-shrink:0';
+            preview.parentNode.replaceChild(img, preview);
+        }
+    }
 
     input.addEventListener('change', function () {
         clearError();
@@ -103,22 +135,26 @@
             showError('Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WEBP.');
             return;
         }
-        const reader = new FileReader();
-        reader.onloadend = function (e) {
+        // Kiểm tra chữ ký file bằng 12 byte đầu
+        const sigReader = new FileReader();
+        sigReader.onloadend = function (e) {
             const arr = new Uint8Array(e.target.result).subarray(0, 12);
             let hex = '';
-            for (let i = 0; i < arr.length; i++) {
-                hex += arr[i].toString(16).padStart(2, '0');
-            }
+            for (let i = 0; i < arr.length; i++) hex += arr[i].toString(16).padStart(2, '0');
             const isJpeg = hex.startsWith('ffd8ff');
             const isPng  = hex.startsWith('89504e470d0a1a0a');
             const isGif  = hex.startsWith('47494638');
             const isWebp = hex.startsWith('52494646') && hex.substring(16, 24) === '57454250';
             if (!(isJpeg || isPng || isGif || isWebp)) {
                 showError('Nội dung tệp không phải là ảnh hợp lệ.');
+                return;
             }
+            // Hợp lệ → đọc toàn bộ file để preview
+            const previewReader = new FileReader();
+            previewReader.onloadend = function (ev) { setPreviewSrc(ev.target.result); };
+            previewReader.readAsDataURL(f);
         };
-        reader.readAsArrayBuffer(f.slice(0, 12));
+        sigReader.readAsArrayBuffer(f.slice(0, 12));
     });
 })();
 </script>
